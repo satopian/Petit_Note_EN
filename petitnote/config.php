@@ -59,7 +59,7 @@ $skindir="basic/";
 // Use [] if no description is needed.
 
 // $descriptions = ["This is a drawing board that allows you to draw on your iPad or smartphone. "];
-$descriptions = ["This is a drawing board that allows you to draw on your iPad or smartphone. ","Let's have fun. "];
+$descriptions = ["You can draw from PC, iPad or smartphone.","Enjoy drawing."];
 
 /* email notification */
 
