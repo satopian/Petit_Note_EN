@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<!-- mocked drawing page -->
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+	<title><?=h($boardname)?></title> 
+
+    <!-- this is important -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+	<style>
+		:not(input){
+		-moz-user-select: none;
+		-webkit-user-select: none;
+		-ms-user-select: none;
+		user-select: none;
+		}
+		</style>
+</head>
+<body>
+
+<!-- embed start -->
+<script src="app/klecks/embed.js?<?=h($parameter_day)?>"></script>
+<script type="text/javascript">
+
+    /*
+    Using Klecks in a drawing community:
+    - on first time opening, start with a manually created project (klecks.openProject)
+    - on submit, upload psd (and png) to the server
+    - on continuing a drawing, read psd that was stored on server (klecks.readPsd -> klecks.openProject)
+     */
+
+	const psdURL = '<?php if($img_klecks):?><?=h($img_klecks)?><?php endif;?>';
+
+    let saveData = (function () {
+        let a = document.createElement("a");
+        document.body.appendChild(a);
+        a.style = "display: none";
+        return function (blob, fileName) {
+            let url = window.URL.createObjectURL(blob);
+			console.log(url);
+            a.href = url;
+            a.download = fileName;
+            a.click();
+            window.URL.revokeObjectURL(url);
+        };
+		
+    }());
+
+    const klecks = new Klecks({
+		
+	onSubmit: (onSuccess, onError) => {
+	// download png
+	// saveData(klecks.getPNG(), 'drawing.png');
+
+	/*// download psd
+	klecks.getPSD().then((blob) => {
+		saveData(blob, 'drawing.psd');
+	});*/
+
+		setTimeout(() => {
+		onSuccess();
+		//2022 (c)satopian MIT LICENCE
+		//この箇所はさとぴあが作成したMIT LICENCEのコードです。
+			klecks.getPSD().then((psd)=>{
+				var formData = new FormData();
+				formData.append("picture", klecks.getPNG(),'blob');
+				formData.append("psd", psd,'blob');
+				formData.append("usercode", "<?=h($usercode)?>");
+				<?php if($rep):?>formData.append("repcode", "<?=h($repcode)?>");<?php endif;?>
+				formData.append("tool", "<?=h($tool)?>");
+				formData.append("stime", <?=time();?>);
+				formData.append("resto", "<?=h($resto)?>");
+
+				var request = new XMLHttpRequest();
+				request.open("POST", "saveklecks.php");
+				request.setRequestHeader( "X-Requested-With", "klecks" );
+				request.send(formData);
+
+				request.onreadystatechange = function() {
+
+					console.log(request.readyState);
+					console.log(request.status);
+					console.log(request.responseText);
+
+					if(request.readyState === 4 && request.status === 200) {
+
+						if(request.responseText === 'ok'){
+						//PHPからOKが返って来た時は画面を推移。OKが返って来ない時は、alertを出す。
+						return window.location.href="index.php?mode=<?=h($paintmode)?><?php if($rep):?>&no=<?=h($no)?>&id=<?=h($id)?>&pwd=<?=h($pwd)?>&repcode=<?=h($repcode)?><?php endif;?>";
+						}
+						return alert('<?php if($en):?>Your picture upload failed! Please try again!<?php else:?>投稿に失敗。時間をおいて再度投稿してみてください。<?php endif;?>');
+					}
+					if(request.readyState === 4 && request.status != 200){
+						let req_status=request.status;
+						if(req_status===0){
+							return alert(<?php if($en):?>'Server or line is unstable.\nPlease try again!'<?php else:?>'サーバまたは回線が不安定です。\n時間をおいて再度投稿してみてください。'<?php endif;?>);	
+						}
+						if(req_status===403){
+							return alert(<?php if($en):?>'403 Forbidden\nsaveklecks.php'<?php else:?>'エラー403\nsaveklecks.phpへのアクセスが拒否されました。'<?php endif;?>);
+						}
+						if(req_status===404){
+							return alert(<?php if($en):?>'404 not found\nsaveklecks.php'<?php else:?>'エラー404\nsaveklecks.phpがありません。'<?php endif;?>);	
+						}
+						if(req_status===503){
+							return alert(<?php if($en):?>'503 Service Unavailable\nPlease try again!'<?php else:?>'エラー503\n時間をおいて再度投稿してみてください。'<?php endif;?>);
+						}
+						return alert(<?php if($en):?>'Error '<?php else:?>'エラー'<?php endif;?> + req_status);
+					}
+				}
+			});
+		//2022 (c)satopian MIT LICENCE ここまで
+		// location.reload();
+		}, 500);
+	}
+    });
+    if (psdURL) {
+        fetch(new Request(psdURL)).then(response => {
+            return response.arrayBuffer();
+        }).then(buffer => {
+            return klecks.readPSD(buffer); // resolves to Klecks project
+        }).then(project => {
+            klecks.openProject(project);
+        }).catch(e => {
+            klecks.initError(<?php if($en):?>'failed to read image'<?php else:?>'画像の読み込みに失敗しました。'<?php endif;?>);
+        });
+
+    } else {
+
+		klecks.openProject({
+		width: <?=h($picw)?>,
+		height: <?=h($pich)?>,
+
+			layers: [{
+				name: 'Background',
+				opacity: 1,
+				mixModeStr: 'source-over',
+
+				image: (() => {
+					const canvas = document.createElement('canvas');
+					canvas.width = <?=h($picw)?>;
+					canvas.height = <?=h($pich)?>;
+					const ctx = canvas.getContext('2d');
+					//PSDがなく画像だけの時はcanvasに読み込む
+					<?php if($imgfile):?>
+						var img = new Image();
+						img.src = "<?=h($imgfile)?>";
+						img.onload = function(){
+							ctx.drawImage(img, 0, 0);
+						}
+					<?php endif;?>
+					ctx.save();
+					ctx.fillStyle = '#fff';
+					ctx.fillRect(0, 0, canvas.width, canvas.height);
+					ctx.restore();
+					return canvas;
+				})(),
+			}]
+		});
+	}
+</script>
+<!-- embed end -->
+</body>
+</html>

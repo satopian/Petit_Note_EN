@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="<?=h($skindir)?>index.css">
+<link rel="preload" as="style" href="<?=h($skindir)?>icomoon/style.css" onload="this.rel='stylesheet'">
+<link rel="preload" as="style" href="lib/luminous/luminous-basic.min.css" onload="this.rel='stylesheet'">
+<link rel="preload" as="script" href="lib/luminous/luminous.min.js">
+<link rel="preload" as="script" href="lib/<?=h(JQUERY)?>">
+
+<?php if($set_nsfw && !$nsfwc):?>
+	<!-- センシティブコンテンツにブラーをかける -->
+<style>img {filter:blur(10px);}</style>
+<?php endif;?>
+
+<title><?=h($boardname)?></title> 
+</head>
+<body>
+
+<div class="container" id="top">
+
+<?php if($set_nsfw && !$nsfwc):?>
+	<h2><?php if($en):?>View NSFW images?<?php else:?>年齢制限付きのコンテンツを表示してもよろしいでしょうか?<?php endif;?></h2>
+	<form action="./" method="post">
+	<input type="hidden" name="mode" value="view_nsfw">
+	<input type="hidden" name="view_nsfw" value="on">
+	<input type="hidden" name="page" value="<?=h($page)?>">
+	<input type="submit" value="<?php if($en):?>Yes<?php else:?>はい表示します。<?php endif;?>">
+</form>
+<?php endif;?>
+
+<h1 class="title"><a href="./"><?=h($boardname)?></a></h1>
+<!-- ナビゲーション -->
+	<?php if($aikotoba):?>
+<nav class="menu_wrap">
+<span>[<a href="./?mode=catalog"><?php if($en):?>Catalog<?php else:?>カタログ<?php endif;?></a>]</span>
+<span> [<a href="./?mode=paintcom"><?php if($en):?>Recover Images<?php else:?>未投稿画像<?php endif;?></a>]</span>
+<?php if($userdel || $admindel):?>
+	<span>[<a href="./?mode=logout&page=<?=h($page)?>"><?php if($en):?>Exit edit mode<?php else:?>編集モード終了<?php endif;?></a>]</span>
+<?php else:?>
+	<span>[<a href="./?mode=userdel&page=<?=h($page)?>"><?php if($en):?>Edit<?php else:?>編集<?php endif;?></a>]</span>
+<?php endif;?>
+ <a href="#bottom">▽</a>
+	</nav>
+<?php endif;?>
+
+<?php if($aikotoba&&(!$userdel && !$admindel)):?>
+<!-- 掲示板の説明文 -->
+<?php if(!empty($descriptions)):?>
+<div class="description">
+<ul>
+<?php foreach($descriptions as $description):?>
+	<li><?=h($description)?></li>
+	<?php endforeach;?>
+</ul>
+</div>
+<?php endif;?>
+	<?php if((!$use_diary || $adminpost) && !$deny_all_posts):?>
+<div class="mainform">
+
+<!-- ペイントフォーム -->
+<form action="./" method="post" enctype="multipart/form-data" class="paint_form">
+	<?php if($adminpost):?>
+	<span>
+	<input type="file" name="pchup" size="35" accept="image/*,.pch,.chi,.psd" class="pchup_button">
+	</span>
+	<br>
+	<?php endif;?>
+<input type="hidden" name="mode" value="paint">
+<input type="submit" value="PAINT" class="paint_button">
+<span>Tool:
+<select name="app" class="select_applet">
+<option value="neo" 
+<?php if($appc==='neo'):?>
+selected
+<?php endif;?>
+>PaintBBS NEO</option>
+<option value="chi"
+<?php if($appc==='chi'):?>
+selected
+<?php endif;?>
+>ChickenPaint</option>
+<option value="klecks"
+<?php if($appc==='klecks'):?>
+selected
+<?php endif;?>
+>Klecks</option>
+</select>
+</span>
+<span class="canvas_size_wrap"> 
+Size:
+<select name="picw" title="幅" class="canvas_select">
+	<?php
+	//幅 300から、$pmax_w で設定した最大値まで。
+		for($i = 300; $i <=$pmax_w ; $i+=50){//50ずつ増える
+		if($picwc==$i){//デフォルトサイズ
+		echo'<option value="'.h($i).'" selected>'.h($i).'</option>';
+		}
+		else{
+		echo'<option value="'.h($i).'">'.h($i).'</option>';
+		}
+		}
+	?>
+	</select>
+	x
+	<select name="pich" title="高さ" class="canvas_select">
+	<?php
+	//高さ 300から、PMAX_H で設定した最大値まで。
+		for($i = 300; $i <=$pmax_h ; $i+=50){//50ずつ増える
+		if($pichc==$i){//デフォルトサイズ
+		echo'<option value="'.$i.'" selected>'.$i.'</option>';
+		}
+		else{
+		echo'<option value="'.$i.'">'.$i.'</option>';
+		}
+		}
+	?>
+	</select>
+</span>
+</form>
+<!-- フォーム入力欄 -->
+	<?php if(($use_top_form && ($use_upload||$allow_coments_only))||$adminpost):?>
+	<form action="./" method="POST" enctype="multipart/form-data" class="postform">
+	<table>
+	<tr>
+		<td><?php if($en):?>Name<?php else:?>名前<?php endif;?></td>
+		<td>:</td>
+		<td><input type="text" name="name" value="<?=h($namec)?>" autocomplete="username" class="input_txt"></td>
+
+	</tr>
+	<tr>
+		<td><?php if($en):?>Subject<?php else:?>題名<?php endif;?></td>
+		<td>:</td>
+		<td><input type="text" name="sub" class="input_txt"></td>
+	</tr>
+	<tr>
+		<td>URL</td>
+		<td>:</td>
+		<td><input type="text" name="url" value="<?=h($urlc)?>" autocomplete="off" class="input_txt"></td>
+	</tr>
+	</table>
+<textarea name="com" class="post_com"></textarea><br>
+<?php if($en):?>Password:<?php else:?>パスワード:<?php endif;?><input type="password" name="pwd" value="<?=h($pwdc)?>" autocomplete="current-password">
+<input type="hidden" name="mode" value="regist">
+<input type="hidden" name="token" value="<?=h($token)?>">
+<br>
+<?php if($use_upload || $adminpost):?>
+<input type="hidden" name="MAX_FILE_SIZE" value="<?=h($max_byte)?>">
+<input type="file" name="imgfile" size="35" accept="image/*" class="form_button">
+<br>
+<?php endif;?>
+<input type="submit" value="<?php if($en):?>New Thread<?php else:?>スレッドを立てる<?php endif;?>" class="form_button">
+	<span>
+	<?php if($mark_sensitive_image):?>
+	<input type="checkbox" name="hide_thumbnail" id="hide_thumbnail"><label for="hide_thumbnail"><?php if($en):?>Sensitive content<?php else:?>閲覧注意にする<?php endif;?></label>
+	<?php endif;?>
+	</span>
+</form>
+<?php endif;?>
+</div>
+<?php endif;?>
+<?php endif;?>
+
+<?php if(!$aikotoba):?>
+<?php if($en):?>What's the secret word?:<?php else:?>この掲示板の合言葉はなんですか?:<?php endif;?> 
+<form action="./" method="post" class="aikotoba">
+	<input type="text" name="aikotoba" class="input_txt">
+	<input type="hidden" name="mode" value="aikotoba">
+	<input type="hidden" name="postpage" value="<?=h($page)?>">
+	<input type="submit" value="<?php if($en):?>Answer<?php else:?>秘密の答え<?php endif;?>">
+</form><br>
+<?php endif;?>
+<hr>
+<!-- スレッド -->
+	<!-- 親のループ -->
+<?php if(isset($out)):?>
+<?php foreach($out as $t => $ress) : ?>
+	<!-- タイトル -->
+	<h2 class="article_title"><a href="./?resno=<?= h($ress[0]['no'])?>">[<?= h($ress[0]['no'])?>] <?= h($ress[0]['sub'])?></a></h2>
+	<?php
+	$countres=count($ress);
+	$skipres=$countres-($dispres+1);
+	if($userdel || $admindel){
+		$skipres=0;	//削除モードの時はレスを省略しない
+	}
+	?>
+		<!-- 個別スレッドのループ -->
+		<?php foreach($ress as $i => $res) : ?>
+			<?php if($skipres && $i===$skipres):?>
+			<hr>
+			<?php if($en):?><?=h($skipres)?> posts omitted.<?php else:?>レス<?=h($skipres)?>件省略中。<?php endif;?>
+			<?php endif;?>	
+			<?php if($i===0 || $i>$skipres):?>
+		<hr>
+		<?php if($i!==0):?>
+		<div class="res_wrap">	
+		<?php endif;?>
+
+		<div class="imginfo_wrap">
+			<span class="info_name"><a href="./?mode=catalog&q=<?=h($res['encoded_name'])?>" target="_blank"><?= h($res['name'])?></a></span>
+			<?php if($res['verified']):?>
+			<span class="icon-checkmark2"></span>
+			<?php endif?>
+			<?php if($res['url']):?><span>[<a href="<?=h($res['url'])?>" target="_blank" rel="nofollow noopener noreferrer">URL</a>]</span><?php endif;?>
+				<?php if($res['userid']):?><span>ID:<?= h($res['userid'])?></span><?php endif;?>
+				<span><?=h($res['date'])?></span>		
+			<?php if($res['img']):?>
+				<span>Tool:<?=h($res['tool'])?></span>
+				<?php if($res['painttime']):?>
+				<span>
+					<?php if($en):?>Paint time:<?php else:?>描画時間:<?php endif;?><?=h($res['painttime'])?>
+				</span>
+				<?php endif;?>
+				<span>
+				<?php if($res['hide_thumbnail']):?>
+					<?php if($en):?>- Hiding thumbnail -<?php else:?>- サムネ非表示 -<?php endif;?>	
+
+				<?php elseif($res['thumbnail']):?>
+					<?php if($en):?>- Showing thumbnail -<?php else:?>- サムネイル表示中 -<?php endif;?>	
+				<?php endif;?>
+				</span>
+						
+			<?php endif;?>
+		<?php if($admindel):?>
+			<br>
+			HOST:<?=h($res['host'])?>
+			<?php endif;?> 
+		</div>
+			<?php if($res['img']):?>
+			<?php if($res['continue']||$res['anime']):?>
+			<div class="imginfo_wrap">
+			<?php if($res['continue'] && $aikotoba):?>
+			<span>☆<a href="?mode=to_continue&id=<?=h($res['time'])?>&no=<?=h($res['no'])?>"><?php if($en):?>Continue<?php else:?>続きを描く<?php endif;?></a></span>
+			<?php endif;?>
+			<?php if($res['anime']):?>
+					<span>☆<a href="?mode=pchview&imagefile=<?=h($res['img'])?>&no=<?=h($res['no'])?>" target="_blank"><?php if($en):?>Animation<?php else:?>動画<?php endif;?></a></span>
+			<?php endif;?>
+			</div>
+			<?php endif;?>
+				<div class="posted_image <?php if($res['hide_thumbnail'] && !$admindel):?>hide_thumbnail<?php endif;?>" style="<?php if($res['w']>747):?>float:none;margin-right:0;<?php endif;?>max-width:<?=h($res['w'])?>px;max-height:<?=h($res['h'])?>px;">
+				<a href="src/<?=h($res['img'])?>" target="_blank" class="luminous">
+				<?php if($res['thumbnail']):?>
+					<img src="thumbnail/<?=h($res['thumbnail'])?>" alt="<?=h($res['sub'])?> by <?=h($res['name'])?>" title="<?=h($res['sub'])?> by <?=h($res['name'])?>" width="<?=h($res['w'])?>" height="<?=h($res['h'])?>" <?php if($t>4):?>loading="lazy"<?php endif;?>>
+			<?php else:?>
+			<img src="src/<?=h($res['img'])?>" alt="<?=h($res['sub'])?> by <?=h($res['name'])?>" title="<?=h($res['sub'])?> by <?=h($res['name'])?>" width="<?=h($res['w'])?>" height="<?=h($res['h'])?>" <?php if($t>4):?>loading="lazy"<?php endif;?>>
+				<?php endif;?>
+				<?php if($res['hide_thumbnail']):?>
+					<p><?php if($en):?>Sensitive<br>content<?php else:?>閲覧注意<?php endif;?></p>
+						<?php endif;?>
+				</a>
+			</div>
+			<?php endif;?>
+			<div class="comment"><?= com(h($res['com']))?></div>
+			<?php if($i>=$max_res||!$ress[0]['check_elapsed_days']){
+				$resform=false;//最大レス数を超えている時はレスフォームを閉じる
+			}?>
+			<?php if($i!==0):?>
+			</div><!-- 子レスのwrap	 -->
+			<?php endif;?>
+		<?php if($aikotoba && ($userdel || $admindel)):?>
+			<!-- 編集削除のためのボタン -->
+			<form action="./" method="POST" class="aikotoba">
+				<input type="hidden" name="mode" value="before_del">
+				<input type="hidden" name="edit_mode" value="editmode">
+				<input type="hidden" name="resmode" value="false">
+				<input type="hidden" name="id" value="<?=h($res['time'])?>">
+				<input type="hidden" name="no" value="<?=h($res['no'])?>">
+				<input type="hidden" name="postpage" value="<?=h($page)?>">
+				<?php if($res['check_elapsed_days']||$admindel):?>
+				<input type="submit" value="<?php if($en):?>Edit<?php else:?>編集<?php endif;?>">
+				<?php endif;?>
+			</form>
+			<form action="./" method="POST" class="aikotoba">
+				<input type="hidden" name="mode" value="before_del">
+				<input type="hidden" name="edit_mode" value="delmode">
+				<input type="hidden" name="resmode" value="false">
+				<input type="hidden" name="id" value="<?=h($res['time'])?>">
+				<input type="hidden" name="no" value="<?=h($res['no'])?>">
+				<input type="hidden" name="postpage" value="<?=h($page)?>">
+				<!-- <input type="hidden" name="resno" value="<?=h($page)?>"> -->
+				<input type="submit" value="<?php if($en):?>Delete<?php else:?>削除<?php endif;?>">
+			</form>
+		<?php endif;?>
+			
+		<?php endif;?>	
+		<?php endforeach;?>
+	<!-- 返信ボタン -->
+	<div class="clear"></div>
+
+	<div class="res_button_wrap">
+	<?php if($aikotoba && (!$userdel && !$admindel)):?>
+	<?php if($use_sns_button):?>
+	<span class="share_button">
+
+	<a target="_blank" href="https://twitter.com/intent/tweet?text=<?=h($ress[0]['encoded_t'])?>&amp;url=<?=h($ress[0]['encoded_u'])?>"><span class="icon-twitter"></span>Tweet</a></span>
+	<?php endif; ?>
+	<?php endif; ?>
+
+	<?php if($resform):?>
+		<form action="./?resno=<?=h($res['no'])?>" method="POST" class="res_button">
+		<input type="submit" value="<?php if($en):?>Reply<?php else:?>返信<?php endif;?>"></form>
+	<?php else:?>
+		<form action="./?resno=<?=h($res['no'])?>" method="POST" class="res_button">
+		<input type="submit" value="<?php if($en):?>View thread<?php else:?>表示<?php endif;?>"></form>
+	<?php endif;?>
+	</div>
+
+	<hr>
+<?php endforeach;?>
+<?php endif;?>
+<nav>
+<div class="pagelink">
+	<span class="prev">
+			<?php if($prev!==false):?>
+			<a href="?page=<?=h($prev)?>">≪prev</a>
+	<?php endif;?>
+	</span>
+	| <a href="./">top</a> |
+	<span class="next">
+	<?php if($next):?>
+	<a href="?page=<?=h($next)?>">next≫</a>
+	<?php endif;?>
+	</span>
+</div>
+<div class="pagination">
+<?php if($prev!==false):?>
+<a href="?page=0">start</a> |
+<?php endif;?>
+
+<?php for($i = $start_page; ($i < $count_alllog && $i <= $end_page) ; $i+=$pagedef) :?>
+	<?php if($page==$i):?>
+			[<strong><?=h($i/$pagedef)?></strong>]
+		<?php else: ?>
+			<?php if($i===0):?>
+				[<a href="?page=0">0</a>]
+			<?php else:?>	
+			<?php if($i === $end_page):?>
+			<!-- 特定のページに代入される記号 エンド -->
+				[<a href="?page=<?=h($i)?>">≫</a>]
+				<?php elseif($i === $start_page):?>
+				[<a href="?page=<?=h($i)?>">≪</a>]
+					<?php else:?>
+			[<a href="?page=<?=h($i)?>"><?=h($i/$pagedef)?></a>]
+			<?php endif;?>
+			<?php endif;?>
+		<?php endif;?>
+		<?php endfor ;?>
+
+		<?php if($next):?>
+		| <a href="?page=<?=h(ceil(($count_alllog/$pagedef)-1)*$pagedef)?>">end</a>
+		<?php endif;?>
+	</div>
+</nav>
+
+	<div class="copy">
+		<div class="left_wrap">
+		[<a href="<?=h($home)?>">HOME</a> / <a href="./?mode=adminin&page=<?=h($page)?>"><?php if($en):?>Admin<?php else:?>管理<?php endif;?></a>]
+	</div>
+<div class="righit_wrap">
+<a href="https://paintbbs.sakura.ne.jp/petit/" target="_blank" rel="noopener noreferrer" title="Petit Note <?=h($petit_ver)?> <?=h($petit_lot)?>">Petit Note <?=h($petit_ver)?></a> <span>Web Style by BASIC</span><br>
+<span>OekakiApp -</span> <a href="http://github.com/funige/neo/" target="_blank" rel="noopener noreferrer" title="by funige">PaintBBS NEO</a> , <a href="https://bitbof.com/"  target="_blank" rel="noopener noreferrer" title="by bitbof">Klecks</a> , <a href="https://github.com/thenickdude/chickenpaint" target="_blank" rel="noopener noreferrer" title="by Nicholas Sherlock">ChickenPaint</a>
+<br>
+<span>UseFunction - <span title="by WonderCatStudio">DynamicPalette</span></span>
+<!--http://wondercatstudio.com/-->
+, 
+<a href="https://github.com/imgix/luminous" target="_blank" rel="noopener noreferrer" title="by Zebrafish Labs" >luminous</a>
+</div>
+</div>
+</div>
+<div id="bottom"></div>
+<div id="page_top"><a class="icon-angles-up-solid"></a></div>
+<script src="lib/<?=h(JQUERY)?>"></script>
+<script src="lib/luminous/luminous.min.js"></script>
+<script>
+	jQuery(function() {
+		window.onpageshow = function(){
+			var $btn = $('[type="submit"]');
+			//disbledを解除
+			$btn.prop("disabled", false);
+			$btn.click(function(){//送信ボタン2度押し対策
+				$(this).prop('disabled',true);
+				$(this).closest('form').submit();
+			});
+		}
+		// https://cotodama.co/pagetop/
+		var pagetop = $('#page_top');   
+		pagetop.hide();
+		$(window).scroll(function () {
+			if ($(this).scrollTop() > 100) {  //100pxスクロールしたら表示
+				pagetop.fadeIn();
+			} else {
+				pagetop.fadeOut();
+			}
+		});
+		pagetop.click(function () {
+			$('body,html').animate({
+				scrollTop: 0
+			}, 500); //0.5秒かけてトップへ移動
+			return false;
+		});
+		// https://www.webdesignleaves.com/pr/plugins/luminous-lightbox.html
+		const luminousElems = document.querySelectorAll('.luminous');
+		//取得した要素の数が 0 より大きければ
+		if( luminousElems.length > 0 ) {
+			luminousElems.forEach( (elem) => {
+			new Luminous(elem);
+			});
+		}
+	});
+</script>
+</body>
+</html>

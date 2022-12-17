@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="<?=h($skindir)?>index.css">
+
+<?php if($set_nsfw && !$nsfwc):?>
+	<!-- センシティブコンテンツにブラーをかける -->
+<style>img {filter:blur(10px);}</style>
+<?php endif;?>
+	<title><?=h($boardname)?></title> 
+</head>
+<div class="container">
+	<h1 class="title"><a href="./"><?=h($boardname)?></a></h1>
+	<nav class="menu_wrap" >
+		<span>[<a href="./?resno=<?=h($no)?>#<?=h($time)?>"><?php if($en):?>Return<?php else:?>もどる<?php endif;?></a>]</span>
+		<a href="#bottom">▽</a>
+		</nav>
+	<hr>
+
+<?php if($aikotoba):?>
+
+<!--  画像と描画時間  -->
+<div class="continue_img <?php if($hidethumbnail):?>hide_thumbnail<?php endif;?>">
+	<img src="<?=h($picfile)?>" width="<?=h($w)?>" height="<?=h($h)?>" alt="<?=h($sub)?> by <?=h($name)?> <?=h($picw)?>x<?=h($pich)?> - <?=($boardname)?>" title="<?=h($sub)?> by <?=h($name)?> <?=h($picw)?>x<?=h($pich)?> - <?=($boardname)?>">
+</div>
+<!-- ダウンロード -->
+<div class="continue_post_form">
+<?php if($download_app_dat):?>
+<form action="./" method="post">
+		<input type="hidden" name="mode" value="download">
+		<input type="hidden" name="id" value="<?=h($time)?>">
+		<input type="hidden" name="no" value="<?=h($no)?>">
+		<?php if(!$adminmode):?>
+		<span class="non"><input type="text" value="" autocomplete="username"></span>
+		<span class="continue_menu"><?php if($en):?>Password<?php else:?>パスワード<?php endif;?>:<input type="password" name="pwd" size="8" value="<?=h($pwdc)?>" class="paint_password" autocomplete="current-password"></span>		
+		<?php endif;?>
+		<input type="submit" value="<?php if($en):?>Download <?=h($pchext)?> file.<?php else:?><?=h($pchext)?>ファイルをダウンロード<?php endif;?>">
+		</form>
+<?php endif;?>
+
+<!-- コンティニューフォーム欄 -->
+<form action="./" method="post">
+ <input type="hidden" name="mode" value="contpaint">
+ <input type="hidden" name="anime" value="true">
+ <input type="hidden" name="picw" value="<?=h($picw)?>">
+ <input type="hidden" name="pich" value="<?=h($pich)?>">
+ <input type="hidden" name="no" value="<?=h($no)?>">
+ <input type="hidden" name="time" value="<?=h($time)?>">
+ <input type="hidden" name="imgfile" value="<?=h($imgfile)?>">
+ <select name="ctype" class="paint_select">
+   <?php if($ctype_pch):?>
+   <option value="pch"><?php if($en):?>from animation<?php else:?>動画から続きを描く<?php endif;?></option>
+   <?php endif;?>
+   <option value="img"><?php if($en):?>from picture<?php else:?>画像から続きを描く<?php endif;?></option>
+ </select>
+ <span class="continue_menu">
+ <?php if($en):?>The image is a<?php else:?>画像は<?php endif;?> <select name="type" class="paint_select">
+<option value="rep"><?php if($en):?>replace<?php else:?>差し換え<?php endif;?></option>
+<?php if(!$use_diary || $adminpost):?>
+<option value="new"><?php if($en):?>new post<?php else:?>新規投稿<?php endif;?></option>
+<?php endif;?>
+</select>
+  </span>
+ <br>
+
+<?php if($select_app):?>
+<select name="app" class="paint_select">
+<option value="neo"
+<?php if($appc==='neo'):?>
+selected
+<?php endif;?>
+>PaintBBS NEO</option>
+<option value="chi"
+<?php if($appc==='chi'):?>
+selected
+<?php endif;?>
+>ChickenPaint</option>
+<option value="klecks"
+<?php if($appc==='klecks'):?>
+selected
+<?php endif;?>
+>Klecks</option>
+</select>
+<?php endif;?>
+<?php if($app_to_use):?>
+<input type="hidden" name="app" value="<?=($app_to_use)?>">
+<?php endif;?>
+
+<span class="non"><input type="text" value="" autocomplete="username"></span>
+<span class="continue_menu"><?php if($en):?>Password<?php else:?>パスワード<?php endif;?>:<input type="password" name="pwd" size="8" value="<?=h($pwdc)?>" class="paint_password" autocomplete="current-password"></span>
+<input type="submit" value="<?php if($en):?>Continue<?php else:?>続きを描く<?php endif;?>">
+</form>
+</div>
+<!--  コンティニュー説明  -->
+<?php if(!$use_diary || $adminpost):?>
+<div class="howtocontinue">
+   <ul id="up_desc">
+<li><?php if($en):?>If it is a new post, you can draw the continuation without a password.<?php else:?>新規投稿ならパスワードがなくても続きを描く事ができます。<?php endif;?></li>
+</ul>
+</div>
+<?php endif;?>
+<?php endif;?>
+</div>
+</body>
+</html>

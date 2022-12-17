@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="<?=h($skindir)?>index.css">
+	<link rel="preload" as="style" href="<?=h($skindir)?>icomoon/style.css" onload="this.rel='stylesheet'">
+	<link rel="preload" as="script" href="lib/<?=h(JQUERY)?>">
+	<title><?=h($boardname)?></title> 
+
+	<script>
+	function select_pic(){
+	if(document.getElementById('select_picfile')){
+	id = document.getElementById('select_picfile').value;
+
+	var csvString = id;
+	var csvArray = csvString.split(',');
+	
+	if(csvArray[1] == 'res'){
+	document.getElementById('paintcom_title').style.display = "none";
+	document.getElementById('paintcom_sage').style.display = "";
+	}else{
+		document.getElementById('paintcom_title').style.display = "";
+		document.getElementById('paintcom_sage').style.display = "none";
+	}
+	}
+	}
+	window.addEventListener('DOMContentLoaded',select_pic,false);
+	</script>
+
+</head>
+<body>
+	<div class="container">
+		<h1 class="title"><a href="./"><?=h($boardname)?></a></h1>
+		<nav class="menu_wrap" >
+			<span>[<a href="./"><?php if($en):?>Return<?php else:?>掲示板にもどる<?php endif;?></a>]</span>
+			<a href="#bottom">▽</a>
+			</nav>
+							   <hr>
+			
+		<div>
+			<div class="error">
+				<?php if(!$tmps):?>
+				<?php if($en):?>The images was not found.<?php else:?>画像が見当たりません。<?php endif;?><br>
+				<a href="#" onClick="javascript:window.history.back(-1);return false;"><?php if($en):?>Back<?php else:?>もどる<?php endif;?></a>
+			</div>
+			<?php endif;?>
+<?php if($tmps):?>
+			<?php foreach($out as $i=>$val):?>
+			<?php foreach($val as $tempimg):?>
+<div class="posted_img_form">
+	<img src="<?=h($tempimg['src'])?>"
+	alt="<?=h($tempimg['srcname'])?>" width="<?=h($tempimg['w'])?>" height="<?=h($tempimg['h'])?>"></div>
+<?=h($tempimg['srcname'])?><br>
+<?=h($tempimg['date'])?>
+
+				<?php endforeach;?>
+				<?php endforeach;?>
+	</div>
+<?php if($aikotoba):?>
+<form action="./" method="POST" enctype="multipart/form-data" class="postform">
+	<table>
+		<tr>
+			<td><?php if($en):?>Name<?php else:?>名前<?php endif;?></td>
+			<td>:</td>
+			<td><input type="text" name="name" value="<?=h($namec)?>" autocomplete="username" class="input_txt"></td>
+	
+		</tr>
+		<tr id="paintcom_title">
+			<td><?php if($en):?>Subject<?php else:?>題名<?php endif;?></td>
+			<td>:</td>
+			<td><input type="text" name="sub" class="input_txt"></td>
+		</tr>
+		<tr>
+			<td>URL</td>
+			<td>:</td>
+			<td><input type="text" name="url" value="<?=h($urlc)?>" class="input_txt"></td>
+		</tr>
+		</table>
+	
+<textarea name="com" class="post_com"></textarea><br>
+<?php if($en):?>Password:<?php else:?>パスワード:<?php endif;?><input type="password" name="pwd" value="<?=h($pwdc)?>" autocomplete="current-password">
+<input type="hidden" name="mode" value="regist">
+<input type="hidden" name="token" value="<?=h($token)?>">
+<input type="hidden" name="pictmp" value="<?=h($pictmp)?>">
+<div class="post_table_title"><?php if($en):?>Images<?php else:?>画像<?php endif;?>
+	<select name="picfile" class="post_select_image" onchange="select_pic();" id="select_picfile">
+
+	<?php foreach($out as $i=>$val):?>
+
+	<?php krsort($val);?>
+
+			<?php foreach($val as $tempimg):?>
+				<option value="<?=h($tempimg['slect_src_val'])?>"><?=h($tempimg['srcname'])?></option>
+				<?php endforeach;?>
+	
+				<?php endforeach;?>
+			</select>
+			<br>
+		</div>
+	<input type="submit" value="<?php if($en):?>Post<?php else:?>投稿する<?php endif;?>">
+	
+	<?php if(!$sage_all):?>
+	<span id="paintcom_sage">
+	<input type="checkbox" name="sage" value="on" id="sage"><label for="sage">sage</label>	
+	</span>
+	<?php endif;?>
+	<?php if($mark_sensitive_image):?>
+	<span>
+	<input type="checkbox" name="hide_thumbnail" id="hide_thumbnail"><label for="hide_thumbnail"><?php if($en):?>Sensitive content<?php else:?>閲覧注意にする<?php endif;?></label>
+	</span>
+	<?php endif;?>
+</form>
+<?php else:?>
+<?php if($en):?>What's the secret word?:<?php else:?>この掲示板の合言葉はなんですか?:<?php endif;?> 
+<form action="./" method="post" class="aikotoba">
+	<input type="text" name="aikotoba" class="input_txt">
+	<input type="hidden" name="mode" value="aikotoba">
+	<input type="hidden" name="paintcom" value="true">
+	<input type="submit" value="<?php if($en):?>Answer<?php else:?>秘密の答え<?php endif;?>">
+	</form>
+<?php endif;?>
+
+			<?php endif; ?>
+
+<br>
+<?php if($tmps):?>
+[<a href="./"><?php if($en):?>Return<?php else:?>掲示板にもどる<?php endif;?></a>]
+<?php endif;?>
+</div>
+</div>
+<div id="bottom"></div>
+<div id="page_top"><a class="icon-angles-up-solid"></a></div>
+<script src="lib/<?=h(JQUERY)?>"></script>
+<script>
+	jQuery(function() {
+	window.onpageshow = function(){
+		var $btn = $('[type="submit"]');
+		//disbledを解除
+		$btn.prop("disabled", false);
+		$btn.click(function(){//送信ボタン2度押し対策
+			$(this).prop('disabled',true);
+			$(this).closest('form').submit();
+		});
+		}
+		// https://cotodama.co/pagetop/
+		var pagetop = $('#page_top');   
+		pagetop.hide();
+		$(window).scroll(function () {
+			if ($(this).scrollTop() > 100) {  //100pxスクロールしたら表示
+				pagetop.fadeIn();
+			} else {
+				pagetop.fadeOut();
+			}
+		});
+		pagetop.click(function () {
+			$('body,html').animate({
+				scrollTop: 0
+			}, 500); //0.5秒かけてトップへ移動
+			return false;
+		});
+	});
+</script>
+</body>
+</html>

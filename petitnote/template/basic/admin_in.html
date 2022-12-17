@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="<?=h($skindir)?>index.css">
+	<title><?=h($boardname)?></title> 
+</head>
+<body>
+
+<div class="container">
+	<h1 class="title"><a href="./"><?=h($boardname)?></a></h1>
+<nav class="menu_wrap">
+		
+<span>[<a href="./"><?php if($en):?>Return<?php else:?>掲示板に戻る<?php endif;?></a>]</span>
+</nav>
+
+<?php if($adminpost||$admindel):?>
+<ul>
+<?php if($adminpost):?>
+<li>
+<?php if($use_diary):?>
+	<?php if($en):?>You are logged in in diary mode.<?php else:?>日記モードでログイン中です。<?php endif;?>
+			
+<?php else:?>
+		<?php if($en):?>You are logged in in admin post mode.<?php else:?>管理者投稿モードでログイン中です。<?php endif;?>		
+<?php endif;?>
+
+</li>
+<?php endif;?>
+<?php if($admindel):?>
+<li>
+<?php if($en):?>You are logged in in edit mode.<?php else:?>編集モードでログイン中です。<?php endif;?>
+</li>
+<?php endif;?>
+</ul>
+
+<form action="./" method="post" class="admin">
+<input type="hidden" name="mode" value="logout_admin">
+<input type="hidden" name="postpage" value="<?=h($page)?>">
+<input type="hidden" name="resno" value="<?=h($resno)?>">
+<input type="hidden" name="catalog" value="<?=h($catalog)?>">
+<input type="submit" value="<?php if($en):?>Admin log out<?php else:?>管理者ログアウト<?php endif;?>">
+	</form>
+	<?php endif;?>
+
+	<?php if(!$adminpost || !$admindel):?>
+
+	<form action="./" method="post" class="admin">
+		<?php if(!$admindel):?>
+		
+		<label><input type="radio" name="mode" value="admin_del" checked>
+		<?php if($en):?>[Admin edit mode]<?php else:?>[管理者編集モード]<?php endif;?></label>
+			<br>
+		<?php endif;?>
+		<?php if(!$adminpost):?>
+		
+		<label><input type="radio" name="mode" value="adminpost" 
+			<?php if(!$admindel):?>checked<?php endif;?>
+			>
+			<?php if($use_diary):?>
+				<?php if($en):?>[Diary mode]<?php else:?>[日記モード]<?php endif;?>
+			<?php else:?>
+				<?php if($en):?>[Admin post mode]<?php else:?>[管理者投稿モード]<?php endif;?>
+				<?php endif;?>
+			</label><br>
+			<?php endif;?>
+		
+		<span class="non"><input type="text" value="" autocomplete="username"></span>
+		<input type="password" name="adminpass">
+		<input type="hidden" name="postpage" value="<?=h($page)?>">
+		<input type="hidden" name="resno" value="<?=h($resno)?>">
+		<input type="hidden" name="catalog" value="<?=h($catalog)?>">
+		<input type="submit" value="<?php if($en):?>Admin login<?php else:?>管理者ログイン<?php endif;?>">
+	</form>
+	<?php endif;?>
+
+<hr>
+<?php if(isset($latest_var)&&$latest_var):?>
+<div class="left_wrap"><a href="https://github.com/satopian/Petit_Note/releases/latest" target="_blank" rel="noopener"><img src="https://img.shields.io/github/v/release/satopian/Petit_Note?label=Latest" alt="Latest release"></a></div>
+<?php endif;?>
+<div class="copy">
+	<div class="righit_wrap">
+		<a href="https://paintbbs.sakura.ne.jp/petit/" target="_blank" rel="noopener noreferrer" title="Petit Note <?=h($petit_ver)?> <?=h($petit_lot)?>">Petit Note <?=h($petit_ver)?></a> <span>Web Style by BASIC</span><br>
+		<span>OekakiApp -</span> <a href="http://github.com/funige/neo/" target="_blank" rel="noopener noreferrer" title="by funige">PaintBBS NEO</a> , <a href="https://bitbof.com/"  target="_blank" rel="noopener noreferrer" title="by bitbof">Klecks</a> , <a href="https://github.com/thenickdude/chickenpaint" target="_blank" rel="noopener noreferrer" title="by Nicholas Sherlock">ChickenPaint</a>
+		<br>
+		<span>UseFunction - <span title="by WonderCatStudio">DynamicPalette</span></span>
+		<!--http://wondercatstudio.com/-->
+		, 
+		<a href="https://github.com/imgix/luminous" target="_blank" rel="noopener noreferrer" title="by Zebrafish Labs" >luminous</a>
+	</div>
+</div>
+</div>
+</body>
+</html>
+		
