@@ -9,4 +9,7 @@ Other than that, it is exactly the same as [Petit Note](https://github.com/satop
 This electronic bulletin board is displayed in Japanese when the language of the browser is set to Japanese.  
 If the set language is not Japanese, it will be displayed in English.  
 
+## support
+If you have any questions, you can open an [issue](https://github.com/satopian/Petit_Note_EN/issues) and ask a question.
+
 
