@@ -921,7 +921,7 @@ function paintcom(){
 			$file_name = pathinfo($file, PATHINFO_FILENAME);
 			$uresto = $uresto ? 'res' :''; 
 			if(is_file(TEMP_DIR.$file_name.$imgext)){ //画像があればリストに追加
-				if($ucode === $usercode||$uip === $userip){
+				if($ucode === $usercode||($uip && ($uip === $userip))){
 					$tmps[$file_name] = [$file_name.$imgext,$uresto];
 				}
 			}

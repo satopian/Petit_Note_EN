@@ -344,10 +344,10 @@ function create_res($line){
 
 //ユーザーip
 function get_uip(){
-	$ip = '';
-	$ip = getenv("HTTP_CLIENT_IP");
-	$ip = $ip ? $ip : getenv("HTTP_X_FORWARDED_FOR");
-	$ip = $ip ? $ip : getenv("REMOTE_ADDR");
+	$ip = isset($_SERVER["HTTP_CLIENT_IP"]) ? $_SERVER["HTTP_CLIENT_IP"] :'';
+	$ip = $ip ? $ip : (isset($_SERVER["HTTP_INCAP_CLIENT_IP"]) ? $_SERVER["HTTP_INCAP_CLIENT_IP"] : '');
+	$ip = $ip ? $ip : (isset($_SERVER["HTTP_X_FORWARDED_FOR"]) ? $_SERVER["HTTP_X_FORWARDED_FOR"] : '');
+	$ip = $ip ? $ip : (isset($_SERVER["REMOTE_ADDR"]) ? $_SERVER["REMOTE_ADDR"] : '');
 	if (strstr($ip, ', ')) {
 		$ips = explode(', ', $ip);
 		$ip = $ips[0];
