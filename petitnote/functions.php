@@ -1,5 +1,5 @@
 <?php
-$functions_ver=20221217;
+$functions_ver=20221218;
 //編集モードログアウト
 function logout(){
 	$resno=filter_input(INPUT_GET,'resno');
@@ -584,7 +584,7 @@ function Reject_if_NGword_exists_in_the_post(){
 
 	//ホスト取得
 	$userip = get_uip();
-	$host = gethostbyaddr($userip);
+	$host = $userip ? gethostbyaddr($userip) :'';
 	//拒絶ホスト
 	foreach($badhost as $value){
 		if (preg_match("/$value\z/i",$host)) {
