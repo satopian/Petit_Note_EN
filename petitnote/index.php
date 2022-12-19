@@ -656,10 +656,8 @@ function post(){
 	if($send_email){
 	//template_ini.phpで未定義の時の初期値
 	//このままでよければ定義不要
-	defined('NOTICE_MAIL_TITLE') or define('NOTICE_MAIL_TITLE', '記事題名');
 	defined('NOTICE_MAIL_IMG') or define('NOTICE_MAIL_IMG', '投稿画像');
 	defined('NOTICE_MAIL_THUMBNAIL') or define('NOTICE_MAIL_THUMBNAIL', 'サムネイル画像');
-	defined('NOTICE_MAIL_ANIME') or define('NOTICE_MAIL_ANIME', 'アニメファイル');
 	defined('NOTICE_MAIL_URL') or define('NOTICE_MAIL_URL', '記事URL');
 	defined('NOTICE_MAIL_REPLY') or define('NOTICE_MAIL_REPLY', 'へのレスがありました');
 	defined('NOTICE_MAIL_NEWPOST') or define('NOTICE_MAIL_NEWPOST', '新規投稿がありました');
@@ -676,10 +674,10 @@ function post(){
 		} 
 		if($resto){
 			$data['subject'] = '['.$boardname.'] No.'.$resto.NOTICE_MAIL_REPLY;
-			$data['option'][] = "\n".NOTICE_MAIL_URL.','.$root_url.'?res='.$resto;
+			$data['option'][] = NOTICE_MAIL_URL.','.$root_url.'?res='.$resto;
 		}else{
 			$data['subject'] = '['.$boardname.'] '.NOTICE_MAIL_NEWPOST;
-			$data['option'][] = "\n".NOTICE_MAIL_URL.','.$root_url.'?res='.$no;
+			$data['option'][] = NOTICE_MAIL_URL.','.$root_url.'?res='.$no;
 		}
 
 		$data['comment'] = str_replace('"\n"',"\n",$com);

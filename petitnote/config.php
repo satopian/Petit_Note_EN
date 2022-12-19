@@ -313,6 +313,13 @@ date_default_timezone_set("asia/tokyo");
 $x_frame_options_deny=true;
 // $x_frame_options_deny=false;
 
+/* Message for notification mail */
+
+define("NOTICE_MAIL_IMG", "Picture");
+define("NOTICE_MAIL_THUMBNAIL", "Thumbnail");
+define("NOTICE_MAIL_URL", "Fixed link");
+define("NOTICE_MAIL_REPLY", " Notification: There is a new reply to a post.");
+define("NOTICE_MAIL_NEWPOST", " Notification: There is a new post");
 
 /* usually don't change */
 
