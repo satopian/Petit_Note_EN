@@ -1,6 +1,6 @@
 <?php
 /*
-** メール通知クラス(UTF-8) lot.220918 for PetitNote
+** メール通知クラス(UTF-8) lot.221219 for PetitNote
 **
 ** https://paintbbs.sakura.ne.jp/poti/
 ** by POTI改
@@ -8,6 +8,7 @@
 ** http://www.punyu.net/php/
 ** 
 **
+** 2022/12/19 コード整理。
 ** 2022/09/18 URLがURLとして正しい事を確認できるようにした。
 ** 2022/09/18 多国語対応。mb_language( 'uni' )。
 ** 2020/06/20 多国語対応。メール送信をJISからutf-8へ。
@@ -111,19 +112,14 @@ class noticemail{
 	$Message = '■'.$data['subject']."\n";
 	$Message .= 'Date: '.date("Y/m/d H:i:s",time())."\n";
 	//ユーザーip
-	$userip = getenv("HTTP_CLIENT_IP");
-	if(!$userip){
-		$userip = getenv("HTTP_X_FORWARDED_FOR");
-	} 
-	if(!$userip){
-		$userip = getenv("REMOTE_ADDR");
-	} 
-	$Message .= 'Host: '.gethostbyaddr($userip)."\n";
-	$Message .= 'UserAgent: '.getenv("HTTP_USER_AGENT")."\n";
+	$userip = self::get_uip();
+	$host= $userip ? gethostbyaddr($userip) :'';
+	$Message .= 'Host: '.$host."\n";
+	$Message .= 'UserAgent: '.$_SERVER["HTTP_USER_AGENT"]."\n";
 	$Message .= $line;
 	$Message .= $name ? ('Name: '.$name."\n") :'';
 	$Message .= filter_var($url,FILTER_VALIDATE_URL) ? ('URL: '.$url."\n") : '';
-	$Message .= $title ? ('Title: '.$title."\n") : '';
+	$Message .= $title ? ('Subject: '.$title."\n") : '';
 	$option = $data['option'];
 	if(is_array($option)){
 		foreach($option as $value){
@@ -143,7 +139,7 @@ class noticemail{
 		$name = mb_convert_kana($name);
 	
 		// メールアドレスの入力欄が無いので代替え
-		$from = 'nomail@'.getenv("HTTP_HOST");
+		$from = 'nomail@'.$_SERVER["HTTP_HOST"];
 		$name = mb_encode_mimeheader(($name));
 		// ヘッダにFrom追加
 		$MailHeaders .= 'From: '.$name.' <'.$from.'>'."\n";
@@ -154,5 +150,16 @@ class noticemail{
 
 			return true;
 	}
+	//ユーザーip
+	private static function get_uip(){
+		$ip = isset($_SERVER["HTTP_CLIENT_IP"]) ? $_SERVER["HTTP_CLIENT_IP"] :'';
+		$ip = $ip ? $ip : (isset($_SERVER["HTTP_INCAP_CLIENT_IP"]) ? $_SERVER["HTTP_INCAP_CLIENT_IP"] : '');
+		$ip = $ip ? $ip : (isset($_SERVER["HTTP_X_FORWARDED_FOR"]) ? $_SERVER["HTTP_X_FORWARDED_FOR"] : '');
+		$ip = $ip ? $ip : (isset($_SERVER["REMOTE_ADDR"]) ? $_SERVER["REMOTE_ADDR"] : '');
+		if (strstr($ip, ', ')) {
+			$ips = explode(', ', $ip);
+			$ip = $ips[0];
+		}
+		return $ip;
+	}
 }
-
