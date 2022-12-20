@@ -9,7 +9,7 @@ $admin_pass = "adminpass";
 //Please change the second password.
 // Password to double check that you are an admin when posting or deleting with admin privileges.
 // You don't have to remember it because it's handled internally.
-//The password cannot be the same as the management path.
+//The second password cannot be the same as the admin password.
 $second_pass = "mGeL5dhpQ8e9ugd";
 
 // name of this board
