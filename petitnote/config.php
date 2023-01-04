@@ -98,6 +98,22 @@ $badhost =["example.com","example.org"];
 
 /*Settings by Purpose of Use*/
 
+//Use PaintBBS NEO 
+// yes: true no: false
+$use_paintbbs_neo= true;
+// $use_paintbbs_neo= false;
+
+// Use ChickenPaint
+// yes: true no: false
+$use_chickenpaint= true;
+// $use_chickenpaint= false;
+
+//Use Klecks
+// yes: true no: false
+$use_klecs= true;
+// $use_klecs= false;
+
+
 // allow writing URLs in the body
 // to filter spam that writes a URL: false
 // Admins can write URLs in the body regardless of the setting.

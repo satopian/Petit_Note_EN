@@ -60,6 +60,7 @@
 	<?php if((!$use_diary || $adminpost) && !$deny_all_posts):?>
 <div class="mainform">
 
+<?php if($use_paint):?>
 <!-- ペイントフォーム -->
 <form action="./" method="post" enctype="multipart/form-data" class="paint_form">
 	<?php if($adminpost):?>
@@ -70,25 +71,18 @@
 	<?php endif;?>
 <input type="hidden" name="mode" value="paint">
 <input type="submit" value="PAINT" class="paint_button">
+
+<?php if($select_app):?>
 <span>Tool:
 <select name="app" class="select_applet">
-<option value="neo" 
-<?php if($appc==='neo'):?>
-selected
-<?php endif;?>
->PaintBBS NEO</option>
-<option value="chi"
-<?php if($appc==='chi'):?>
-selected
-<?php endif;?>
->ChickenPaint</option>
-<option value="klecks"
-<?php if($appc==='klecks'):?>
-selected
-<?php endif;?>
->Klecks</option>
+<!-- ペイントアプリ選択のプルダウンメニューをインクルード -->
+<?php include __DIR__.'/parts/select_apps.html'?>
 </select>
 </span>
+<?php else:?>
+<input type="hidden" name="app" value="<?=h($app_to_use)?>">
+<?php endif;?>
+
 <span class="canvas_size_wrap"> 
 Size:
 <select name="picw" title="幅" class="canvas_select">
@@ -120,6 +114,7 @@ Size:
 	</select>
 </span>
 </form>
+<?php endif;?>
 <!-- フォーム入力欄 -->
 	<?php if(($use_top_form && ($use_upload||$allow_coments_only))||$adminpost):?>
 	<form action="./" method="POST" enctype="multipart/form-data" class="postform">
@@ -231,7 +226,7 @@ Size:
 			<?php if($res['img']):?>
 			<?php if($res['continue']||$res['anime']):?>
 			<div class="imginfo_wrap">
-			<?php if($res['continue'] && $aikotoba):?>
+			<?php if($res['continue'] && $aikotoba && $use_paint):?>
 			<span>☆<a href="?mode=to_continue&id=<?=h($res['time'])?>&no=<?=h($res['no'])?>"><?php if($en):?>Continue<?php else:?>続きを描く<?php endif;?></a></span>
 			<?php endif;?>
 			<?php if($res['anime']):?>
