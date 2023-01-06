@@ -172,17 +172,6 @@ $use_diary = false;
 // $only_admin_can_reply = true;
 $only_admin_can_reply = false;
 
-// use the secret word feature to restrict posting
-// yes: true no: false
-
-// $use_aikotoba = true;
-$use_aikotoba=false;
-
-// Restrict posts with a secret word.
-// Cannot write unless this secret word is entered.
-// change as needed.
-$aikotoba = "secret";
-
 // set this entire board as NSFW content
 // Yes: If set to true, the image will be blurred until the confirm button is pressed.
 // yes: true no: false
@@ -284,6 +273,27 @@ $res_max_h = 300;//height
 
 $use_thumb = true;
 // $use_thumb = false;
+
+/* secret word setting */
+
+// Require a secret word in posts
+// Yes: true requires a secret word for posts.
+// Yes: true No: false
+
+// $use_aikotoba = true;
+$use_aikotoba=false;
+
+// require a secret word to view the message board
+// Yes: true No: false
+// Yes: true requires a secret word to view all content on the board.
+
+// $aikotoba_required_to_view=true;
+$aikotoba_required_to_view=false;
+
+// Secret word
+// Secret answer to enter when either or both of the secret word setting above are true.
+// Change as needed.
+$aikotoba = "secret";
 
 /* safety */
 
