@@ -1,8 +1,8 @@
 <?php
 //Petit Note (c)さとぴあ @satopian 2021-2022
 //1スレッド1ログファイル形式のスレッド式画像掲示板
-$petit_ver='v0.53.5';
-$petit_lot='lot.230106';
+$petit_ver='v0.53.8';
+$petit_lot='lot.230109';
 $lang = ($http_langs = isset($_SERVER['HTTP_ACCEPT_LANGUAGE']) ? $_SERVER['HTTP_ACCEPT_LANGUAGE'] : '')
   ? explode( ',', $http_langs )[0] : '';
 $en= (stripos($lang,'ja')!==0);
@@ -17,7 +17,7 @@ if(!is_file(__DIR__.'/functions.php')){
 	return die(__DIR__.'/functions.php'.($en ? ' does not exist.':'がありません。'));
 }
 require_once(__DIR__.'/functions.php');
-if(!isset($functions_ver)||$functions_ver<20230106){
+if(!isset($functions_ver)||$functions_ver<20230109){
 	return die($en?'Please update functions.php to the latest version.':'functions.phpを最新版に更新してください。');
 }
 // jQueryバージョン
@@ -912,6 +912,7 @@ function paintcom(){
 	global $use_aikotoba,$boardname,$home,$skindir,$sage_all,$en,$mark_sensitive_image;
 	global $usercode; 
 
+	aikotoba_required_to_view();
 	$token=get_csrf_token();
 	$userip = get_uip();
 	//テンポラリ画像リスト作成
@@ -1050,8 +1051,6 @@ function to_continue(){
 function download_app_dat(){
 
 	global $en;
-
-	aikotoba_required_to_view();
 
 	check_same_origin();
 
