@@ -310,6 +310,14 @@ $check_password_input_error_count = false;
 // This file contains the IP addresses of clients who entered an incorrect admin password.
 
 
+// Setting the minimum required drawing time when posting with a drawing app
+// (unit second)
+// if you don't want this setting : 0
+// If the specified number of seconds is not reached, an alert will be displayed informing you of the number of seconds required to draw.
+
+$security_timer = 0;
+// $security_timer = 120;
+
 /*Advanced Setting*/
 
 // days in days before automatically closing old threads
