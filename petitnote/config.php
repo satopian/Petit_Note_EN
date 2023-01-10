@@ -237,7 +237,7 @@ $max_res = 100;
 // number of reply to display in one thread
 // Display all when reply screen.
 
-$display=5;
+$dispres= 5;
 
 // number of items displayed per page in catalog mode
 // Set it in multiples of 6 to fit nicely on the screen.
