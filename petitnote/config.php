@@ -295,6 +295,13 @@ $aikotoba_required_to_view=false;
 // Change as needed.
 $aikotoba = "secret";
 
+// Maintain the login status of the secret Word
+// Yes: true No: false
+// Yes: keep password login status for 30 days.
+
+// $keep_aikotoba_login_status=true;
+$keep_aikotoba_login_status=false;
+
 /* safety */
 
 //Reject if admin password is wrong for her 5 times in a row
