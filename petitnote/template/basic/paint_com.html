@@ -11,20 +11,25 @@
 
 	<script>
 	function select_pic(){
-	if(document.getElementById('select_picfile')){
-	id = document.getElementById('select_picfile').value;
+		if(document.getElementById('select_picfile')){
+		id = document.getElementById('select_picfile').value;
 
-	var csvString = id;
-	var csvArray = csvString.split(',');
-	
-	if(csvArray[1] == 'res'){
-	document.getElementById('paintcom_title').style.display = "none";
-	document.getElementById('paintcom_sage').style.display = "";
-	}else{
-		document.getElementById('paintcom_title').style.display = "";
-		document.getElementById('paintcom_sage').style.display = "none";
-	}
-	}
+		var csvString = id;
+		var csvArray = csvString.split(',');
+		
+			if(csvArray[1] == 'res'){
+			document.getElementById('paintcom_title').style.display = "none";
+			document.getElementById('paintcom_sage').style.display = "";
+			}else{
+				document.getElementById('paintcom_title').style.display = "";
+				document.getElementById('paintcom_sage').style.display = "none";
+			}
+			if(csvArray[2] == '.pch'){
+			document.getElementById('paintcom_hide_animation').style.display = "";
+			}else{
+				document.getElementById('paintcom_hide_animation').style.display = "none";
+			}
+		}
 	}
 	window.addEventListener('DOMContentLoaded',select_pic,false);
 	</script>
@@ -86,9 +91,7 @@
 <input type="hidden" name="pictmp" value="<?=h($pictmp)?>">
 <div class="post_table_title"><?php if($en):?>Images<?php else:?>画像<?php endif;?>
 	<select name="picfile" class="post_select_image" onchange="select_pic();" id="select_picfile">
-
 	<?php foreach($out as $i=>$val):?>
-
 	<?php krsort($val);?>
 
 			<?php foreach($val as $tempimg):?>
@@ -97,18 +100,21 @@
 	
 				<?php endforeach;?>
 			</select>
+	<span id="paintcom_hide_animation">
+		<input type="checkbox" name="hide_animation" id="hide_animation" value="on"><label for="hide_animation"><?php if($en):?>Hide Animation<?php else:?>動画を表示しない<?php endif;?></label>	
+	</span>	
 			<br>
 		</div>
 	<input type="submit" value="<?php if($en):?>Post<?php else:?>投稿する<?php endif;?>">
 	
 	<?php if(!$sage_all):?>
 	<span id="paintcom_sage">
-	<input type="checkbox" name="sage" value="on" id="sage"><label for="sage">sage</label>	
+	<input type="checkbox" name="sage" id="sage" value="on"><label for="sage">sage</label>	
 	</span>
 	<?php endif;?>
 	<?php if($mark_sensitive_image):?>
 	<span>
-	<input type="checkbox" name="hide_thumbnail" id="hide_thumbnail"><label for="hide_thumbnail"><?php if($en):?>Sensitive content<?php else:?>閲覧注意にする<?php endif;?></label>
+	<input type="checkbox" name="hide_thumbnail" id="hide_thumbnail" value="on"><label for="hide_thumbnail"><?php if($en):?>Sensitive content<?php else:?>閲覧注意にする<?php endif;?></label>
 	</span>
 	<?php endif;?>
 </form>

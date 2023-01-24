@@ -1,8 +1,8 @@
 <?php
 //Petit Note (c)さとぴあ @satopian 2021-2022
 //1スレッド1ログファイル形式のスレッド式画像掲示板
-$petit_ver='v0.55.2';
-$petit_lot='lot.230116';
+$petit_ver='v0.56.2';
+$petit_lot='lot.230124';
 $lang = ($http_langs = isset($_SERVER['HTTP_ACCEPT_LANGUAGE']) ? $_SERVER['HTTP_ACCEPT_LANGUAGE'] : '')
   ? explode( ',', $http_langs )[0] : '';
 $en= (stripos($lang,'ja')!==0);
@@ -64,14 +64,15 @@ $aikotoba_required_to_view=isset($aikotoba_required_to_view) ? $aikotoba_require
 $keep_aikotoba_login_status=isset($keep_aikotoba_login_status) ? $keep_aikotoba_login_status : false;
 $use_paintbbs_neo=isset($use_paintbbs_neo) ? $use_paintbbs_neo : true;
 $use_chickenpaint=isset($use_chickenpaint) ? $use_chickenpaint : true;
+$max_file_size_in_png_format_paint = isset($max_file_size_in_png_format_paint) ? $max_file_size_in_png_format_paint : 1024;
+$max_file_size_in_png_format_upload = isset($max_file_size_in_png_format_upload) ? $max_file_size_in_png_format_upload : 800;
 $use_klecs=isset($use_klecs) ? $use_klecs : true;
 $mode = (string)filter_input(INPUT_POST,'mode');
 $mode = $mode ? $mode :(string)filter_input(INPUT_GET,'mode');
-$page=filter_input(INPUT_GET,'page',FILTER_VALIDATE_INT);
-$page= $page ? $page : 0; 
-$resno=filter_input(INPUT_GET,'resno',FILTER_VALIDATE_INT);
+$page=(int)filter_input(INPUT_GET,'page',FILTER_VALIDATE_INT);
+$resno=(int)filter_input(INPUT_GET,'resno',FILTER_VALIDATE_INT);
 
-$usercode = t(filter_input(INPUT_COOKIE, 'usercode'));//user-codeを取得
+$usercode = t((string)filter_input(INPUT_COOKIE, 'usercode'));//user-codeを取得
 $userip = get_uip();
 //user-codeの発行
 if(!$usercode){//user-codeがなければ発行
@@ -102,7 +103,7 @@ switch($mode){
 	case 'to_continue':
 		return to_continue();
 	case 'contpaint':
-		$type = filter_input(INPUT_POST, 'type');
+		$type = (string)filter_input(INPUT_POST, 'type');
 		if($type==='rep') check_cont_pass();
 		return paint();
 	case 'picrep':
@@ -148,7 +149,7 @@ switch($mode){
 function post(){
 	global $max_log,$max_res,$max_kb,$use_aikotoba,$use_upload,$use_res_upload,$use_diary,$max_w,$max_h,$use_thumb,$mark_sensitive_image;
 	global $allow_comments_only,$res_max_w,$res_max_h,$admin_pass,$name_input_required,$max_com,$max_px,$sage_all,$en,$only_admin_can_reply;
-	global $usercode;
+	global $usercode,$max_file_size_in_png_format_upload,$max_file_size_in_png_format_paint;
 
 	if($use_aikotoba){
 		check_aikotoba();
@@ -166,14 +167,15 @@ function post(){
 	$url = t((string)filter_input(INPUT_POST,'url',FILTER_VALIDATE_URL));
 	$resto = t((string)filter_input(INPUT_POST,'resto',FILTER_VALIDATE_INT));
 	$pwd=t((string)filter_input(INPUT_POST, 'pwd'));//パスワードを取得
-	$sage = $sage_all ? true : filter_input(INPUT_POST,'sage',FILTER_VALIDATE_BOOLEAN);
-	$hide_thumbnail = $mark_sensitive_image ? filter_input(INPUT_POST,'hide_thumbnail',FILTER_VALIDATE_BOOLEAN) : false;
+	$sage = $sage_all ? true : (bool)filter_input(INPUT_POST,'sage',FILTER_VALIDATE_BOOLEAN);
+	$hide_thumbnail = $mark_sensitive_image ? (bool)filter_input(INPUT_POST,'hide_thumbnail',FILTER_VALIDATE_BOOLEAN) : false;
+	$hide_animation=(bool)filter_input(INPUT_POST,'hide_animation',FILTER_VALIDATE_BOOLEAN);
 	$check_elapsed_days=false;
 
 	//NGワードがあれば拒絶
 	Reject_if_NGword_exists_in_the_post();
 
-	$pwd=$pwd ? $pwd : t(filter_input(INPUT_COOKIE,'pwdc'));//未入力ならCookieのパスワード
+	$pwd=$pwd ? $pwd : t((string)filter_input(INPUT_COOKIE,'pwdc'));//未入力ならCookieのパスワード
 	if(!$pwd){//それでも$pwdが空なら
 		srand();
 		$pwd = substr(md5(uniqid(rand(),true)),2,15);
@@ -200,13 +202,13 @@ function post(){
 	$adminpost=(adminpost_valid()||($pwd && $pwd === $admin_pass));
 
 	//お絵かきアップロード
-	$pictmp = filter_input(INPUT_POST, 'pictmp',FILTER_VALIDATE_INT);
+	$pictmp = (int)filter_input(INPUT_POST, 'pictmp',FILTER_VALIDATE_INT);
 	$painttime ='';
 	$pictmp2=false;
 	$tempfile='';
 	$picfile='';
 	if($pictmp===2){//ユーザーデータを調べる
-		list($picfile,) = explode(",",filter_input(INPUT_POST, 'picfile'));
+		list($picfile,) = explode(",",(string)filter_input(INPUT_POST, 'picfile'));
 		$picfile=basename($picfile);
 		$tempfile = TEMP_DIR.$picfile;
 		$picfile=pathinfo($tempfile, PATHINFO_FILENAME );//拡張子除去
@@ -218,10 +220,11 @@ function post(){
 		$fp = fopen(TEMP_DIR.$picfile.".dat", "r");
 		$userdata = fread($fp, 1024);
 		fclose($fp);
-		list($uip,$uhost,,,$ucode,,$starttime,$postedtime,$uresto,$tool) = explode("\t", rtrim($userdata)."\t\t");
+		list($uip,$uhost,,,$ucode,,$starttime,$postedtime,$uresto,$tool,$u_hide_animation) = explode("\t", rtrim($userdata)."\t\t\t");
 		if(($ucode != $usercode) && (!$uip || ($uip != $userip))){return error($en? 'Posting failed.':'投稿に失敗しました。');}
 		$tool= in_array($tool,['neo','chi','klecks']) ? $tool : '???';
 		$uresto=filter_var($uresto,FILTER_VALIDATE_INT);
+		$hide_animation= $hide_animation ? true : ($u_hide_animation==='true');
 		$resto = $uresto ? $uresto : $resto;//変数上書き$userdataのレス先を優先する
 		check_open_no($resto);
 		$resto=(string)$resto;//(string)厳密な型
@@ -471,9 +474,9 @@ function post(){
 		}	
 		clearstatcache();
 		$filesize=filesize($upfile);
-		if(($filesize > 1024 * 1024) ||($is_upload && $filesize > 800 * 1024)){//指定サイズを超えていたら
+		if(($filesize > $max_file_size_in_png_format_paint * 1024) || ($is_upload && $filesize > $max_file_size_in_png_format_upload * 1024)){//指定サイズを超えていたら
 			if ($im_jpg = png2jpg($upfile)) {//PNG→JPEG自動変換
-
+				clearstatcache();
 				if(filesize($im_jpg)<$filesize){//JPEGのほうが小さい時だけ
 					rename($im_jpg,$upfile);//JPEGで保存
 					chmod($upfile,0606);
@@ -504,7 +507,7 @@ function post(){
 
 		//同じ画像チェック アップロード画像のみチェックしてお絵かきはチェックしない
 		if(!$pictmp2){
-			
+
 			$img_md5=md5_file($upfile);
 			foreach($chk_images as $line){
 				list($no_,$sub_,$name_,$verified_,$com_,$url_,$imgfile_,$w_,$h_,$thumbnail_,$painttime_,$log_md5,$tool_,$pchext_,$time_,$first_posted_time_,$host_,$userid_,$hash_,$oya_)=$line;
@@ -517,7 +520,7 @@ function post(){
 			}
 		}
 		$imgfile=$time.$ext;
-	
+
 		rename($upfile,IMG_DIR.$imgfile);
 		if(!is_file(IMG_DIR.$imgfile)){
 			return error($en?'This operation has failed.':'失敗しました。');
@@ -536,6 +539,7 @@ function post(){
 				chmod($dst,0606);
 		}
 	}
+	$pchext= ($pchext==='.pch' && $hide_animation) ? 'hide_animation' : $pchext; 
 
 	$thumbnail='';
 	if($imgfile && is_file(IMG_DIR.$imgfile)){
@@ -550,9 +554,9 @@ function post(){
 				$thumbnail='thumbnail';
 			}
 		}
-		$hide_thumbnail=$hide_thumbnail ? 'hide_' : '';
-		$thumbnail =  $hide_thumbnail.$thumbnail;
-		}
+	$hide_thumbnail=$hide_thumbnail ? 'hide_' : '';
+	$thumbnail =  $hide_thumbnail.$thumbnail;
+	}
 	//ログの番号の最大値
 	$no_arr = [];
 	foreach($alllog_arr as $i => $_alllog){
@@ -710,12 +714,12 @@ function paint(){
 
 	global $boardname,$skindir,$pmax_w,$pmax_h,$en;
 	global $usercode;
-	
+
 	check_same_origin();
 
 	$app = (string)filter_input(INPUT_POST,'app');
-	$picw = filter_input(INPUT_POST,'picw',FILTER_VALIDATE_INT);
-	$pich = filter_input(INPUT_POST,'pich',FILTER_VALIDATE_INT);
+	$picw = (int)filter_input(INPUT_POST,'picw',FILTER_VALIDATE_INT);
+	$pich = (int)filter_input(INPUT_POST,'pich',FILTER_VALIDATE_INT);
 	$resto = t((string)filter_input(INPUT_POST, 'resto',FILTER_VALIDATE_INT));
 	if(strlen($resto)>1000){
 		return error($en?'Unknown error':'問題が発生しました。');
@@ -732,7 +736,7 @@ function paint(){
 	setcookie("picwc", $picw , time()+(60*60*24*30),"","",false,true);//幅
 	setcookie("pichc", $pich , time()+(60*60*24*30),"","",false,true);//高さ
 
-	$mode = filter_input(INPUT_POST, 'mode');
+	$mode = (string)filter_input(INPUT_POST, 'mode');
 
 	$imgfile='';
 	$pchfile='';
@@ -795,12 +799,13 @@ function paint(){
 		}
 	}
 	$repcode='';
+	$hide_animation=false;
 	if($mode==="contpaint"){
 
 		$imgfile = basename((string)filter_input(INPUT_POST,'imgfile'));
 		$ctype = (string)filter_input(INPUT_POST, 'ctype');
 		$type = (string)filter_input(INPUT_POST, 'type');
-		$no = filter_input(INPUT_POST, 'no',FILTER_VALIDATE_INT);
+		$no = (string)filter_input(INPUT_POST, 'no',FILTER_VALIDATE_INT);
 		$time = basename((string)filter_input(INPUT_POST, 'time'));
 
 		if(($type!=='rep') && is_file(LOG_DIR."{$no}.log")){
@@ -811,7 +816,7 @@ function paint(){
 					continue;
 				}
 				list($no_,$sub_,$name_,$verified_,$com_,$url_,$imgfile_,$w_,$h_,$thumbnail_,$painttime_,$log_md5_,$tool_,$pchext_,$time_,$first_posted_time_,$host_,$userid_,$hash_,$oya_)=explode("\t",trim($line));
-				if($time===$time_ && (int)$no==$no_){
+				if($time===$time_ && $no===$no_){
 					$resto=(trim($oya_)==='res') ? $no_ : '';
 					break;
 				}
@@ -840,6 +845,8 @@ function paint(){
 				$img_klecks =IMG_DIR.$time.'.psd';
 			}
 		}
+		$hide_animation = (bool)filter_input(INPUT_POST,'hide_animation',FILTER_VALIDATE_BOOLEAN);
+		$hide_animation = $hide_animation ? 'true' : 'false';
 		if($type==='rep'){//画像差し換え
 			$rep=true;
 			$pwd = t((string)filter_input(INPUT_POST, 'pwd'));
@@ -900,7 +907,7 @@ function paint(){
 			}
 			$palettes=$initial_palette.implode('',$arr_pal);
 			$palsize = count($arr_dynp) + 1;
-			
+
 			// HTML出力
 			$templete='paint_neo.html';
 			return include __DIR__.'/'.$skindir.$templete;
@@ -922,19 +929,23 @@ function paintcom(){
 	$uresto = '';
 	$handle = opendir(TEMP_DIR);
 	$tmps = [];
+	$hide_animation=false;
 	while ($file = readdir($handle)) {
 		if(!is_dir($file) && pathinfo($file, PATHINFO_EXTENSION)==='dat') {
 			$file=basename($file);
 			$fp = fopen(TEMP_DIR.$file, "r");
 			$userdata = fread($fp, 1024);
 			fclose($fp);
-			list($uip,$uhost,$uagent,$imgext,$ucode,,$starttime,$postedtime,$uresto,$tool) = explode("\t", rtrim($userdata)."\t\t");
+			list($uip,$uhost,$uagent,$imgext,$ucode,,$starttime,$postedtime,$uresto,$tool,$u_hide_animation) = explode("\t", rtrim($userdata)."\t\t\t");
+			$hide_animation=($u_hide_animation==='true');
 			$imgext=basename($imgext);
 			$file_name = pathinfo($file, PATHINFO_FILENAME);
 			$uresto = $uresto ? 'res' :''; 
 			if(is_file(TEMP_DIR.$file_name.$imgext)){ //画像があればリストに追加
+				$pchext = check_pch_ext(TEMP_DIR . $file_name);
+				$pchext = !$hide_animation ? $pchext : ''; 
 				if($ucode === $usercode||($uip && ($uip === $userip))){
-					$tmps[$file_name] = [$file_name.$imgext,$uresto];
+					$tmps[$file_name] = [$file_name.$imgext,$uresto,$pchext];
 				}
 			}
 		}
@@ -945,13 +956,14 @@ function paintcom(){
 		$pictmp = 2;
 		ksort($tmps);
 		foreach($tmps as $tmp){
-			list($tmpfile,$resto)=$tmp;
+			list($tmpfile,$resto,$pchext)=$tmp;
+			$tmpfile=basename($tmpfile);
 			list($w,$h)=getimagesize(TEMP_DIR.$tmpfile);
 			$tmp_img['w']=$w;
 			$tmp_img['h']=$h;
 			$tmp_img['src'] = TEMP_DIR.$tmpfile;
 			$tmp_img['srcname'] = $tmpfile;
-			$tmp_img['slect_src_val'] = $tmpfile.','.$resto;
+			$tmp_img['slect_src_val'] = $tmpfile.','.$resto.','.$pchext;
 			$tmp_img['date'] = date("Y/m/d H:i", filemtime($tmp_img['src']));
 			$out['tmp'][] = $tmp_img;
 		}
@@ -960,9 +972,9 @@ function paintcom(){
 	if(!$use_aikotoba){
 		$aikotoba=true;
 	}
-	$namec = filter_input(INPUT_COOKIE,'namec');
-	$pwdc=filter_input(INPUT_COOKIE,'pwdc');
-	$urlc=(string)filter_input(INPUT_COOKIE,'urlc');
+	$namec = (string)filter_input(INPUT_COOKIE,'namec');
+	$pwdc = (string)filter_input(INPUT_COOKIE,'pwdc');
+	$urlc = (string)filter_input(INPUT_COOKIE,'urlc');
 
 	// HTML出力
 	$templete='paint_com.html';
@@ -978,8 +990,7 @@ function to_continue(){
 	aikotoba_required_to_view();
 
 	$appc=(string)filter_input(INPUT_COOKIE,'appc');
-	$pwdc=filter_input(INPUT_COOKIE,'pwdc');
-
+	$pwdc=(string)filter_input(INPUT_COOKIE,'pwdc');
 
 	$no = (string)filter_input(INPUT_GET, 'no',FILTER_VALIDATE_INT);
 	$id = (string)filter_input(INPUT_GET, 'id');//intの範囲外
@@ -993,7 +1004,7 @@ function to_continue(){
 			if(!trim($line)){
 				continue;
 			}
-			list($_no,$sub,$name,$verified,$com,$url,$imgfile,$w,$h,$thumbnail,$painttime,$log_md5,$tool,$pchext,$time,$first_posted_time,$host,$userid,$hash,$oya)=explode("\t",trim($line));
+			list($_no,$sub,$name,$verified,$com,$url,$imgfile,$w,$h,$thumbnail,$painttime,$log_md5,$tool,$_pchext,$time,$first_posted_time,$host,$userid,$hash,$oya)=explode("\t",trim($line));
 			if($id===$time && $no===$_no){
 				$flag=true;
 				break;
@@ -1009,17 +1020,22 @@ function to_continue(){
 	list($picw, $pich) = getimagesize(IMG_DIR.$imgfile);
 	$picfile = $thumbnail ? THUMB_DIR.$time.'s.jpg' : IMG_DIR.$imgfile;
 
+	$pch_exists = in_array($_pchext,['hide_animation','.pch']);
+	$hide_animation_checkd = ($_pchext==='hide_animation');
+
+	$pchext = check_pch_ext(IMG_DIR.$time,['upload'=>true]);
+
+	$pchext=basename($pchext);
 	$select_app = false;
 	$app_to_use = false;
 	$ctype_pch = false;
 	$download_app_dat=true;
-	if(($pchext==='.pch')&&is_file(IMG_DIR.$time.'.pch')){
+	if($pchext==='.pch'){
 		$ctype_pch = true;
 		$app_to_use = "neo";
-		
-	}elseif(($pchext==='.chi')&&is_file(IMG_DIR.$time.'.chi')){
+	}elseif($pchext==='.chi'){
 		$app_to_use = 'chi';
-	}elseif(($pchext==='.psd')&&is_file(IMG_DIR.$time.'.psd')){
+	}elseif($pchext==='.psd'){
 		$app_to_use = 'klecks';
 	}else{
 		$select_app = true;
@@ -1042,7 +1058,7 @@ function to_continue(){
 	$select_app= $select_app ? ($count_arr_apps>1) : false;
 	$app_to_use=($use_paint && !$select_app && !$app_to_use) ? $arr_apps[0]: $app_to_use;
 	// nsfw
-	$nsfwc=filter_input(INPUT_COOKIE,'nsfwc',FILTER_VALIDATE_BOOLEAN);
+	$nsfwc=(bool)filter_input(INPUT_COOKIE,'nsfwc',FILTER_VALIDATE_BOOLEAN);
 
 	// HTML出力
 	$templete='continue.html';
@@ -1073,7 +1089,7 @@ function download_app_dat(){
 		if(!trim($line)){
 			continue;
 		}
-		list($_no,$sub,$name,$verified,$com,$url,$imgfile,$w,$h,$thumbnail,$painttime,$log_md5,$tool,$pchext,$time,$first_posted_time,$host,$userid,$hash,$oya)=explode("\t",trim($line));
+		list($_no,$sub,$name,$verified,$com,$url,$imgfile,$w,$h,$thumbnail,$painttime,$log_md5,$tool,$_pchext,$time,$first_posted_time,$host,$userid,$hash,$oya)=explode("\t",trim($line));
 		if($id===$time && $no===$_no){
 			if(!adminpost_valid()&&!admindel_valid()&&(!$pwd || !password_verify($pwd,$hash))){
 				return error($en?'Password is incorrect.':'パスワードが違います。');
@@ -1085,9 +1101,10 @@ function download_app_dat(){
 	}
 	closeFile ($rp);
 	$time=basename($time);
+	$pchext = check_pch_ext(IMG_DIR.$time,['upload'=>true]);
 	$pchext=basename($pchext);
-	$filepath= ($flag && is_file(IMG_DIR.$time.$pchext)) ? IMG_DIR.$time.$pchext : '';
-	if(!$filepath){
+	$filepath= IMG_DIR.$time.$pchext;
+	if(!$pchext){
 		return error($en?'This operation has failed.':'失敗しました。');
 	}
 	$mime_type = mime_content_type($filepath);
@@ -1102,7 +1119,7 @@ function download_app_dat(){
 function img_replace(){
 
 	global $use_thumb,$max_w,$max_h,$res_max_w,$res_max_h,$max_px,$en,$use_upload,$mark_sensitive_image;
-	global $admin_pass;
+	global $admin_pass,$max_file_size_in_png_format_upload,$max_file_size_in_png_format_paint;
 
 	$no = t((string)filter_input(INPUT_POST, 'no',FILTER_VALIDATE_INT));
 	$no = $no ? $no :t((string)filter_input(INPUT_GET, 'no',FILTER_VALIDATE_INT));
@@ -1156,6 +1173,7 @@ function img_replace(){
 	$starttime='';
 	$postedtime='';
 	$repfind=false;
+	$hide_animation=false;
 	if(!$is_upload){
 		/*--- テンポラリ捜査 ---*/
 		$handle = opendir(TEMP_DIR);
@@ -1165,7 +1183,8 @@ function img_replace(){
 				$fp = fopen(TEMP_DIR.$file, "r");
 				$userdata = fread($fp, 1024);
 				fclose($fp);
-				list($uip,$uhost,$uagent,$imgext,$ucode,$urepcode,$starttime,$postedtime,$uresto,$tool) = explode("\t", rtrim($userdata)."\t");//区切りの"\t"を行末に
+				list($uip,$uhost,$uagent,$imgext,$ucode,$urepcode,$starttime,$postedtime,$uresto,$tool,$u_hide_animation) = explode("\t", rtrim($userdata)."\t\t\t");//区切りの"\t"を行末に
+				$hide_animation = ($u_hide_animation==='true');
 				$tool= in_array($tool,['neo','chi','klecks']) ? $tool : '???';
 				$file_name = pathinfo($file, PATHINFO_FILENAME );//拡張子除去
 				//画像があり、認識コードがhitすれば抜ける
@@ -1276,7 +1295,7 @@ function img_replace(){
 	$time= is_file(TEMP_DIR.$time.'.tmp') ?	(string)(substr($time,0,-6)+1).(string)substr($time,-6) : $time;
 	$time=basename($time);
 	$upfile=TEMP_DIR.$time.'.tmp';
-	
+
 	if($is_upload && ($_tool==='upload') && ( $use_upload || $adminpost || $admindel) && is_file($up_tempfile)){
 		move_uploaded_file($up_tempfile,$upfile);
 	}
@@ -1284,7 +1303,7 @@ function img_replace(){
 		copy($tempfile, $upfile);
 	}
 
-if(!is_file($upfile)){
+	if(!is_file($upfile)){
 		closeFile($rp);
 		closeFile($fp);
 		return error($en?'This operation has failed.':'失敗しました。');
@@ -1294,11 +1313,11 @@ if(!is_file($upfile)){
 		$max_px=isset($max_px) ? $max_px : 1024;
 		thumb(TEMP_DIR,$time.'.tmp',$time,$max_px,$max_px,['toolarge'=>1]);
 	}	
-
+	clearstatcache();
 	$filesize=filesize($upfile);
-	if(($filesize > 1024 * 1024) ||($is_upload && $filesize > 800 * 1024)){//指定サイズを超えていたら
+	if(($filesize > $max_file_size_in_png_format_paint * 1024) || ($is_upload && $filesize > $max_file_size_in_png_format_upload * 1024)){//指定サイズを超えていたら
 		if ($im_jpg = png2jpg($upfile)) {//PNG→JPEG自動変換
-
+			clearstatcache();
 			if(filesize($im_jpg)<$filesize){//JPEGのほうが小さい時だけ
 				rename($im_jpg,$upfile);//JPEGで保存
 				chmod($upfile,0606);
@@ -1358,10 +1377,10 @@ if(!is_file($upfile)){
 			$time=(string)(substr($time,0,-6)+1).(string)substr($time,-6);
 		}
 		if($is_upload && $chk_log_md5 && ($chk_log_md5 === $img_md5)){
-		safe_unlink($upfile);
-		closeFile($fp);
-		closeFile($rp);
-		return error($en?'Image already exists.':'同じ画像がありました。');
+			safe_unlink($upfile);
+			closeFile($fp);
+			closeFile($rp);
+			return error($en?'Image already exists.':'同じ画像がありました。');
 		}
 	}
 
@@ -1377,10 +1396,14 @@ if(!is_file($upfile)){
 	if (!$is_upload && $repfind && ($pchext = check_pch_ext(TEMP_DIR . $file_name,['upload'=>true]))) {
 		$src = TEMP_DIR . $file_name . $pchext;
 		$dst = IMG_DIR . $time . $pchext;
-			if(copy($src, $dst)){
-				chmod($dst, 0606);
+		if(copy($src, $dst)){
+			chmod($dst, 0606);
 		}
 	}
+	if(in_array($_pchext,['.pch','hide_animation'])){
+		$pchext= !$hide_animation ?  '.pch' : 'hide_animation'; 
+	}
+
 	list($w,$h)=getimagesize(IMG_DIR.$imgfile);
 
 	//縮小表示 
@@ -1413,14 +1436,14 @@ if(!is_file($upfile)){
 	$r_arr[$i] = $r_line;
 
 	if($_oya ==='oya'){
-	
+
 		$strcut_com=mb_strcut($_com,0,120);
 		$newline = "$_no\t$_sub\t$_name\t$_verified\t$strcut_com\t$_url\t$imgfile\t$w\t$h\t$thumbnail\t$painttime\t$img_md5\t$tool\t$pchext\t$time\t$_first_posted_time\t$host\t$userid\t$_hash\toya\n";
-	
+
 		$flag=false;
 		foreach($alllog_arr as $i => $val){
 			list($no_,$sub_,$name_,$verified_,$com_,$url_,$imgfile_,$w_,$h_,$thumbnail_,$painttime_,$log_md5_,$tool_,$pchext_,$time_,$first_posted_time_,$host_,$userid_,$hash_,$oya_) = explode("\t",trim($val));
-			
+
 			if(($id===$time_ && $no===$no_) &&
 			(($admindel && $is_upload ||
 			($pwd && password_verify($pwd,$hash_))))){
@@ -1443,7 +1466,7 @@ if(!is_file($upfile)){
 
 	}
 	writeFile($rp, implode("", $r_arr));
-		closeFile($rp);
+	closeFile($rp);
 	closeFile($fp);
 	
 	//旧ファイル削除
@@ -1471,16 +1494,36 @@ function pchview(){
 
 	$imagefile = basename((string)filter_input(INPUT_GET, 'imagefile'));
 	$no = (string)filter_input(INPUT_GET, 'no',FILTER_VALIDATE_INT);
-	$pch = pathinfo($imagefile, PATHINFO_FILENAME);
-	$pchext = check_pch_ext(IMG_DIR . $pch);
-	if(!$pchext||!is_file(IMG_DIR.$imagefile)){
+	$id = pathinfo($imagefile, PATHINFO_FILENAME);
+	check_open_no($no);
+	if(!is_file(LOG_DIR."{$no}.log")){
+		return error($en? 'The article does not exist.':'記事がありません。');
+	}
+	$rp=fopen(LOG_DIR."{$no}.log","r");
+	$flag=false;
+	while ($line = fgets($rp)) {
+		if(!trim($line)){
+			continue;
+		}
+		list($_no,$sub,$name,$verified,$com,$url,$imgfile,$w,$h,$thumbnail,$painttime,$log_md5,$tool,$pchext,$time,$first_posted_time,$host,$userid,$hash,$oya)=explode("\t",trim($line));
+		if($id===$time && $no===$_no){
+			$flag=true;
+			break;
+		} 
+	}
+	closeFile ($rp);
+
+	$pchext=basename($pchext);
+
+	$view_replay = ($pchext==='.pch') && check_pch_ext(IMG_DIR . $time) ;
+	if(!$view_replay||!is_file(IMG_DIR.$imagefile)){
 		return error('ファイルがありません。');
 	}
-	$pchfile = IMG_DIR.$pch.$pchext;
+	$pch=$time;
+	$pchfile = IMG_DIR.$time.$pchext;
 	list($picw, $pich) = getimagesize(IMG_DIR.$imagefile);
 	$appw = $picw < 200 ? 200 : $picw;
 	$apph = $pich < 200 ? 200 : $pich + 26;
-
 	// HTML出力
 	$templete='pch_view.html';
 	return include __DIR__.'/'.$skindir.$templete;
@@ -1496,17 +1539,14 @@ function confirmation_before_deletion ($edit_mode=''){
 	$admindel=admindel_valid();
 	$aikotoba=aikotoba_valid();
 	$userdel=isset($_SESSION['userdel'])&&($_SESSION['userdel']==='userdel_mode');
-	$resmode = filter_input(INPUT_POST,'resmode',FILTER_VALIDATE_BOOLEAN);
+	$resmode = ((string)filter_input(INPUT_POST,'resmode')==='true');
 	$resmode = $resmode ? 'true' : 'false';
-	$postpage = filter_input(INPUT_POST,'postpage',FILTER_VALIDATE_INT);
-	$postresno = filter_input(INPUT_POST,'postresno',FILTER_VALIDATE_INT);
-	$postpage = ($postpage || $postpage===0) ? $postpage : 0; 
-	$postresno = ($postresno) ? $postresno : false; 
+	$postpage = (int)filter_input(INPUT_POST,'postpage',FILTER_VALIDATE_INT);
+	$postresno = (int)filter_input(INPUT_POST,'postresno',FILTER_VALIDATE_INT);
+	$postresno = $postresno ? $postresno : false; 
 
 	$pwdc=(string)filter_input(INPUT_COOKIE,'pwdc');
-
-
-	$edit_mode = filter_input(INPUT_POST,'edit_mode');
+	$edit_mode = (string)filter_input(INPUT_POST,'edit_mode');
 
 	if(!($admindel||$userdel)){
 		return error($en?'This operation has failed.':'失敗しました。');
@@ -1561,7 +1601,7 @@ function confirmation_before_deletion ($edit_mode=''){
 		$aikotoba=true;
 	}
 	// nsfw
-	$nsfwc=filter_input(INPUT_COOKIE,'nsfwc',FILTER_VALIDATE_BOOLEAN);
+	$nsfwc=(bool)filter_input(INPUT_COOKIE,'nsfwc',FILTER_VALIDATE_BOOLEAN);
 
 	if($edit_mode==='delmode'){
 		$templete='before_del.html';
@@ -1640,8 +1680,8 @@ function edit_form($id='',$no=''){
 
 	$out[0][]=create_res($line);//$lineから、情報を取り出す;
 
-	$resno=filter_input(INPUT_POST,'postresno',FILTER_VALIDATE_INT);
-	$page=filter_input(INPUT_POST,'postpage',FILTER_VALIDATE_INT);
+	$resno=(int)filter_input(INPUT_POST,'postresno',FILTER_VALIDATE_INT);//古いバージョンで使用
+	$page=(int)filter_input(INPUT_POST,'postpage',FILTER_VALIDATE_INT);
 
 	foreach($line as $i => $val){
 		$line[$i]=h($val);
@@ -1650,9 +1690,9 @@ function edit_form($id='',$no=''){
 
 	$com=h(str_replace('"\n"',"\n",$com));
 
-	$page = ($page||$page===0) ? $page : false; 
-	$resno = $resno ? $resno : false;
-	$nsfwc=filter_input(INPUT_COOKIE,'nsfwc',FILTER_VALIDATE_BOOLEAN);
+	$pch_exists = in_array($pchext,['hide_animation','.pch']);
+	$hide_animation_checkd = ($pchext==='hide_animation');
+	$nsfwc=(bool)filter_input(INPUT_COOKIE,'nsfwc',FILTER_VALIDATE_BOOLEAN);
 
 	$hide_thumb_checkd = ($thumbnail==='hide_thumbnail'||$thumbnail==='hide_');
 
@@ -1681,8 +1721,8 @@ function edit(){
 	$url = t((string)filter_input(INPUT_POST,'url',FILTER_VALIDATE_URL));
 	$id = t((string)filter_input(INPUT_POST,'id'));//intの範囲外
 	$no = t((string)filter_input(INPUT_POST,'no',FILTER_VALIDATE_INT));
-	$hide_thumbnail = $mark_sensitive_image ? filter_input(INPUT_POST,'hide_thumbnail',FILTER_VALIDATE_BOOLEAN) : false;
-	
+	$hide_thumbnail = $mark_sensitive_image ? (bool)filter_input(INPUT_POST,'hide_thumbnail',FILTER_VALIDATE_BOOLEAN) : false;
+	$hide_animation=(bool)filter_input(INPUT_POST,'hide_animation',FILTER_VALIDATE_BOOLEAN);
 	$pwd=(string)filter_input(INPUT_POST,'pwd');
 	$pwdc=(string)filter_input(INPUT_COOKIE,'pwdc');
 	$pwd = $pwd ? $pwd : $pwdc;
@@ -1762,16 +1802,20 @@ function edit(){
 	$hide_thumbnail=($_imgfile && $hide_thumbnail) ? 'hide_' : '';
 	$thumbnail =  $mark_sensitive_image ? $hide_thumbnail.$thumbnail : $_thumbnail;
 
+	if(in_array($_pchext,['.pch','hide_animation'])){
+		$pchext= $hide_animation ? 'hide_animation' : '.pch'; 
+	}
+
 	$sub=(!$sub) ? ($en? 'No subject':'無題') : $sub;
 
-	$r_line= "$_no\t$sub\t$name\t$_verified\t$com\t$url\t$_imgfile\t$_w\t$_h\t$thumbnail\t$_painttime\t$_log_md5\t$_tool\t$_pchext\t$_time\t$_first_posted_time\t$host\t$userid\t$_hash\t$_oya\n";
+	$r_line= "$_no\t$sub\t$name\t$_verified\t$com\t$url\t$_imgfile\t$_w\t$_h\t$thumbnail\t$_painttime\t$_log_md5\t$_tool\t$pchext\t$_time\t$_first_posted_time\t$host\t$userid\t$_hash\t$_oya\n";
 	
 	$r_arr[$i] = $r_line;
 
 	if($_oya==='oya'){
 	//コメントを120バイトに短縮
 	$strcut_com=mb_strcut($com,0,120);
-	$newline = "$_no\t$sub\t$name\t$_verified\t$strcut_com\t$url\t$_imgfile\t$_w\t$_h\t$thumbnail\t$_painttime\t$_log_md5\t$_tool\t$_pchext\t$_time\t$_first_posted_time\t$host\t$userid\t$_hash\toya\n";
+	$newline = "$_no\t$sub\t$name\t$_verified\t$strcut_com\t$url\t$_imgfile\t$_w\t$_h\t$thumbnail\t$_painttime\t$_log_md5\t$_tool\t$pchext\t$_time\t$_first_posted_time\t$host\t$userid\t$_hash\toya\n";
 
 		$alllog_arr=[];
 		while ($_line = fgets($fp)) {
@@ -1931,13 +1975,13 @@ function del(){
 	unset($_SESSION['userdel']);
 	$resno=(string)filter_input(INPUT_POST,'postresno');
 	//多重送信防止
-	if(filter_input(INPUT_POST,'resmode')==='true'){
+	if((string)filter_input(INPUT_POST,'resmode')==='true'){
 		if(!is_file(LOG_DIR.$resno.'.log')){
 			return header('Location: ./');
 		}
 		return header('Location: ./?resno='.$resno);
 	}
-	return header('Location: ./?page='.filter_input(INPUT_POST,'postpage'));
+	return header('Location: ./?page='.(int)filter_input(INPUT_POST,'postpage'));
 }
 
 //カタログ表示
@@ -1949,7 +1993,7 @@ function catalog($page=0,$q=''){
 
 	$pagedef=$catalog_pagedef;
 	
-	$q=filter_input(INPUT_GET,'q');
+	$q=(string)filter_input(INPUT_GET,'q');
 
 	$fp=fopen(LOG_DIR."alllog.log","r");
 	$alllog_arr=[];
@@ -2032,7 +2076,7 @@ function catalog($page=0,$q=''){
 	}
 
 	//Cookie
-	$nsfwc=filter_input(INPUT_COOKIE,'nsfwc',FILTER_VALIDATE_BOOLEAN);
+	$nsfwc=(bool)filter_input(INPUT_COOKIE,'nsfwc',FILTER_VALIDATE_BOOLEAN);
 	//token
 	$token=get_csrf_token();
 
@@ -2058,9 +2102,9 @@ function view($page=0){
 	global $use_aikotoba,$use_upload,$home,$pagedef,$dispres,$allow_comments_only,$use_top_form,$skindir,$descriptions,$max_kb;
 	global $boardname,$max_res,$pmax_w,$pmax_h,$use_miniform,$use_diary,$petit_ver,$petit_lot,$set_nsfw,$use_sns_button,$deny_all_posts,$en,$mark_sensitive_image,$only_admin_can_reply; 
 	global $use_paintbbs_neo,$use_chickenpaint,$use_klecs;
-	
+
 	aikotoba_required_to_view();
-	
+
 	$max_byte = $max_kb * 1024*2;
 	$denny_all_posts=$deny_all_posts;//互換性
 	$allow_coments_only=$allow_comments_only;//互換性
@@ -2124,7 +2168,7 @@ function view($page=0){
 	$appc=h((string)filter_input(INPUT_COOKIE,'appc'));
 	$picwc=h((string)filter_input(INPUT_COOKIE,'picwc'));
 	$pichc=h((string)filter_input(INPUT_COOKIE,'pichc'));
-	$nsfwc=filter_input(INPUT_COOKIE,'nsfwc',FILTER_VALIDATE_BOOLEAN);
+	$nsfwc=(bool)filter_input(INPUT_COOKIE,'nsfwc',FILTER_VALIDATE_BOOLEAN);
 
 	//token
 	$token=get_csrf_token();
@@ -2258,7 +2302,7 @@ function res ($resno){
 	$appc=h((string)filter_input(INPUT_COOKIE,'appc'));
 	$picwc=h((string)filter_input(INPUT_COOKIE,'picwc'));
 	$pichc=h((string)filter_input(INPUT_COOKIE,'pichc'));
-	$nsfwc=filter_input(INPUT_COOKIE,'nsfwc',FILTER_VALIDATE_BOOLEAN);
+	$nsfwc=(bool)filter_input(INPUT_COOKIE,'nsfwc',FILTER_VALIDATE_BOOLEAN);
 
 	$arr_apps=app_to_use();
 	$count_arr_apps=count($arr_apps);
