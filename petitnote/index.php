@@ -1,8 +1,8 @@
 <?php
 //Petit Note (c)さとぴあ @satopian 2021-2022
 //1スレッド1ログファイル形式のスレッド式画像掲示板
-$petit_ver='v0.56.3';
-$petit_lot='lot.230125';
+$petit_ver='v0.57.3';
+$petit_lot='lot.230131';
 $lang = ($http_langs = isset($_SERVER['HTTP_ACCEPT_LANGUAGE']) ? $_SERVER['HTTP_ACCEPT_LANGUAGE'] : '')
   ? explode( ',', $http_langs )[0] : '';
 $en= (stripos($lang,'ja')!==0);
@@ -17,7 +17,7 @@ if(!is_file(__DIR__.'/functions.php')){
 	return die(__DIR__.'/functions.php'.($en ? ' does not exist.':'がありません。'));
 }
 require_once(__DIR__.'/functions.php');
-if(!isset($functions_ver)||$functions_ver<20230125){
+if(!isset($functions_ver)||$functions_ver<20230130){
 	return die($en?'Please update functions.php to the latest version.':'functions.phpを最新版に更新してください。');
 }
 // jQueryバージョン
@@ -257,6 +257,7 @@ function post(){
 	$r_no='';
 	$rp=false;
 	$r_arr=[];
+	$chk_resto='';
 	if($resto){//レスの時はファイルロックしてレスファイルを開く
 		check_open_no($resto);
 		$rp=fopen(LOG_DIR."{$resto}.log","r+");
@@ -270,7 +271,11 @@ function post(){
 		if(empty($r_arr)){
 			closeFile($rp);
 			closeFile($fp);
-			return error($en?'This operation has failed.':'失敗しました。');
+			if(!$pictmp2){
+				return error($en?'This operation has failed.':'失敗しました。');
+			}
+			$chk_resto=$resto;
+			$resto = '';
 		}
 
 		list($r_no,$oyasub,$n_,$v_,$c_,$u_,$img_,$_,$_,$thumb_,$pt_,$md5_,$to_,$pch_,$postedtime,$fp_time_,$h_,$uid_,$h_,$r_oya)=explode("\t",trim($r_arr[0]));
@@ -280,15 +285,17 @@ function post(){
 
 		//レス先のログファイルを再確認
 		if($resto && ($r_no!==$resto || $r_oya!=='oya')){
-		if(!$pictmp2){
-			return error($en? 'The article does not exist.':'記事がありません。');
-		}
-		$resto='';
+			if(!$pictmp2){
+				return error($en? 'The article does not exist.':'記事がありません。');
+			}
+			$chk_resto=$resto;
+			$resto='';
 		}
 		if($pictmp2){//お絵かきの時は新規投稿にする
 			//お絵かきの時に日数を経過していたら新規投稿。
 			//お絵かきの時に最大レス数を超過していたら新規投稿。
 			if($resto && !$adminpost && (!$check_elapsed_days || $count_r_arr>$max_res)){
+				$chk_resto=$resto;
 				$resto='';
 			}
 		}
@@ -404,9 +411,11 @@ function post(){
 	}
 	$_chk_lines=[];
 	$chk_lines=[];
+	//条件分岐で新規投稿に変更になった時のエラー回避
+	$chk_resto=$chk_resto ? $chk_resto : $resto; 
 	foreach($chk_resnos as $chk_resno){
 
-		if(($chk_resno!==$resto)&&is_file(LOG_DIR."{$chk_resno}.log")){
+		if(($chk_resno!==$chk_resto)&&is_file(LOG_DIR."{$chk_resno}.log")){
 			check_open_no($chk_resno);
 			$cp=fopen(LOG_DIR."{$chk_resno}.log","r");
 			while($line=fgets($cp)){
@@ -2057,7 +2066,7 @@ function catalog($page=0,$q=''){
 		if(!is_file(LOG_DIR."{$_no}.log")){
 		continue;
 		}	
-		$out[$oya][] = create_res($line);//$lineから、情報を取り出す
+		$out[$oya][] = create_res($line,['catalog'=>true]);//$lineから、情報を取り出す
 		if(empty($out[$oya])){
 			unset($out[$oya]);
 		}
@@ -2214,6 +2223,8 @@ function res ($resno){
 	$rresname = [];
 	$resname = '';
 	$oyaname='';
+	$_res['time_left_to_close_the_thread']=false;
+	$_res['descriptioncom']='';
 	check_open_no($resno);
 	$rp = fopen(LOG_DIR."{$resno}.log", "r");//個別スレッドのログを開く
 		$out[0]=[];
@@ -2224,6 +2235,10 @@ function res ($resno){
 			$_res = create_res(explode("\t",trim($line)));//$lineから、情報を取り出す
 
 			if($_res['oya']==='oya'){
+
+				$_res['time_left_to_close_the_thread'] = time_left_to_close_the_thread($_res['time']);
+				$_res['descriptioncom']= $_res['com'] ? h(s(mb_strcut(str_replace('"\n"'," ",$_res['com']),0,300))) : '';
+
 				$oyaname = $_res['name'];
 			} 
 			// 投稿者名を配列にいれる
@@ -2264,8 +2279,8 @@ function res ($resno){
 	}
 	$next=isset($articles[$i+1])? rtrim($articles[$i+1]) :'';
 	$prev=isset($articles[$i-1])? rtrim($articles[$i-1]) :'';
-	$next=$next ? (create_res(explode("\t",trim($next)))):[];
-	$prev=$prev ? (create_res(explode("\t",trim($prev)))):[];
+	$next=$next ? (create_res(explode("\t",trim($next)),['catalog'=>true])):[];
+	$prev=$prev ? (create_res(explode("\t",trim($prev)),['catalog'=>true])):[];
 	$next=(!empty($next) && is_file(LOG_DIR."{$next['no']}.log"))?$next:[];
 	$prev=(!empty($prev) && is_file(LOG_DIR."{$prev['no']}.log"))?$prev:[];
 
@@ -2275,7 +2290,7 @@ function res ($resno){
 		$start_view=(($i-7)>=0) ? ($i-7) : 0;
 		$other_articles=array_slice($articles,$start_view,17,false);
 		foreach($other_articles as $val){
-			$b=create_res(explode("\t",trim($val)));
+			$b=create_res(explode("\t",trim($val)),['catalog'=>true]);
 			if(!empty($b)&&$b['img']&&$b['no']!==$resno){
 				$a[]=$b;
 			}
