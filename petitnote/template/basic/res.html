@@ -5,26 +5,24 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <!--SNS-->
-<?php foreach($out as $ress) : ?>
-	<?php if($use_sns_button):?>
-	<meta name="Description" content="<?= h(s($ress[0]['descriptioncom']))?>">
-	<meta name="twitter:card" content="summary">
-	<meta property="og:title" content="[<?= h(s($ress[0]['no']))?>] <?= h(s($ress[0]['sub']))?> by <?= h(s($ress[0]['name']))?> - <?=h(s($boardname))?>">
-	<meta property="og:type" content="article">
-	<meta property="og:url" content="<?=h($root_url)?>?resno=<?= h($ress[0]['no'])?>">
-	<!-- 閲覧注意 またはNSFWが設定されている時は ogp imageを表示しない -->
-	<?php if(!((isset($set_nsfw)&&$set_nsfw)||$ress[0]['hide_thumbnail'])):?>
-	<!-- thumbnail -->
-	<?php if($ress[0]['thumbnail']):?>
-	<meta property="og:image" content="<?=h($root_url)?>thumbnail/<?=h($ress[0]['thumbnail'])?>">
-	<?php else:?>
-	<meta property="og:image" content="<?php if($ress[0]['img']):?><?=h($root_url)?>src/<?=h($ress[0]['img'])?><?php endif;?>">
-	<?php endif;?>
-	<?php endif;?>
-	<meta property="og:site_name"  content="<?=h($boardname)?>">
-	<meta property="og:description" content="<?=h(s($ress[0]['descriptioncom']))?>">
-	<?php endif;?>
-<?php endforeach;?>
+<?php if($use_sns_button):?>
+<meta name="Description" content="<?= h(s($out[0][0]['descriptioncom']))?>">
+<meta name="twitter:card" content="summary">
+<meta property="og:title" content="[<?= h(s($out[0][0]['no']))?>] <?= h(s($out[0][0]['sub']))?> by <?= h(s($out[0][0]['name']))?> - <?=h(s($boardname))?>">
+<meta property="og:type" content="article">
+<meta property="og:url" content="<?=h($root_url)?>?resno=<?= h($out[0][0]['no'])?>">
+<!-- 閲覧注意 またはNSFWが設定されている時は ogp imageを表示しない -->
+<?php if(!((isset($set_nsfw)&&$set_nsfw)||$out[0][0]['hide_thumbnail'])):?>
+<!-- thumbnail -->
+<?php if($out[0][0]['thumbnail']):?>
+<meta property="og:image" content="<?=h($root_url)?>thumbnail/<?=h($out[0][0]['thumbnail'])?>">
+<?php else:?>
+<meta property="og:image" content="<?php if($out[0][0]['img']):?><?=h($root_url)?>src/<?=h($out[0][0]['img'])?><?php endif;?>">
+<?php endif;?>
+<?php endif;?>
+<meta property="og:site_name"  content="<?=h($boardname)?>">
+<meta property="og:description" content="<?=h(s($out[0][0]['descriptioncom']))?>">
+<?php endif;?>
 <!--/SNS-->
 <link rel="stylesheet" href="<?=h($skindir)?>index.css">
 <link rel="preload" as="style" href="<?=h($skindir)?>icomoon/style.css" onload="this.rel='stylesheet'">
@@ -35,18 +33,20 @@
 	<!-- センシティブコンテンツにブラーをかける -->
 	<style>img {filter:blur(15px);}</style>
 <?php endif;?>
-<title>[<?= h($ress[0]['no'])?>] <?= h($ress[0]['sub'])?> by <?= h($ress[0]['name'])?> -  <?=h($boardname)?></title>
+<title>[<?= h($out[0][0]['no'])?>] <?= h($out[0][0]['sub'])?> by <?= h($out[0][0]['name'])?> -  <?=h($boardname)?></title>
 </head>
 <body>
 <div class="container" id="top">
 	<?php if($set_nsfw && !$nsfwc):?>
-	<h2><?php if($en):?>View NSFW images?<?php else:?>年齢制限付きのコンテンツを表示してもよろしいでしょうか?<?php endif;?></h2>
+	<div class="view_nsfw">
+	<span><?php if($en):?>View NSFW images?<?php else:?>年齢制限付きのコンテンツを表示してもよろしいでしょうか?<?php endif;?></span>
 	<form action="./" method="post">
 	<input type="hidden" name="mode" value="view_nsfw">
 	<input type="hidden" name="view_nsfw" value="on">
 	<input type="hidden" name="resno" value="<?=h($out[0][0]['no'])?>">
 	<input type="submit" value="<?php if($en):?>Yes<?php else:?>はい表示します。<?php endif;?>">
 	</form>
+	</div>
 	<?php endif;?>
 
 	<h1 class="title"><a href="./"><?=h($boardname)?></a></h1>
@@ -68,7 +68,6 @@
 <form action="./" method="post" class="aikotoba">
 	<input type="text" name="aikotoba" class="input_txt"> 
 	<input type="hidden" name="mode" value="aikotoba">
-	<input type="hidden" name="resmode" value="true">
 	<input type="hidden" name="resno" value="<?=h($out[0][0]['no'])?>">
 	<input type="submit" value="<?php if($en):?>Answer<?php else:?>秘密の答え<?php endif;?>">
 </form><br>
@@ -88,7 +87,7 @@
 		<?php endif;?>
 
 			<div class="imginfo_wrap">
-				<span class="info_name"><a href="./?mode=catalog&q=<?=h($res['encoded_name'])?>" target="_blank"><?= h($res['name'])?></a></span>
+				<span class="info_name"><a href="./?mode=search&imgsearch=on&q=<?=h($res['encoded_name'])?>" target="_blank"><?= h($res['name'])?></a></span>
 				<?php if($res['verified']):?>
 				<span class="icon-checkmark2"></span>
 				<?php endif?>
@@ -347,7 +346,18 @@
 </div>
 <?php if($view_other_works):?>
 <div class="view_other_works">
-<?php foreach($view_other_works as $view_other_work):?><div <?php if($view_other_work['hide_thumbnail'] && !$admindel):?>class="hide_thumbnail"<?php endif;?>><a href="?resno=<?=h($view_other_work['no'])?>"><img src="<?php if($view_other_work['thumbnail']):?>thumbnail/<?=h($view_other_work['thumbnail'])?><?php else:?>src/<?=h($view_other_work['img'])?><?php endif?>" alt="<?=h($view_other_work['sub'])?> by <?=h($view_other_work['name'])?>" title="<?=h($view_other_work['sub'])?> by <?=h($view_other_work['name'])?>" width="<?=h($view_other_work['w'])?>" height="<?=h($view_other_work['h'])?>" loading="lazy"></a></div><?php endforeach;?>
+<?php foreach($view_other_works as $view_other_work):?><div <?php if($view_other_work['hide_thumbnail'] && !$admindel):?>class="hide_thumbnail"<?php endif;?>>
+	<a href="?resno=<?=h($view_other_work['no'])?>">
+	<?php if($view_other_work['webpimg']):?>
+	<picture><source srcset="<?=h($view_other_work['webpimg'])?>" type="image/webp">
+	<?php endif;?>
+	<img src="<?php if($view_other_work['thumbnail']):?>thumbnail/<?=h($view_other_work['thumbnail'])?>
+		<?php else:?>
+	src/<?=h($view_other_work['img'])?><?php endif?>" alt="<?=h($view_other_work['sub'])?> by <?=h($view_other_work['name'])?>" title="<?=h($view_other_work['sub'])?> by <?=h($view_other_work['name'])?>" width="<?=h($view_other_work['w'])?>" height="<?=h($view_other_work['h'])?>" loading="lazy">
+	<?php if($view_other_work['webpimg']):?>
+	</picture>
+	<?php endif;?>
+	</a></div><?php endforeach;?>
 </div>
 <?php endif;?>
 </nav>

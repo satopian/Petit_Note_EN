@@ -1,5 +1,5 @@
 <?php
-$functions_ver=20230130;
+$functions_ver=20230218;
 //編集モードログアウト
 function logout(){
 	$resno=filter_input(INPUT_GET,'resno');
@@ -19,17 +19,8 @@ function logout_admin(){
 	session_sta();
 	unset($_SESSION['admindel']);
 	unset($_SESSION['adminpost']);
-	$page=(int)filter_input(INPUT_POST,'postpage',FILTER_VALIDATE_INT);
-	$catalog=(bool)filter_input(INPUT_POST,'catalog',FILTER_VALIDATE_BOOLEAN);
-	$resno=(int)filter_input(INPUT_POST,'resno',FILTER_VALIDATE_INT);
-	if($resno){
-		return header('Location: ./?resno='.$resno);	
-	}
-	if($catalog){
-		return header('Location: ./?mode=catalog&page='.$page);
-	}
 
-	return header('Location: ./?page='.$page);
+	return branch_destination_of_location();
 }
 
 //合言葉認証
@@ -50,16 +41,8 @@ function aikotoba(){
 	}
 
 	$_SESSION['aikotoba']='aikotoba';
-	if((bool)filter_input(INPUT_POST,'paintcom',FILTER_VALIDATE_BOOLEAN)){
-		return header('Location: ./?mode=paintcom');
-	}
-	$resno=(int)filter_input(INPUT_POST,'resno',FILTER_VALIDATE_INT);
-	if($resno){
-		return header('Location: ./?resno='.$resno);
-	}
-	$page=(int)filter_input(INPUT_POST,'postpage',FILTER_VALIDATE_INT);
 
-	return header('Location: ./?page='.$page);
+	return branch_destination_of_location();
 	
 }
 //記事の表示に合言葉を必須にする
@@ -84,7 +67,11 @@ function admin_in(){
 	$page=(int)filter_input(INPUT_GET,'page',FILTER_VALIDATE_INT);
 	$resno=(int)filter_input(INPUT_GET,'resno',FILTER_VALIDATE_INT);
 	$catalog=(bool)filter_input(INPUT_GET,'catalog',FILTER_VALIDATE_BOOLEAN);
-	$catalog=$catalog ? 'on' : '';
+	$search=(bool)filter_input(INPUT_GET,'search',FILTER_VALIDATE_BOOLEAN);
+	$radio=(int)filter_input(INPUT_GET,'radio',FILTER_VALIDATE_INT);
+	$imgsearch=(bool)filter_input(INPUT_GET,'imgsearch',FILTER_VALIDATE_BOOLEAN);
+	$q=(string)filter_input(INPUT_GET,'q');
+
 	session_sta();
 	$admindel=admindel_valid();
 	$aikotoba=aikotoba_valid();
@@ -120,22 +107,11 @@ function adminpost(){
 		return error($en?'password is wrong.':'パスワードが違います。');
 	}
 	session_regenerate_id(true);
-	$page=(int)filter_input(INPUT_POST,'postpage',FILTER_VALIDATE_INT);
-	
-	$catalog=(bool)filter_input(INPUT_POST,'catalog',FILTER_VALIDATE_BOOLEAN);
 
 	$_SESSION['aikotoba']='aikotoba';
 	$_SESSION['adminpost']=$second_pass;
 
-	$resno=(int)filter_input(INPUT_POST,'resno',FILTER_VALIDATE_INT);
-	if($resno){
-		return header('Location: ./?resno='.$resno);
-	}
-	if($catalog){
-		return header('Location: ./?mode=catalog&page='.$page);
-	}
-	
-	return header('Location: ./?page='.$page);
+	return branch_destination_of_location();
 }
 
 //管理者削除モード
@@ -153,23 +129,11 @@ function admin_del(){
 		return error($en?'password is wrong.':'パスワードが違います。');
 	}
 	session_regenerate_id(true);
-	$page=(int)filter_input(INPUT_POST,'postpage',FILTER_VALIDATE_INT);
-	$catalog=(bool)filter_input(INPUT_POST,'catalog',FILTER_VALIDATE_BOOLEAN);
 
 	$_SESSION['aikotoba']='aikotoba';
-	
 	$_SESSION['admindel']=$second_pass;
 
-	$resno=(int)filter_input(INPUT_POST,'resno',FILTER_VALIDATE_INT);
-
-	if($resno){
-		return header('Location: ./?resno='.$resno);
-	}
-	if($catalog){
-		return header('Location: ./?mode=catalog&page='.$page);
-	}
-
-	return header('Location: ./?page='.$page);
+	return branch_destination_of_location();
 }
 //ユーザー削除モード
 function userdel_mode(){
@@ -213,16 +177,34 @@ function view_nsfw(){
 		setcookie("nsfwc",'on',time()+(60*60*24*30),"","",false,true);
 	}
 
-	$page=(int)filter_input(INPUT_POST,'page',FILTER_VALIDATE_INT);
+return branch_destination_of_location();
+}
+
+//ログイン・ログアウト時のLocationを分岐
+function branch_destination_of_location(){
+	$page=(int)filter_input(INPUT_POST,'postpage',FILTER_VALIDATE_INT);
 	$resno=(int)filter_input(INPUT_POST,'resno',FILTER_VALIDATE_INT);
-	$catalogpage=(int)filter_input(INPUT_POST,'catalogpage',FILTER_VALIDATE_INT);
-	if($catalogpage){
-		return header('Location: ./?mode=catalog&page='.$catalogpage);
+	$catalog=(bool)filter_input(INPUT_POST,'catalog',FILTER_VALIDATE_BOOLEAN);
+	$search=(bool)filter_input(INPUT_POST,'search',FILTER_VALIDATE_BOOLEAN);
+	$paintcom=(bool)filter_input(INPUT_POST,'paintcom',FILTER_VALIDATE_BOOLEAN);
+	if($paintcom){
+		return header('Location: ./?mode=paintcom');
 	}
 	if($resno){
-		return header('Location: ./?resno='.$resno);
+		return header('Location: ./?resno='.h($resno));
 	}
-	return header('Location: ./?page='.$page);
+	if($catalog){
+		return header('Location: ./?mode=catalog&page='.h($page));
+	}
+	if($search){
+		$radio=filter_input(INPUT_POST,'radio',FILTER_VALIDATE_INT);
+		$imgsearch=(bool)filter_input(INPUT_POST,'imgsearch',FILTER_VALIDATE_BOOLEAN);
+		$imgsearch=$imgsearch ? 'on' : 'off';
+		$q=filter_input(INPUT_POST,'q');
+		
+		return header('Location: ./?mode=search&page='.h($page).'&imgsearch='.h($imgsearch).'&q='.h($q).'&radio='.h($radio));
+	}
+	return header('Location: ./?page='.h($page));
 }
 
 // コンティニュー認証
@@ -260,7 +242,7 @@ function check_cont_pass(){
 function create_res($line,$options=[]){
 	global $root_url,$boardname,$do_not_change_posts_time,$en,$mark_sensitive_image;
 	list($no,$sub,$name,$verified,$com,$url,$imgfile,$w,$h,$thumbnail,$painttime,$log_md5,$tool,$pchext,$time,$first_posted_time,$host,$userid,$hash,$oya)=$line;
-	$isset_catalog = isset($options['catalog']) ? true : false;
+	$isset_catalog = isset($options['catalog']);
 	$res=[];
 
 	$continue = true;
@@ -310,7 +292,7 @@ function create_res($line,$options=[]){
 	$check_elapsed_days = !$isset_catalog ? check_elapsed_days($time) : true;//念のためtrueに
 	$verified = ($verified==='adminpost');
 	$three_point_sub = ($isset_catalog && (mb_strlen($sub)>15)) ? '…' :'';
-
+	$webpimg = $isset_catalog ? is_file('webp/'.$time.'t.webp') : false;
 	$res=[
 		'no' => $no,
 		'sub' => $sub,
@@ -333,6 +315,7 @@ function create_res($line,$options=[]){
 		'continue' => $check_elapsed_days ? $continue : ((adminpost_valid()||admindel_valid()) ? $continue :''),
 		'time' => $time,
 		'date' => $date,
+		'datetime' => $datetime,
 		'host' => $host,
 		'userid' => $userid,
 		'check_elapsed_days' => $check_elapsed_days,
@@ -343,11 +326,12 @@ function create_res($line,$options=[]){
 		'encoded_u' => urlencode($root_url.'?resno='.$no),//tweet
 		'encoded_t' => urlencode('['.$no.']'.$sub.' by '.$name.' - '.$boardname),
 		'oya' => $oya,
+		'webpimg' => $webpimg ? 'webp/'.$time.'t.webp' :false,
 		'hide_thumbnail' => $hide_thumbnail, //サムネイルにぼかしをかける時
 		'link_thumbnail' => $link_thumbnail, //サムネイルにリンクがある時
 	];
 
-	$res['com']= !$isset_catalog ? str_replace('"\n"',"\n",$res['com']) :'';
+	$res['com']= !$isset_catalog ? str_replace('"\n"',"\n",$res['com']) : str_replace('"\n"'," ",$res['com']);
 
 	foreach($res as $key=>$val){
 		$res[$key]=h($val);
@@ -459,6 +443,7 @@ function delete_files ($imgfile, $time) {
 	$time=basename($time);
 	safe_unlink(IMG_DIR.$imgfile);
 	safe_unlink(THUMB_DIR.$time.'s.jpg');
+	safe_unlink('webp/'.$time.'t.webp');
 	safe_unlink(IMG_DIR.$time.'.pch');
 	safe_unlink(IMG_DIR.$time.'.spch');
 	safe_unlink(IMG_DIR.$time.'.chi');
@@ -706,6 +691,7 @@ function init(){
 	check_dir(__DIR__."/temp");
 	check_dir(__DIR__."/thumbnail");
 	check_dir(__DIR__."/log");
+	check_dir(__DIR__."/webp");
 	if(!is_file(LOG_DIR.'alllog.log')){
 	file_put_contents(LOG_DIR.'alllog.log','',FILE_APPEND|LOCK_EX);
 	chmod(LOG_DIR.'alllog.log',0600);	
@@ -894,7 +880,7 @@ function time_left_to_close_the_thread ($postedtime) {
 	$timeleft=((int)$elapsed_days * 86400)-(time() - (int)$postedtime);
 	//残り時間が60日を切ったら表示
 	return ($timeleft<(60 * 86400)) ? 
-	calc_remaining_time_to_close_thread(((int)$elapsed_days * 86400)-(time() - (int)$postedtime)) : false;
+	calc_remaining_time_to_close_thread($timeleft) : false;
 }	
 //POSTされた値をログファイルに格納する書式にフォーマット
 function create_formatted_text_from_post($name,$sub,$url,$com){

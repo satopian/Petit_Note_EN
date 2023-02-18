@@ -1,8 +1,8 @@
 <?php
 //Petit Note (c)さとぴあ @satopian 2021-2022
 //1スレッド1ログファイル形式のスレッド式画像掲示板
-$petit_ver='v0.57.5';
-$petit_lot='lot.230202';
+$petit_ver='v0.60.3';
+$petit_lot='lot.230218';
 $lang = ($http_langs = isset($_SERVER['HTTP_ACCEPT_LANGUAGE']) ? $_SERVER['HTTP_ACCEPT_LANGUAGE'] : '')
   ? explode( ',', $http_langs )[0] : '';
 $en= (stripos($lang,'ja')!==0);
@@ -17,7 +17,7 @@ if(!is_file(__DIR__.'/functions.php')){
 	return die(__DIR__.'/functions.php'.($en ? ' does not exist.':'がありません。'));
 }
 require_once(__DIR__.'/functions.php');
-if(!isset($functions_ver)||$functions_ver<20230130){
+if(!isset($functions_ver)||$functions_ver<20230216){
 	return die($en?'Please update functions.php to the latest version.':'functions.phpを最新版に更新してください。');
 }
 // jQueryバージョン
@@ -132,6 +132,8 @@ switch($mode){
 		return logout_admin();
 	case 'logout':
 		return logout();
+	case 'search':
+		return search();
 	case 'catalog':
 		return catalog($page);
 	case 'download':
@@ -565,6 +567,8 @@ function post(){
 		}
 	$hide_thumbnail=$hide_thumbnail ? 'hide_' : '';
 	$thumbnail =  $hide_thumbnail.$thumbnail;
+		//webpサムネイル
+		thumb(IMG_DIR,$imgfile,$time,300,800,['webp'=>true]);
 	}
 	//ログの番号の最大値
 	$no_arr = [];
@@ -1400,6 +1404,7 @@ function img_replace(){
 	}
 	chmod(IMG_DIR.$imgfile,0606);
 	$src='';
+	$pchext='';
 	//PCHファイルアップロード
 	// .pch, .spch,.chi,.psd ブランク どれかが返ってくる
 	if (!$is_upload && $repfind && ($pchext = check_pch_ext(TEMP_DIR . $file_name,['upload'=>true]))) {
@@ -1428,6 +1433,8 @@ function img_replace(){
 			$thumbnail='thumbnail';
 		}
 	}
+	//webpサムネイル
+	thumb(IMG_DIR,$imgfile,$time,300,800,['webp'=>true]);
 	$hide_thumbnail = ($_imgfile && ($_thumbnail==='hide_thumbnail'||$_thumbnail==='hide_')) ? 'hide_' : '';
 
 	$thumbnail =  $hide_thumbnail.$thumbnail;
@@ -1993,6 +2000,216 @@ function del(){
 	return header('Location: ./?page='.(int)filter_input(INPUT_POST,'postpage'));
 }
 
+//検索画面
+function search(){
+	global $use_aikotoba,$home,$skindir;
+	global $boardname,$petit_ver,$petit_lot,$set_nsfw,$en; 
+	global $max_search,$search_images_pagedef,$search_comments_pagedef; 
+
+	aikotoba_required_to_view();
+
+	//検索可能最大数
+	$max_search= isset($max_search) ? $max_search : 300;
+
+	//画像検索の時の1ページあたりの表示件数
+	$search_images_pagedef = isset($search_images_pagedef) ? $search_images_pagedef : 60;
+	//通常検索の時の1ページあたりの表示件数
+	$search_comments_pagedef = isset($search_comments_pagedef) ? $search_comments_pagedef : 30;
+
+	$disp_count_of_images=isset($disp_count_of_images);//画像検索の時の1ページあたりの表示件数
+	$disp_count_of_comments;//通常検索の時の1ページあたりの表示件数
+	$imgsearch=(bool)filter_input(INPUT_GET,'imgsearch',FILTER_VALIDATE_BOOLEAN);
+	$page=(int)filter_input(INPUT_GET,'page',FILTER_VALIDATE_INT);
+	$en_q=(string)filter_input(INPUT_GET,'q');
+	$q=urldecode($en_q);
+	$q=mb_convert_kana($q, 'rn', 'UTF-8');
+	$q=str_replace(array(" ", "　"), "", $q);
+	$q=str_replace("〜","～",$q);//波ダッシュを全角チルダに
+	$radio =(int)filter_input(INPUT_GET,'radio',FILTER_VALIDATE_INT);
+
+	if($imgsearch){
+		$pagedef=$search_images_pagedef;//画像検索の時の1ページあたりの表示件数
+	}
+	else{
+		$pagedef=$search_comments_pagedef;//通常検索の時の1ページあたりの表示件数
+	}
+	//ログの読み込み
+	$arr=[];
+	$i=0;
+	$j=0;
+	$fp=fopen("log/alllog.log","r");
+	while ($log = fgets($fp)) {
+		if(!trim($log)){
+			continue;
+		}
+		list($resno)=explode("\t",$log);
+		$resno=basename($resno);
+		//個別スレッドのループ
+		if(!is_file(LOG_DIR."{$resno}.log")){
+			continue;	
+		}
+		$cp=fopen("log/{$resno}.log","r");
+		while($line=fgets($cp)){
+
+				list($no,$sub,$name,$verified,$com,$url,$imgfile,$w,$h,$thumbnail,$painttime,$log_md5,$tool,$pchext,$time,$first_posted_time,$host,$userid,$hash,$oya)=explode("\t",$line);
+
+			$continue_to_search=true;
+			if($imgsearch){//画像検索の場合
+				$continue_to_search=(bool)$imgfile;//画像があったら
+			}
+
+			if($continue_to_search){
+				if($radio===1||$radio===2||$radio===0){
+					$s_name=mb_convert_kana($name, 'rn', 'UTF-8');//全角英数を半角に
+					$s_name=str_replace(array(" ", "　"), "", $s_name);
+					$s_name=str_replace("〜","～", $s_name);//波ダッシュを全角チルダに
+				}
+				else{
+					$s_sub=mb_convert_kana($sub, 'rn', 'UTF-8');//全角英数を半角に
+					$s_sub=str_replace(array(" ", "　"), "", $s_sub);
+					$s_sub=str_replace("〜","～", $s_sub);//波ダッシュを全角チルダに
+					$s_com=mb_convert_kana($com, 'rn', 'UTF-8');//全角英数を半角に
+					$s_com=str_replace(array(" ", "　"), "", $s_com);
+					$s_com=str_replace("〜","～", $s_com);//波ダッシュを全角チルダに
+				}
+				
+				//ログとクエリを照合
+				if($q===''||//空白なら
+						$q!==''&&$radio===3&&stripos($s_com,$q)!==false||//本文を検索
+						$q!==''&&$radio===3&&stripos($s_sub,$q)!==false||//題名を検索
+						$q!==''&&($radio===1||$radio===0)&&stripos($s_name,$q)===0||//作者名が含まれる
+						$q!==''&&($radio===2&&$s_name===$q)//作者名完全一致
+				){
+					$hidethumb = ($thumbnail==='hide_thumbnail'||$thumbnail==='hide_');
+
+					$thumb= ($thumbnail==='hide_thumbnail'||$thumbnail==='thumbnail');
+					$arr[(int)$time]=[$no,$sub,$name,$verified,$com,$url,$imgfile,$w,$h,$thumbnail,$painttime,$log_md5,$tool,$pchext,$time,$first_posted_time,$host,$userid,$hash,$oya];
+					++$i;
+					if($i>=$max_search){break 2;}//1掲示板あたりの最大検索数
+				}
+				
+			}
+		}
+		fclose($cp);
+		if($j>=5000){break;}//1掲示板あたりの最大行数
+		++$j;
+	}
+	fclose($fp);
+
+	krsort($arr);
+
+	//検索結果の出力
+	$j=0;
+	$out=[];
+	if(!empty($arr)){
+	//ページ番号から1ページ分のスレッド分とりだす
+	$articles=array_slice($arr,(int)$page,$pagedef,false);
+
+	foreach($articles as $i => $line){
+
+			$out[$i] = create_res($line,['catalog'=>true]);//$lineから、情報を取り出す
+
+			// マークダウン
+			$com= preg_replace("{\[([^\[\]\(\)]+?)\]\((https?://[[:alnum:]\+\$\;\?\.%,!#~*/:@&=_-]+)\)}","\\1",$out[$i]['com']);
+			$com=h(strip_tags($com));
+			$com=mb_strcut($com,0,180);
+			$out[$i]['com']=$com;
+			$out[$i]['date']=$out[$i]['datetime'] ? (date("y/m/d G:i", $out[$i]['datetime'])) : '';
+
+			$j=$page+$i+1;//表示件数
+		}
+	}
+
+	if($imgsearch){
+		$img_or_com=$en ? 'Images' : 'イラスト';
+		$mai_or_ken=$en ? ' ' : '枚';
+	}
+	else{
+		$img_or_com=$en ? 'Comments' : 'コメント';
+		$mai_or_ken=$en ? ' ' : '件';
+	}
+	$imgsearch= (bool)$imgsearch;
+
+	//ラジオボタンのチェック
+	$radio_chk1=false;//作者名
+	$radio_chk2=false;//完全一致
+	$radio_chk3=false;//本文題名	
+	if($q!==''&&$radio===3){//本文題名
+		$radio_chk3=true;
+	}
+	elseif($q!==''&&$radio===2){//完全一致
+		$radio_chk2=true;	
+	}
+	elseif($q!==''&&($radio===0||$radio===1)){//作者名
+		$radio_chk1=true;
+	}
+	else{//作者名	
+		$radio_chk1=true;
+	}
+
+	$page=(int)$page;
+	$en_q=h($en_q);
+	$q=h($q);
+
+	$pageno=0;
+	if($j&&$page>=2){
+		$pageno = ($page+1).'-'.$j.$mai_or_ken;
+	}
+	else{
+		$pageno = $j.$mai_or_ken;
+	}
+	if($q!==''&&$radio===3){
+		$result_subject=($en ? $img_or_com.' of '.$en_q : $en_q."の");//h2タグに入る
+	}
+	elseif($q!==''){
+		$result_subject=$en ? 'Posts by '.$en_q : $en_q.'さんの';
+	}
+	else{
+		$result_subject=$en ? 'Recent '.$pageno.' Posts' : $boardname.'に投稿された最新の';
+		$pageno=$en ? '':$pageno;
+	}
+
+	//ページング
+
+	$nextpage=$page+$pagedef;//次ページ
+	$prevpage=$page-$pagedef;//前のページ
+	$countarr=count($arr);//配列の数
+	$prev=false;
+	$next=false;
+
+	//
+	$countarr=count($arr);//配列の数
+
+	//ページング
+	$start_page=$page-$pagedef*8;
+	$end_page=$page+($pagedef*8);
+	if($page<$pagedef*17){
+		$start_page=0;
+		$end_page=$pagedef*17;
+	}
+	//prev next 
+	$next=(($page+$pagedef)<$countarr) ? $page+$pagedef : false;//ページ番号がmaxを超える時はnextのリンクを出さない
+	$prev=((int)$page<=0) ? false : ($page-$pagedef) ;//ページ番号が0の時はprevのリンクを出さない
+
+	//最終更新日時を取得
+	$postedtime='';
+	$lastmodified='';
+	if(!empty($arr)){
+		
+		$time= key($arr);
+		$postedtime=(strlen($time)>15) ? substr($time,0,-6) : substr($time,0,-3);
+		$lastmodified=date("Y/m/d G:i", (int)$postedtime);
+	}
+
+	unset($arr);
+	unset($no,$sub,$name,$verified,$com,$url,$imgfile,$w,$h,$thumbnail,$painttime,$log_md5,$tool,$pchext,$time,$first_posted_time,$host,$userid,$hash,$oya);
+
+	$nsfwc=(bool)filter_input(INPUT_COOKIE,'nsfwc',FILTER_VALIDATE_BOOLEAN);
+	
+	//HTML出力
+	$templete='search.html';
+	return include __DIR__.'/'.$skindir.$templete;
+}
 //カタログ表示
 function catalog($page=0,$q=''){
 	global $use_aikotoba,$home,$catalog_pagedef,$skindir;
@@ -2091,7 +2308,7 @@ function catalog($page=0,$q=''){
 
 	//ページング
 	$start_page=$page-$pagedef*8;
-	$end_page=$page+($pagedef*8)	;
+	$end_page=$page+($pagedef*8);
 	if($page<$pagedef*17){
 		$start_page=0;
 		$end_page=$pagedef*17;
