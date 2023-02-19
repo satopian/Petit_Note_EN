@@ -98,6 +98,11 @@ $badhost =["example.com","example.org"];
 
 /*Settings by Purpose of Use*/
 
+// Display a link back to the home page in the top menu
+// yes: true no: false
+$display_link_back_to_home = true;
+// $display_link_back_to_home = false;
+
 //Use PaintBBS NEO 
 // yes: true no: false
 $use_paintbbs_neo= true;
@@ -309,6 +314,18 @@ $aikotoba = "secret";
 
 // $keep_aikotoba_login_status=true;
 $keep_aikotoba_login_status=false;
+
+/* search function */
+
+//Maximum searchable number
+//If this value is increased, the number of searchable items will increase, but the load on the server will increase.
+$max_search= 300;
+
+//Number of items displayed per page when searching for images
+$search_images_pagedef = 60;
+
+//Number of items displayed per page during normal search
+$search_comments_pagedef = 30;
 
 /* safety */
 
