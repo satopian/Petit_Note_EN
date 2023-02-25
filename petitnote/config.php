@@ -247,7 +247,7 @@ $dispres= 5;
 // number of items displayed per page in catalog mode
 // Set it in multiples of 6 to fit nicely on the screen.
 
-$catalog_pagedef = 24;
+$catalog_pagedef = 60;
 
 /* image related */
 
