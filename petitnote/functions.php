@@ -1,8 +1,8 @@
 <?php
-$functions_ver=20230218;
+$functions_ver=20230325;
 //編集モードログアウト
 function logout(){
-	$resno=filter_input(INPUT_GET,'resno');
+	$resno=(int)filter_input(INPUT_GET,'resno',FILTER_VALIDATE_INT);
 	session_sta();
 	unset($_SESSION['admindel']);
 	unset($_SESSION['userdel']);
@@ -33,8 +33,11 @@ function aikotoba(){
 	if(!$aikotoba || $aikotoba!==(string)filter_input(INPUT_POST,'aikotoba')){
 		if(isset($_SESSION['aikotoba'])){
 			unset($_SESSION['aikotoba']);
+		}
+		if((string)filter_input(INPUT_COOKIE,'aikotoba')){
+			setcookie('aikotoba', '', time() - 3600);
 		} 
-		return error($en?'The secret words is wrong':'合言葉が違います。');
+		return error($en?'The secret word is wrong':'合言葉が違います。');
 	}
 	if($keep_aikotoba_login_status){
 		setcookie("aikotoba",$aikotoba, time()+(86400*30),"","",false,true);//1ヶ月
@@ -89,7 +92,7 @@ function admin_in(){
 function check_aikotoba(){
 	global $en;
 	if(!aikotoba_valid()){
-		return error($en?'The secret words is wrong.':'合言葉が違います。');
+		return error($en?'The secret word is wrong.':'合言葉が違います。');
 	}
 	return true;
 }
@@ -100,7 +103,7 @@ function adminpost(){
 	check_same_origin();
 	check_password_input_error_count();
 	session_sta();
-	if(!$admin_pass || !$second_pass || $admin_pass === $second_pass || $admin_pass!==filter_input(INPUT_POST,'adminpass')){
+	if(!$admin_pass || !$second_pass || $admin_pass === $second_pass || $admin_pass!==(string)filter_input(INPUT_POST,'adminpass')){
 		if(isset($_SESSION['adminpost'])){
 			unset($_SESSION['adminpost']);
 		} 
@@ -122,7 +125,7 @@ function admin_del(){
 	check_password_input_error_count();
 
 	session_sta();
-	if(!$admin_pass || !$second_pass || $admin_pass === $second_pass || $admin_pass!==filter_input(INPUT_POST,'adminpass')){
+	if(!$admin_pass || !$second_pass || $admin_pass === $second_pass || $admin_pass!==(string)filter_input(INPUT_POST,'adminpass')){
 		if(isset($_SESSION['admindel'])){
 			unset($_SESSION['admindel']);
 		} 
@@ -164,7 +167,7 @@ function admindel_valid(){
 function aikotoba_valid(){
 	global $keep_aikotoba_login_status,$aikotoba;
 	session_sta();
-	$keep=$keep_aikotoba_login_status ? ($aikotoba && ($aikotoba===filter_input(INPUT_COOKIE,'aikotoba'))
+	$keep=$keep_aikotoba_login_status ? ($aikotoba && ($aikotoba===(string)filter_input(INPUT_COOKIE,'aikotoba'))
 	) : false;
 	return ($keep||isset($_SESSION['aikotoba'])&&($_SESSION['aikotoba']==='aikotoba'));
 }
@@ -197,10 +200,10 @@ function branch_destination_of_location(){
 		return header('Location: ./?mode=catalog&page='.h($page));
 	}
 	if($search){
-		$radio=filter_input(INPUT_POST,'radio',FILTER_VALIDATE_INT);
+		$radio=(int)filter_input(INPUT_POST,'radio',FILTER_VALIDATE_INT);
 		$imgsearch=(bool)filter_input(INPUT_POST,'imgsearch',FILTER_VALIDATE_BOOLEAN);
 		$imgsearch=$imgsearch ? 'on' : 'off';
-		$q=filter_input(INPUT_POST,'q');
+		$q=(string)filter_input(INPUT_POST,'q');
 		
 		return header('Location: ./?mode=search&page='.h($page).'&imgsearch='.h($imgsearch).'&q='.h($q).'&radio='.h($radio));
 	}
@@ -312,7 +315,7 @@ function create_res($line,$options=[]){
 		'upload_image' => $upload_image,
 		'pchext' => $pchext,
 		'anime' => $anime,
-		'continue' => $check_elapsed_days ? $continue : ((adminpost_valid()||admindel_valid()) ? $continue :''),
+		'continue' => $check_elapsed_days ? $continue : (adminpost_valid() ? $continue : false),
 		'time' => $time,
 		'date' => $date,
 		'datetime' => $datetime,
@@ -400,14 +403,14 @@ function com($str){
 }
 //マークダウン記法のリンクをHTMLに変換
 function md_link($str){
-	$str= preg_replace('{\[([^\[\]\(\)]+?)\]\((https?://[[:alnum:]\+\$\;\?\.%,!#~*/:@&=_-]+)\)}','<a href="$2" target="_blank" rel="nofollow noopener noreferrer">$1</a>',$str);
+	$str= preg_replace("{\[([^\[\]\(\)]+?)\]\((https?://[\w!\?/\+\-_~=;\.,\*&@#\$%\(\)'\[\]]+)\)}",'<a href="$2" target="_blank" rel="nofollow noopener noreferrer">$1</a>',$str);
 	return $str;
 }
 
 // 自動リンク
 function auto_link($str){
 	if(strpos($str,'<a')===false){//マークダウン記法がなかった時
-		$str= preg_replace('{(https?://[[:alnum:]\+\$\;\?\.%,!#~*/:@&=_-]+)}','<a href="$1" target="_blank" rel="nofollow noopener noreferrer">$1</a>',$str);
+		$str= preg_replace("{(https?://[\w!\?/\+\-_~=;\.,\*&@#\$%\(\)'\[\]]+)}",'<a href="$1" target="_blank" rel="nofollow noopener noreferrer">$1</a>',$str);
 	}
 	return $str;
 }
@@ -505,8 +508,8 @@ function check_csrf_token(){
 	} 
 	check_same_origin();
 	session_sta();
-	$token=filter_input(INPUT_POST,'token');
-	$session_token=isset($_SESSION['token']) ? $_SESSION['token'] : '';
+	$token=(string)filter_input(INPUT_POST,'token');
+	$session_token=isset($_SESSION['token']) ? (string)$_SESSION['token'] : '';
 	if(!$session_token||$token!==$session_token){
 		return error($en?'CSRF token mismatch.':'CSRFトークンが一致しません。');
 	}
@@ -586,18 +589,8 @@ function deltemp(){
 
 // NGワードがあれば拒絶
 function Reject_if_NGword_exists_in_the_post(){
-	global $use_japanesefilter,$badstring,$badname,$badurl,$badstr_A,$badstr_B,$allow_comments_url,$admin_pass,$max_com,$en,$badhost;
+	global $use_japanesefilter,$badstring,$badname,$badurl,$badstr_A,$badstr_B,$allow_comments_url,$admin_pass,$max_com,$en;
 
-	//ホスト取得
-	$userip = get_uip();
-	$host = $userip ? gethostbyaddr($userip) :'';
-	//拒絶ホスト
-	foreach($badhost as $value){
-		if (preg_match("/$value\z/i",$host)) {
-			return error($en?'Post was rejected.':'拒絶されました。');
-		}
-	}
-	
 	$adminpost=adminpost_valid();
 
 	$name = t((string)filter_input(INPUT_POST,'name'));
@@ -605,6 +598,13 @@ function Reject_if_NGword_exists_in_the_post(){
 	$url = t((string)filter_input(INPUT_POST,'url',FILTER_VALIDATE_URL));
 	$com = t((string)filter_input(INPUT_POST,'com'));
 	$pwd = t((string)filter_input(INPUT_POST,'pwd'));
+
+	if($adminpost || ($admin_pass && $pwd === $admin_pass)){
+		return;
+	}
+	if(is_badhost()){
+		return error($en?'Post was rejected.':'拒絶されました。');
+	}
 
 	$com_len=strlen((string)$com);
 	$name_len=strlen((string)$name);
@@ -631,7 +631,7 @@ function Reject_if_NGword_exists_in_the_post(){
 	}
 
 	//本文へのURLの書き込みを禁止
-	if(!$allow_comments_url && !$adminpost && (!$admin_pass||$pwd !== $admin_pass)){
+	if(!$allow_comments_url){
 		if($com_len && preg_match('/:\/\/|\.co|\.ly|\.gl|\.net|\.org|\.cc|\.ru|\.su|\.ua|\.gd/i', $com)) return error($en?'This URL can not be used in text.':'URLの記入はできません。');
 	}
 
@@ -642,7 +642,7 @@ function Reject_if_NGword_exists_in_the_post(){
 
 	// 使えない名前チェック
 	if (is_ngword($badname, $chk_name)) {
-		return error($en?'This name cannot be used.':'その名前は使えません。');
+		return error($en?'This name cannot be used.':'この名前は使えません。');
 	}
 	// 使えないurlチェック
 	if (is_ngword($badurl, $chk_url)) {
@@ -676,12 +676,36 @@ function is_ngword ($ngwords, $strs) {
 	}
 	foreach ($strs as $str) {
 		foreach($ngwords as $ngword){//拒絶する文字列
-			if ($ngword !== '' && preg_match("/{$ngword}/ui", $str)){
+			if ($ngword && preg_match("/{$ngword}/ui", $str)){
 				return true;
 			}
 		}
 	}
 	return false;
+}
+
+/* 禁止ホストチェック */
+function is_badhost(){
+	global $badhost;
+	//ホスト取得
+	$userip = get_uip();
+	$host = $userip ? gethostbyaddr($userip) :'';
+
+	if($host === $userip){//ホスト名がipアドレスになる場合は
+		foreach($badhost as $value){
+			if (preg_match("/\A$value/i",$host)) {//前方一致
+				return true;
+			}
+		}
+		return false;
+	}else{
+		foreach($badhost as $value){
+			if (preg_match("/$value\z/i",$host)) {
+				return true;
+			}
+		}
+		return false;
+	}
 }
 
 //初期化
@@ -970,7 +994,7 @@ function check_password_input_error_count(){
 	if(count($arr_err)>=5){
 		error($en?'Rejected.':'拒絶されました。');
 	}
-if(!$admin_pass || !$second_pass || $admin_pass === $second_pass || $admin_pass!==filter_input(INPUT_POST,'adminpass')){
+if(!$admin_pass || !$second_pass || $admin_pass === $second_pass || $admin_pass!==(string)filter_input(INPUT_POST,'adminpass')){
 		$errlog=$userip."\n";
 		file_put_contents(__DIR__.'/template/errorlog/error.log',$errlog,FILE_APPEND);
 		chmod(__DIR__.'/template/errorlog/error.log',0600);

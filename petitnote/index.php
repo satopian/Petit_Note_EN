@@ -1,8 +1,8 @@
 <?php
 //Petit Note (c)さとぴあ @satopian 2021-2022
 //1スレッド1ログファイル形式のスレッド式画像掲示板
-$petit_ver='v0.60.10';
-$petit_lot='lot.230225';
+$petit_ver='v0.62.3';
+$petit_lot='lot.230325';
 $lang = ($http_langs = isset($_SERVER['HTTP_ACCEPT_LANGUAGE']) ? $_SERVER['HTTP_ACCEPT_LANGUAGE'] : '')
   ? explode( ',', $http_langs )[0] : '';
 $en= (stripos($lang,'ja')!==0);
@@ -16,7 +16,7 @@ if(!is_file(__DIR__.'/functions.php')){
 	return die(__DIR__.'/functions.php'.($en ? ' does not exist.':'がありません。'));
 }
 require_once(__DIR__.'/functions.php');
-if(!isset($functions_ver)||$functions_ver<20230218){
+if(!isset($functions_ver)||$functions_ver<20230325){
 	return die($en?'Please update functions.php to the latest version.':'functions.phpを最新版に更新してください。');
 }
 // jQueryバージョン
@@ -67,6 +67,7 @@ $max_file_size_in_png_format_paint = isset($max_file_size_in_png_format_paint) ?
 $max_file_size_in_png_format_upload = isset($max_file_size_in_png_format_upload) ? $max_file_size_in_png_format_upload : 800;
 $use_klecs=isset($use_klecs) ? $use_klecs : true;
 $display_link_back_to_home = isset($display_link_back_to_home) ? $display_link_back_to_home : true;
+$password_require_to_continue = isset($password_require_to_continue) ? (bool)$password_require_to_continue : false;
 $mode = (string)filter_input(INPUT_POST,'mode');
 $mode = $mode ? $mode :(string)filter_input(INPUT_GET,'mode');
 $page=(int)filter_input(INPUT_GET,'page',FILTER_VALIDATE_INT);
@@ -104,7 +105,9 @@ switch($mode){
 		return to_continue();
 	case 'contpaint':
 		$type = (string)filter_input(INPUT_POST, 'type');
-		if($type==='rep') check_cont_pass();
+		if($type==='rep'||$password_require_to_continue){
+			check_cont_pass();
+		} 
 		return paint();
 	case 'picrep':
 		return img_replace();
@@ -383,7 +386,10 @@ function post(){
 
 
 	//ユーザーid
-	$userid = t(getId($userip));
+	$userid=(isset($_SESSION['userid'])&&$_SESSION['userid'])
+	? $_SESSION['userid'] : getId($userip);
+	$userid=t($userid);//タブ除去
+	$_SESSION['userid'] = $userid; 
 
 	$verified = $adminpost ? 'adminpost' : ''; 
 
@@ -726,7 +732,7 @@ return header('Location: ./');
 function paint(){
 
 	global $boardname,$skindir,$pmax_w,$pmax_h,$en;
-	global $usercode;
+	global $usercode,$password_require_to_continue;
 
 	check_same_origin();
 
@@ -820,23 +826,14 @@ function paint(){
 		$type = (string)filter_input(INPUT_POST, 'type');
 		$no = (string)filter_input(INPUT_POST, 'no',FILTER_VALIDATE_INT);
 		$time = basename((string)filter_input(INPUT_POST, 'time'));
+		$cont_paint_same_thread=(bool)filter_input(INPUT_POST, 'cont_paint_same_thread',FILTER_VALIDATE_BOOLEAN);
 
-		if(($type!=='rep') && is_file(LOG_DIR."{$no}.log")){
-			check_open_no($no);
-			$rp=fopen(LOG_DIR."{$no}.log","r");
-			while ($line = fgets($rp)) {
-				if(!trim($line)){
-					continue;
-				}
-				list($no_,$sub_,$name_,$verified_,$com_,$url_,$imgfile_,$w_,$h_,$thumbnail_,$painttime_,$log_md5_,$tool_,$pchext_,$time_,$first_posted_time_,$host_,$userid_,$hash_,$oya_)=explode("\t",trim($line));
-				if($time===$time_ && $no===$no_){
-					$resto=(trim($oya_)==='res') ? $no_ : '';
-					break;
-				}
+		if(is_file(LOG_DIR."{$no}.log")){
+			if($type!=='rep'){
+				$resto = $cont_paint_same_thread ? $no : '';
 			}
-			closeFile ($rp);
 		}
-		if(!is_file(IMG_DIR.$imgfile)){
+	if(!is_file(IMG_DIR.$imgfile)){
 			return error($en? 'The article does not exist.':'記事がありません。');
 		}
 		list($picw,$pich)=getimagesize(IMG_DIR.$imgfile);//キャンバスサイズ
@@ -999,7 +996,7 @@ function paintcom(){
 //コンティニュー前画面
 function to_continue(){
 
-	global $boardname,$use_diary,$use_aikotoba,$set_nsfw,$skindir,$en;
+	global $boardname,$use_diary,$use_aikotoba,$set_nsfw,$skindir,$en,$password_require_to_continue;
 	global $use_paintbbs_neo,$use_chickenpaint,$use_klecs,$petit_lot;
 
 	aikotoba_required_to_view();
@@ -1030,6 +1027,10 @@ function to_continue(){
 	if(!$flag || !$imgfile || !is_file(IMG_DIR.$imgfile)){//画像が無い時は処理しない
 		return error($en? 'The article does not exist.':'記事がありません。');
 	}
+	if(!check_elapsed_days($time)&&!adminpost_valid()){
+		return error($en? 'The article does not exist.':'記事がありません。');
+	}
+
 	$hidethumbnail = ($thumbnail==='hide_thumbnail'||$thumbnail==='hide_');
 	$thumbnail=($thumbnail==='thumbnail'||$thumbnail==='hide_thumbnail');
 	list($picw, $pich) = getimagesize(IMG_DIR.$imgfile);
@@ -1075,6 +1076,7 @@ function to_continue(){
 	// nsfw
 	$nsfwc=(bool)filter_input(INPUT_COOKIE,'nsfwc',FILTER_VALIDATE_BOOLEAN);
 
+	$is_badhost=is_badhost();
 	// HTML出力
 	$templete='continue.html';
 	return include __DIR__.'/'.$skindir.$templete;
@@ -1999,7 +2001,7 @@ function del(){
 		}
 		return header('Location: ./?resno='.$resno);
 	}
-	return header('Location: ./?page='.(int)filter_input(INPUT_POST,'postpage'));
+	return header('Location: ./?page='.(int)filter_input(INPUT_POST,'postpage',FILTER_VALIDATE_INT));
 }
 
 //検索画面
@@ -2083,6 +2085,7 @@ function search(){
 					$hidethumb = ($thumbnail==='hide_thumbnail'||$thumbnail==='hide_');
 
 					$thumb= ($thumbnail==='hide_thumbnail'||$thumbnail==='thumbnail');
+
 					$arr[$time]=[$no,$sub,$name,$verified,$com,$url,$imgfile,$w,$h,$thumbnail,$painttime,$log_md5,$tool,$pchext,$time,$first_posted_time,$host,$userid,$hash,$oya];
 					++$i;
 					if($i>=$max_search){break 2;}//1掲示板あたりの最大検索数
@@ -2218,7 +2221,7 @@ function catalog($page=0,$q=''){
 	aikotoba_required_to_view();
 
 	$pagedef=$catalog_pagedef;
-	
+
 	$q=(string)filter_input(INPUT_GET,'q');
 
 	$fp=fopen(LOG_DIR."alllog.log","r");
@@ -2375,13 +2378,15 @@ function view($page=0){
 		}
 	}
 
+	// 禁止ホスト
+	$is_badhost=is_badhost();
 	//管理者判定処理
 	session_sta();
 	$admindel=admindel_valid();
 	$aikotoba=aikotoba_valid();
 	$userdel=isset($_SESSION['userdel'])&&($_SESSION['userdel']==='userdel_mode');
 	$adminpost=adminpost_valid();
-	$resform = ((!$deny_all_posts && !$only_admin_can_reply)||$adminpost);
+	$resform = ((!$deny_all_posts && !$only_admin_can_reply && !$use_diary && !$is_badhost)||$adminpost);
 
 	if(!$use_aikotoba){
 		$aikotoba=true;
@@ -2415,7 +2420,6 @@ function view($page=0){
 	//prev next 
 	$next=(($page+$pagedef)<$count_alllog) ? $page+$pagedef : false;//ページ番号がmaxを超える時はnextのリンクを出さない
 	$prev=((int)$page!==0) ? ($page-$pagedef) : false;//ページ番号が0の時はprevのリンクを出さない
-
 	// HTML出力
 	$templete='main.html';
 	return include __DIR__.'/'.$skindir.$templete;
@@ -2516,13 +2520,15 @@ function res ($resno){
 		$view_other_works=array_slice($a,$c,6,false);
 	}
 
+	//禁止ホスト
+	$is_badhost=is_badhost();
 	//管理者判定処理
 	session_sta();
 	$admindel=admindel_valid();
 	$aikotoba=aikotoba_valid();
 	$userdel=isset($_SESSION['userdel'])&&($_SESSION['userdel']==='userdel_mode');
 	$adminpost=adminpost_valid();
-	$resform = ((!$deny_all_posts && !$only_admin_can_reply)||$adminpost);
+	$resform = ((!$deny_all_posts && !$only_admin_can_reply && !$is_badhost)||$adminpost);
 	if(!$use_aikotoba){
 		$aikotoba=true;
 	}
