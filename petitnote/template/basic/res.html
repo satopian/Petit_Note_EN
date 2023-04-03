@@ -48,7 +48,6 @@
 	</form>
 	</div>
 	<?php endif;?>
-
 	<h1 class="title"><a href="./"><?=h($boardname)?></a></h1>
 	<?php if($aikotoba):?>
 <nav class="menu_wrap">
@@ -87,6 +86,7 @@
 		<?php endif;?>
 
 			<div class="imginfo_wrap">
+			<?php if(!isset($res['not_deleted']) || $res['not_deleted']):?>
 				<span class="info_name"><a href="./?mode=search&radio=2&imgsearch=on&q=<?=h($res['encoded_name'])?>" target="_blank"><?= h($res['name'])?></a></span>
 				<?php if($res['verified']):?>
 				<span class="icon-checkmark2"></span>
@@ -114,6 +114,7 @@
 				<br>
 				HOST:<?=h($res['host'])?>
 				<?php endif;?> 
+			<?php endif;?> 
 			</div>
 			<?php if($res['img']):?>
 				<?php if($res['continue']||$res['anime']):?>
@@ -140,11 +141,14 @@
 				</div>
 			<?php endif;?>
 			<div class="comment"><?=com(h($res['com']))?>
+			<?php if(isset($res['not_deleted']) && !$res['not_deleted']):?>
+			<?php if($en):?>This post does not exist.<?php else:?>この記事はありません。<?php endif;?>
+			<?php endif;?>
 
 				<?php if(!$adminpost && ($i>=$max_res||!$ress[0]['check_elapsed_days'])){
 					$resform=false;//最大レス数を超えている時と指定した日数を超えた古いスレッドはレスフォームを閉じる
 				}?>
-				<?php if($aikotoba && ($userdel || $admindel)):?>
+			<?php if($aikotoba && !$deny_all_posts && (((!isset($res['not_deleted'])||$res['not_deleted']) && $userdel) || $admindel)):?>
 				<div>
 					<form action="./" method="POST" class="aikotoba">
 					<input type="hidden" name="mode" value="before_del">
@@ -153,7 +157,7 @@
 					<input type="hidden" name="id" value="<?=h($res['time'])?>">
 					<input type="hidden" name="no" value="<?=h($res['no'])?>">
 					<input type="hidden" name="postresno" value="<?=h($resno)?>">
-					<?php if($res['check_elapsed_days']||$admindel):?>
+					<?php if(($res['check_elapsed_days']&&!$is_badhost||$admindel)&&(!isset($res['not_deleted'])||$res['not_deleted'])):?>
 					<input type="submit" value="<?php if($en):?>Edit<?php else:?>編集<?php endif;?>">
 					<?php endif;?>
 					</form>
@@ -186,7 +190,7 @@
 		<?php if($en):?>
 			This thread will be closed with <?=h($maxres_current)?> more posts.
 		<?php else:?>
-			あと<?=h($maxres_current)?>件返信できます。
+			あと<?=h($maxres_current)?>件投稿できます。
 		<?php endif;?>
 <?php endif;?>
 <?php if($ress[0]['time_left_to_close_the_thread']&& !$adminpost && $resform):?>
@@ -308,7 +312,7 @@
 	<input type="checkbox" name="sage" id="sage" value="on"><label for="sage">sage</label>
 	</span>
 <?php endif;?>
-<input type="submit" value="<?php if($en):?>Reply<?php else:?>返信<?php endif;?>" class="form_button">
+<input type="submit" value="<?php if($en):?>Post<?php else:?>投稿する<?php endif;?>" class="form_button">
 
 </form>
 <?php endif;?>

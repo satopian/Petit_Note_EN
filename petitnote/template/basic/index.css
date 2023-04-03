@@ -300,13 +300,11 @@ span.prev {
 }
 span.res_next {
     display: inline-block;
-    width: 305px;
     text-align: left;
 }
 
 span.res_prev {
 	display: inline-block;
-    width: 305px;
     text-align: right;
 }
 
@@ -364,7 +362,9 @@ span.continue_menu {
 .continue_post_form {
     line-height: 2.2;
 }
-
+#span_cont_paint_same_thread {
+    display: none;
+}
 /* エラー画面 */
 .error{font-size: 18px;
 	line-height: 2;

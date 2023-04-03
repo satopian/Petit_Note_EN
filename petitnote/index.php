@@ -1,8 +1,8 @@
 <?php
 //Petit Note (c)さとぴあ @satopian 2021-2022
 //1スレッド1ログファイル形式のスレッド式画像掲示板
-$petit_ver='v0.62.3';
-$petit_lot='lot.230325';
+$petit_ver='v0.63.5';
+$petit_lot='lot.230326';
 $lang = ($http_langs = isset($_SERVER['HTTP_ACCEPT_LANGUAGE']) ? $_SERVER['HTTP_ACCEPT_LANGUAGE'] : '')
   ? explode( ',', $http_langs )[0] : '';
 $en= (stripos($lang,'ja')!==0);
@@ -16,7 +16,7 @@ if(!is_file(__DIR__.'/functions.php')){
 	return die(__DIR__.'/functions.php'.($en ? ' does not exist.':'がありません。'));
 }
 require_once(__DIR__.'/functions.php');
-if(!isset($functions_ver)||$functions_ver<20230325){
+if(!isset($functions_ver)||$functions_ver<20230326){
 	return die($en?'Please update functions.php to the latest version.':'functions.phpを最新版に更新してください。');
 }
 // jQueryバージョン
@@ -1622,6 +1622,7 @@ function confirmation_before_deletion ($edit_mode=''){
 	}
 	// nsfw
 	$nsfwc=(bool)filter_input(INPUT_COOKIE,'nsfwc',FILTER_VALIDATE_BOOLEAN);
+	$count_r_arr=count($r_arr);
 
 	if($edit_mode==='delmode'){
 		$templete='before_del.html';
@@ -1797,7 +1798,12 @@ function edit(){
 	foreach($r_arr as $i => $line){
 
 		list($_no,$_sub,$_name,$_verified,$_com,$_url,$_imgfile,$_w,$_h,$_thumbnail,$_painttime,$_log_md5,$_tool,$pchext,$_time,$_first_posted_time,$_host,$_userid,$_hash,$_oya)=explode("\t",trim($line));
+			
 		if($id===$_time && $no===$_no){
+
+			if(!$_name && !$_com && !$_imgfile && !$_userid && ($_oya==='oya')){//削除ずみのoyaの時
+				return error($en?'This operation has failed.':'失敗しました。');
+			}
 
 			if($admindel||(check_elapsed_days($_time)&&$pwd&&password_verify($pwd,$_hash))){
 				$flag=true;
@@ -1902,6 +1908,7 @@ function del(){
 	if($id_and_no){
 		list($id,$no)=explode(",",trim($id_and_no));
 	}
+	$delete_thread=(bool)filter_input(INPUT_POST,'delete_thread',FILTER_VALIDATE_BOOLEAN);
 	$fp=fopen(LOG_DIR."alllog.log","r+");
 	flock($fp, LOCK_EX);
 
@@ -1936,7 +1943,12 @@ function del(){
 					return error($en?'This operation has failed.':'失敗しました。');
 				}
 			}
-			if($oya==='oya'){//スレッド削除
+
+			$count_r_arr=count($r_arr);
+			list($d_no,$d_sub,$d_name,$s_verified,$d_com,$d_url,$d_imgfile,$d_w,$d_h,$d_thumbnail,$d_painttime,$d_log_md5,$d_tool,$d_pchext,$d_time,$d_first_posted_time,$d_host,$d_userid,$d_hash,$d_oya)=explode("\t",trim($r_arr[0]));
+			$res_oya_deleted=(!$d_name && !$d_com && !$d_imgfile && !$d_userid && ($d_oya==='oya'));
+
+			if(($oya==='oya')||(($count_r_arr===2) && $res_oya_deleted)){//スレッド削除?
 				$alllog_arr=[];
 				while ($_line = fgets($fp)) {
 					if(!trim($_line)){
@@ -1950,33 +1962,49 @@ function del(){
 					return error($en?'This operation has failed.':'失敗しました。');
 				}
 				$flag=false;
-				foreach($alllog_arr as $i =>$_val){//全体ログ
+				foreach($alllog_arr as $j =>$_val){//全体ログ
 					list($no_,$sub_,$name_,$verified_,$com_,$url_,$_imgfile_,$w_,$h_,$thumbnail_,$painttime_,$log_md5_,$tool_,$pchext_,$time_,$first_posted_time_,$host_,$userid_,$hash_,$oya_)=explode("\t",trim($_val));
-					if(($id===$time_ && $no===$no_) &&
-					($admindel || ($pwd && password_verify($pwd,$hash_)))){
+					$alllog_oya_deleted=($no===$no_&& !$name_ && !$com_ && !$_imgfile_ && !$userid_ && ($oya_==='oya'));
 
-						unset($alllog_arr[$i]);
+					if($alllog_oya_deleted||((($id===$time_) && $no===$no_) &&
+					( $admindel || ($pwd && password_verify($pwd,$hash_))))){
 						$flag=true;
 						break;
 					}
 				}
+
 				if(!$flag){
 					closeFile ($rp);
 					closeFile($fp);
 					return error($en?'This operation has failed.':'失敗しました。');
 				}
+				if($count_r_arr===1 || (($count_r_arr===2) && $res_oya_deleted) || $delete_thread){
 
-				foreach($r_arr as $r_line) {//レスファイル
-					list($_no,$_sub,$_name,$_verified,$_com,$_url,$_imgfile,$_w,$_h,$_thumbnail,$_painttime,$_log_md5,$_tool,$_pchext,$_time,$_first_posted_time,$_host,$_userid,$_hash,$_oya)=explode("\t",trim($r_line));
+					unset($alllog_arr[$j]);
+					foreach($r_arr as $r_line) {//スレッドの一連のファイルを削除
+						list($_no,$_sub,$_name,$_verified,$_com,$_url,$_imgfile,$_w,$_h,$_thumbnail,$_painttime,$_log_md5,$_tool,$_pchext,$_time,$_first_posted_time,$_host,$_userid,$_hash,$_oya)=explode("\t",trim($r_line));
+						
+						delete_files ($_imgfile, $_time);//一連のファイルを削除
+						
+					}
+					closeFile ($rp);
+					safe_unlink(LOG_DIR.$no.'.log');
 					
-					delete_files ($_imgfile, $_time);//一連のファイルを削除
-					
+				}else{
+					delete_files ($imgfile, $time);//該当記事の一連のファイルを削除
+					$deleted_sub = $en? 'No subject':'無題';
+					$newline="$no\t$deleted_sub\t\t\t\t\t\t\t\t\t\t\t\t\t$time_\t$first_posted_time_\t$host_\t\t$hash_\toya\n";
+					$alllog_arr[$j]=$newline;
+					$r_arr[$i]=$newline;
+					writeFile ($rp,implode("",$r_arr));
+					closeFile ($rp);
+
 				}
+
 				writeFile($fp,implode("",$alllog_arr));
-				closeFile ($rp);
-				safe_unlink(LOG_DIR.$no.'.log');
 		
 			}else{
+				
 				unset($r_arr[$i]);
 				delete_files ($imgfile, $time);//一連のファイルを削除
 				writeFile ($rp,implode("",$r_arr));
