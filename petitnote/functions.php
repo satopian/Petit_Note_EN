@@ -1,5 +1,5 @@
 <?php
-$functions_ver=20230326;
+$functions_ver=20230411;
 //編集モードログアウト
 function logout(){
 	$resno=(int)filter_input(INPUT_GET,'resno',FILTER_VALIDATE_INT);
@@ -327,12 +327,12 @@ function create_res($line,$options=[]){
 		'encoded_no' => urlencode('['.$no.']'),
 		'encoded_sub' => urlencode($sub),
 		'encoded_u' => urlencode($root_url.'?resno='.$no),//tweet
-		'encoded_t' => urlencode('['.$no.']'.$sub.' by '.$name.' - '.$boardname),
+		'encoded_t' => urlencode('['.$no.']'.$sub.($name ? ' by '.$name : '').' - '.$boardname),
 		'oya' => $oya,
 		'webpimg' => $webpimg ? 'webp/'.$time.'t.webp' :false,
 		'hide_thumbnail' => $hide_thumbnail, //サムネイルにぼかしをかける時
 		'link_thumbnail' => $link_thumbnail, //サムネイルにリンクがある時
-		'not_deleted' => !(!$name && !$com && !$imgfile && !$userid), //表示する記事がある親
+		'not_deleted' => !(!$name && !$com && !$url&& !$imgfile && !$userid), //表示する記事がある親
 	];
 
 	$res['com']= !$isset_catalog ? str_replace('"\n"',"\n",$res['com']) : str_replace('"\n"'," ",$res['com']);
