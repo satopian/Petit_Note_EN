@@ -1,5 +1,5 @@
 <?php
-$functions_ver=20230411;
+$functions_ver=20230421;
 //編集モードログアウト
 function logout(){
 	$resno=(int)filter_input(INPUT_GET,'resno',FILTER_VALIDATE_INT);
@@ -486,7 +486,15 @@ function png2jpg ($src) {
 }
 
 function error($str){
+
 	global $boardname,$skindir,$en,$aikotoba_required_to_view,$petit_lot;
+
+	$str=nl2br(h($str));
+	$asyncflag = (bool)filter_input(INPUT_POST,'asyncflag',FILTER_VALIDATE_BOOLEAN);
+	$http_x_requested_with= (bool)(isset($_SERVER['HTTP_X_REQUESTED_WITH']));
+	if($http_x_requested_with||$asyncflag){
+		return die("error\n{$str}");
+	}
 	$boardname = ($aikotoba_required_to_view && !aikotoba_valid()) ? '' : $boardname; 
 	$templete='error.html';
 	include __DIR__.'/'.$skindir.$templete;
@@ -512,7 +520,7 @@ function check_csrf_token(){
 	$token=(string)filter_input(INPUT_POST,'token');
 	$session_token=isset($_SESSION['token']) ? (string)$_SESSION['token'] : '';
 	if(!$session_token||$token!==$session_token){
-		return error($en?'CSRF token mismatch.':'CSRFトークンが一致しません。');
+		return error($en?"CSRF token mismatch.\nPlease reload.":"CSRFトークンが一致しません。\nリロードしてください。");
 	}
 }
 //session開始
@@ -647,7 +655,7 @@ function Reject_if_NGword_exists_in_the_post(){
 	}
 	// 使えないurlチェック
 	if (is_ngword($badurl, $chk_url)) {
-		return error($en?'There is an inappropriate url.':'不適切なurlがあります。');
+		return error($en?'There is an inappropriate URL.':'不適切なURLがあります。');
 	}
 
 	//指定文字列が2つあると拒絶
