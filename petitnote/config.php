@@ -229,6 +229,11 @@ $view_other_works = true;
 $latest_var = true;
 // $latest_var = false;
 
+// When drawing a continuation, require a password even for new posts
+// yes: true no: false// $password_require_to_continue = true;
+// $password_require_to_continue = true;
+$password_require_to_continue = false;
+
 /* display result */
 
 //Number of threads to display on one page

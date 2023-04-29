@@ -1,13 +1,20 @@
+//Petit Note 2022-2023 (c)satopian MIT LICENCE
+//https://paintbbs.sakura.ne.jp/
 function res_form_submit(event, formId = 'res_form') {//第二引数が未指定の時はformId = 'res_form'
-	if (formId !== "res_form" && formId !== "image_rep") {
-		console.error("Invalid form ID specified!");
-		return;
-	}
 	let error_message_Id;
 	if (formId === "res_form") {
 		error_message_Id = "error_message";//エラーメッセージを表示する箇所のidを指定
 	} else if (formId === "image_rep") {
 		error_message_Id = "error_message_imgrep";
+	} else if (formId === "paint_forme") {
+		error_message_Id = "error_message_paintform";
+	} else if (formId === "download_forme") {
+		error_message_Id = "error_message_download";
+	} else if (formId === "before_delete") {
+		error_message_Id = "error_message_beforedelete";
+	} else {
+		console.error("Invalid form ID specified!");
+		return;
 	}
 
 	const form = document.getElementById(formId);
@@ -34,15 +41,13 @@ function res_form_submit(event, formId = 'res_form') {//第二引数が未指定
 				}
 				submitBtn.disabled = false;
 				response.text().then((text) => {
-					console.log(text);
 					if (text.startsWith("error\n")) {
-						if (text.startsWith("error\n")) {
+							console.log(text);
 							const error_message = text.split("\n").slice(1).join("\n");
-							return document.getElementById(error_message_Id).innerHTML = '<div>' + error_message + '</div>';
-						  }
+							return document.getElementById(error_message_Id).innerText = error_message;
 					}
-					if (formId === "image_rep") {
-						//画像差し換え時はヘッダX-Requested-Withをチェックしてfetchでの投稿をPHP側で中断し、
+					if (formId !== "res_form") {
+						//ヘッダX-Requested-Withをチェックしてfetchでの投稿をPHP側で中断し、
 						//エラーメッセージが返ってこなければ
 						return form.submit(); // 通常のフォームの送信を実行
 					}
@@ -78,15 +83,16 @@ function res_form_submit(event, formId = 'res_form') {//第二引数が未指定
 					break;
 			}
 			submitBtn.disabled = false;
-			return document.getElementById(error_message_Id).innerHTML = '<div>' + response_status + ' ' + resp_error_msg + '</div>';
+			return document.getElementById(error_message_Id).innerText = response_status + ' ' + resp_error_msg;
 
 		})
 			.catch(error => {
 				submitBtn.disabled = false;
-				return document.getElementById(error_message_Id).innerHTML = '<div>There was a problem with the fetch operation:</div>';
+				return document.getElementById(error_message_Id).innerText = 'There was a problem with the fetch operation:';
 			});
 	}
 }
+// (c)satopian MIT LICENCE ここまで
 
 jQuery(function() {
 	window.onpageshow = function(){

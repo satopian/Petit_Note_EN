@@ -560,13 +560,13 @@ span.continue_menu {
 	filter: blur(15px);
 }
 /* エラーメッセージ */
-
-div#error_message , div#error_message_imgrep {
-    margin: 0;
+div#error_message , div#error_message_imgrep , div#error_message_paintform , div#error_message_download , div#error_message_beforedelete {
+	line-height: initial;
+	background-color: hsl(60 100% 88% / 1);
+	font-size: 20px;
+	padding: 1px 4px 1px;
+	margin: 5px 0 5px;
 }
-div#error_message div , div#error_message_imgrep div {
-    background-color: hsl(60 100% 88% / 1);
-    font-size: 20px;
-    padding: 1px 4px 1px;
-    margin: 2px 0 2px;
+div#error_message:empty , div#error_message_imgrep:empty , div#error_message_paintform:empty , div#error_message_download:empty , div#error_message_beforedelete:empty {
+	display: none;
 }
