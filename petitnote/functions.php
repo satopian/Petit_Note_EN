@@ -1,5 +1,5 @@
 <?php
-$functions_ver=20230428;
+$functions_ver=20230429;
 //編集モードログアウト
 function logout(){
 	$resno=(int)filter_input(INPUT_GET,'resno',FILTER_VALIDATE_INT);
@@ -46,7 +46,7 @@ function aikotoba(){
 	$_SESSION['aikotoba']='aikotoba';
 
 	return branch_destination_of_location();
-	
+
 }
 //記事の表示に合言葉を必須にする
 function aikotoba_required_to_view(){
@@ -180,7 +180,7 @@ function view_nsfw(){
 		setcookie("nsfwc",'on',time()+(60*60*24*30),"","",false,true);
 	}
 
-return branch_destination_of_location();
+	return branch_destination_of_location();
 }
 
 //ログイン・ログアウト時のLocationを分岐
@@ -762,8 +762,8 @@ return $msg;
 // 一括書き込み（上書き）
 function writeFile ($fp, $data) {
 	ftruncate($fp,0);
-	set_file_buffer($fp, 0);
 	rewind($fp);
+	stream_set_write_buffer($fp, 0);
 	fwrite($fp, $data);
 }
 //fpクローズ

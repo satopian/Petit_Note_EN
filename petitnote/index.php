@@ -1,8 +1,8 @@
 <?php
 //Petit Note (c)さとぴあ @satopian 2021-2022
 //1スレッド1ログファイル形式のスレッド式画像掲示板
-$petit_ver='v0.67.8';
-$petit_lot='lot.230429';
+$petit_ver='v0.68.2';
+$petit_lot='lot.230501';
 $lang = ($http_langs = isset($_SERVER['HTTP_ACCEPT_LANGUAGE']) ? $_SERVER['HTTP_ACCEPT_LANGUAGE'] : '')
   ? explode( ',', $http_langs )[0] : '';
 $en= (stripos($lang,'ja')!==0);
@@ -16,7 +16,7 @@ if(!is_file(__DIR__.'/functions.php')){
 	return die(__DIR__.'/functions.php'.($en ? ' does not exist.':'がありません。'));
 }
 require_once(__DIR__.'/functions.php');
-if(!isset($functions_ver)||$functions_ver<20230428){
+if(!isset($functions_ver)||$functions_ver<20230429){
 	return die($en?'Please update functions.php to the latest version.':'functions.phpを最新版に更新してください。');
 }
 // jQueryバージョン
@@ -1417,6 +1417,7 @@ function img_replace(){
 	$asyncflag = (bool)filter_input(INPUT_POST,'asyncflag',FILTER_VALIDATE_BOOLEAN);
 	$http_x_requested_with= (bool)(isset($_SERVER['HTTP_X_REQUESTED_WITH']));
 	if($http_x_requested_with || $asyncflag){//非同期通信ならエラーチェックだけすませて処理中断。通常フォームでやりなおし。
+		safe_unlink($upfile);
 		return;
 	}
 
@@ -1678,8 +1679,8 @@ function edit_form($id='',$no=''){
 	}
 
 	$id_and_no=(string)filter_input(INPUT_POST,'id_and_no');
-	$id=$no='';
-	if($id_and_no){
+
+	if($id_and_no){//引数の$id,$noを更新
 		list($id,$no)=explode(",",trim($id_and_no));
 	}
 
