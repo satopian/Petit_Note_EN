@@ -1,8 +1,8 @@
 <?php
 //Petit Note (c)さとぴあ @satopian 2021-2022
 //1スレッド1ログファイル形式のスレッド式画像掲示板
-$petit_ver='v0.68.2';
-$petit_lot='lot.230501';
+$petit_ver='v0.68.5';
+$petit_lot='lot.230502';
 $lang = ($http_langs = isset($_SERVER['HTTP_ACCEPT_LANGUAGE']) ? $_SERVER['HTTP_ACCEPT_LANGUAGE'] : '')
   ? explode( ',', $http_langs )[0] : '';
 $en= (stripos($lang,'ja')!==0);
@@ -2293,83 +2293,37 @@ function search(){
 	return include __DIR__.'/'.$skindir.$templete;
 }
 //カタログ表示
-function catalog($page=0,$q=''){
+function catalog($page=0){
 	global $use_aikotoba,$home,$catalog_pagedef,$skindir,$display_link_back_to_home;
 	global $boardname,$petit_ver,$petit_lot,$set_nsfw,$en; 
 
 	aikotoba_required_to_view();
-
 	$pagedef=$catalog_pagedef;
 
-	$q=(string)filter_input(INPUT_GET,'q');
-
 	$fp=fopen(LOG_DIR."alllog.log","r");
-	$alllog_arr=[];
+	$articles=[];
+	$count_alllog=0;
 	while ($_line = fgets($fp)) {
 		if(!trim($_line)){
 			continue;
 		}
-		$alllog_arr[]=$_line;	
+		if($page <= $count_alllog && $count_alllog < $page+$pagedef){
+			$articles[]=$_line;	
+		}
+		++$count_alllog;
 	}
 	fclose($fp);
-
-	$encoded_q='';
-	$result=[];
-	$j=0;
-	if($q){//名前検索の時
-		foreach($alllog_arr as $i => $alllog){
-			if(!trim($alllog)){
-				continue;
-			}
-			list($no,)=explode("\t",trim($alllog));
-
-			//個別スレッドのループ
-			if(!is_file(LOG_DIR."{$no}.log")){
-				continue;	
-			}
-			check_open_no($no);
-			$cp=fopen('log/'."{$no}.log","r");
-			while($r_line=fgets($cp)){
-				if(!trim($r_line)){
-					continue;
-				}
-				list($no,$sub,$name,$verified,$com,$url,$imgfile,$w,$h,$thumbnail,$painttime,$log_md5,$tool,$pchext,$time,$first_posted_time,$host,$userid,$hash,$oya)=explode("\t",trim($r_line));
-				if ($imgfile&&$name===$q){
-					$result[$time]=[$no,$sub,$name,$verified,$com,$url,$imgfile,$w,$h,$thumbnail,$painttime,$log_md5,$tool,$pchext,$time,$first_posted_time,$host,$userid,$hash,$oya];
-					++$j;
-					if($j>120){
-						break 2;
-					}
-				}
-			}
-			fclose($cp);	
-			if($i>300){
-				break;
-			}
-		}
-		krsort($result);
-		$alllog_arr=$result;
-		$encoded_q=urlencode($q);
-	}
-	$count_alllog=count($alllog_arr);
-
-	//ページ番号から1ページ分のスレッド分とりだす
-	$articles=array_slice($alllog_arr,(int)$page,$pagedef,false);
 	//oyaのループ
+	$_res=[];
+	$out=[];
 	foreach($articles as $oya => $line){
-		$out[$oya]=[];
-		if(!$q){//検索結果は分割ずみ
-			$line=explode("\t",trim($line));
-		}
-		list($_no)=$line;
-		if(!is_file(LOG_DIR."{$_no}.log")){
-		continue;
-		}	
-		$out[$oya][] = create_res($line,['catalog'=>true]);//$lineから、情報を取り出す
+
+		$line=explode("\t",trim($line));
+		$_res = create_res($line,['catalog'=>true]);//$lineから、情報を取り出す
+		$out[$oya][] = $_res;//$lineから、情報を取り出す
 		if(empty($out[$oya])){
 			unset($out[$oya]);
 		}
-
 	}
 
 	//管理者判定処理
@@ -2382,6 +2336,8 @@ function catalog($page=0,$q=''){
 	if(!$use_aikotoba){
 		$aikotoba=true;
 	}
+
+	$encoded_q='';//旧バージョンのテンプレート用
 
 	//Cookie
 	$nsfwc=(bool)filter_input(INPUT_COOKIE,'nsfwc',FILTER_VALIDATE_BOOLEAN);
@@ -2418,23 +2374,23 @@ function view($page=0){
 	$allow_coments_only=$allow_comments_only;//互換性
 
 	$fp=fopen(LOG_DIR."alllog.log","r");
-	$alllog_arr=[];
+	$article_nos=[];
+	$count_alllog=0;
 	while ($_line = fgets($fp)) {
 		if(!trim($_line)){
 			continue;
 		}
-		$alllog_arr[]=$_line;	
+		if($page <= $count_alllog && $count_alllog < $page+$pagedef){
+			list($_no)=explode("\t",trim($_line));
+			$article_nos[]=$_no;	
+		}
+		++$count_alllog;
 	}
 	fclose($fp);
-	$count_alllog=count($alllog_arr);
 
-
-	//ページ番号から1ページ分のスレッドをとりだす
-	$articles=array_slice($alllog_arr,(int)$page,$pagedef,false);
 	//oyaのループ
-	foreach($articles as $oya => $alllog){
+	foreach($article_nos as $oya => $no){
 
-		list($no)=explode("\t",trim($alllog));
 		//個別スレッドのループ
 		if(!is_file(LOG_DIR."{$no}.log")){
 			continue;	
