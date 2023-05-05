@@ -32,6 +32,12 @@ $root_url = "http://example.com/oekaki/";
 $name_input_required = true;
 // $name_input_required = false;
 
+// require thread subject
+// yes: true no: false
+
+// $subject_input_required = true;
+$subject_input_required = false;
+
 // Limit the number of characters in the body. (unit byte)
 $max_com=1000;
 
