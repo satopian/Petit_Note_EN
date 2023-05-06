@@ -334,7 +334,6 @@ $keep_aikotoba_login_status=false;
 // $display_search_nav = true;
 $display_search_nav = false;
 
-
 //Maximum searchable number
 //If this value is increased, the number of searchable items will increase, but the load on the server will increase.
 $max_search= 300;
