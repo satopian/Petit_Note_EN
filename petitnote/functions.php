@@ -1,5 +1,5 @@
 <?php
-$functions_ver=20230515;
+$functions_ver=20230516;
 //編集モードログアウト
 function logout(){
 	$resno=(int)filter_input(INPUT_GET,'resno',FILTER_VALIDATE_INT);
@@ -350,7 +350,7 @@ function create_res($line,$options=[]){
 	foreach($res as $key=>$val){
 		$res[$key]=h($val);
 	}
-	
+
 	return $res;
 }
 
@@ -379,6 +379,22 @@ function create_chk_lins($chk_log_arr,$resno){
 		}
 	}
 	return $chk_lines;
+}
+
+//ログファイルを1行ずつ読み込んで配列に入れる
+function create_array_from_fp($fp){
+	global $en;
+	if(!$fp){
+		return error($en?'This operation has failed.':'失敗しました。');
+	}
+	$arr=[];
+	while ($lines = fgets($fp)) {
+		if(!trim($lines)){
+			continue;
+		}
+		$arr[]=$lines;
+	}
+	return $arr;
 }
 
 //ページング
@@ -841,15 +857,15 @@ function image_reduction_display($w,$h,$max_w,$max_h){
 		return ['',''];
 	}
 
-    if ($w > $max_w || $h > $max_h) {
-        $w_ratio = $max_w / $w;
-        $h_ratio = $max_h / $h;
-        $ratio = min($w_ratio, $h_ratio);
-        $w = ceil($w * $ratio);
-        $h = ceil($h * $ratio);
-    }
-    $reduced_size = [$w,$h];
-    return $reduced_size;
+	if ($w > $max_w || $h > $max_h) {
+		$w_ratio = $max_w / $w;
+		$h_ratio = $max_h / $h;
+		$ratio = min($w_ratio, $h_ratio);
+		$w = ceil($w * $ratio);
+		$h = ceil($h * $ratio);
+	}
+	$reduced_size = [$w,$h];
+	return $reduced_size;
 }
 /**
  * 描画時間を計算

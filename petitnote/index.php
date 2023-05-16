@@ -1,8 +1,8 @@
 <?php
 //Petit Note (c)さとぴあ @satopian 2021-2022
 //1スレッド1ログファイル形式のスレッド式画像掲示板
-$petit_ver='v0.72.2';
-$petit_lot='lot.230515';
+$petit_ver='v0.72.7';
+$petit_lot='lot.230516';
 $lang = ($http_langs = isset($_SERVER['HTTP_ACCEPT_LANGUAGE']) ? $_SERVER['HTTP_ACCEPT_LANGUAGE'] : '')
   ? explode( ',', $http_langs )[0] : '';
 $en= (stripos($lang,'ja')!==0);
@@ -16,7 +16,7 @@ if(!is_file(__DIR__.'/functions.php')){
 	return die(__DIR__.'/functions.php'.($en ? ' does not exist.':'がありません。'));
 }
 require_once(__DIR__.'/functions.php');
-if(!isset($functions_ver)||$functions_ver<20230515){
+if(!isset($functions_ver)||$functions_ver<20230516){
 	return die($en?'Please update functions.php to the latest version.':'functions.phpを最新版に更新してください。');
 }
 // jQueryバージョン
@@ -267,12 +267,7 @@ function post(){
 		check_open_no($resto);
 		$rp=fopen(LOG_DIR."{$resto}.log","r+");
 		flock($rp, LOCK_EX);
-		while ($line = fgets($rp)) {
-			if(!trim($line)){
-				continue;
-			}
-			$r_arr[]=$line;
-		}
+		$r_arr = create_array_from_fp($rp);
 		if(empty($r_arr)){
 			closeFile($rp);
 			closeFile($fp);
@@ -392,13 +387,8 @@ function post(){
 		return error($en?'This operation has failed.':'失敗しました。');
 	}
 	flock($fp, LOCK_EX);
-	$alllog_arr=[];
-	while ($_line = fgets($fp)) {
-		if(!trim($_line)){
-			continue;
-		}
-		$alllog_arr[]=$_line;
-	}
+
+	$alllog_arr = create_array_from_fp($fp);
 
 	//チェックするスレッド数。画像ありなら15、コメントのみなら5 
 	$n= $is_file_upfile ? 15 : 5;
@@ -434,7 +424,7 @@ function post(){
 	foreach($chk_com as $line){
 		list($_no_,$_sub_,$_name_,$_verified_,$_com_,$_url_,$_imgfile_,$_w_,$_h_,$_thumbnail_,$_painttime_,$_log_md5_,$_tool_,$_pchext_,$_time_,$_first_posted_time_,$_host_,$_userid_,$_hash_,$_oya_)=$line;
 
-		if(!$adminpost && $com && ($com === $_com_)){
+		if(!$adminpost && ($com && ($com === $_com_))){
 			closeFile($fp);
 			closeFile($rp);
 			safe_unlink($upfile);
@@ -498,7 +488,7 @@ function post(){
 
 			foreach($chk_images as $line){
 				list($no_,$sub_,$name_,$verified_,$com_,$url_,$imgfile_,$w_,$h_,$thumbnail_,$painttime_,$log_md5,$tool_,$pchext_,$time_,$first_posted_time_,$host_,$userid_,$hash_,$oya_)=$line;
-				if($log_md5 && ($log_md5 === $img_md5)){
+				if(!adminpost_valid() && ($log_md5 && ($log_md5 === $img_md5))){
 					closeFile($fp);
 					closeFile($rp);
 					safe_unlink($upfile);
@@ -945,12 +935,14 @@ function paintcom(){
 			list($tmpfile,$resto,$pchext)=$tmp;
 			$tmpfile=basename($tmpfile);
 			list($w,$h)=getimagesize(TEMP_DIR.$tmpfile);
-			$tmp_img['w']=$w;
-			$tmp_img['h']=$h;
-			$tmp_img['src'] = TEMP_DIR.$tmpfile;
-			$tmp_img['srcname'] = $tmpfile;
-			$tmp_img['slect_src_val'] = $tmpfile.','.$resto.','.$pchext;
-			$tmp_img['date'] = date("Y/m/d H:i", filemtime($tmp_img['src']));
+			$tmp_img=[
+				'w'=>$w,
+				'h'=>$h,
+				'src' => TEMP_DIR.$tmpfile,
+				'srcname' => $tmpfile,
+				'slect_src_val' => $tmpfile.','.$resto.','.$pchext,
+				'date' => date("Y/m/d H:i", filemtime(TEMP_DIR.$tmpfile)),
+			];
 			$out['tmp'][] = $tmp_img;
 		}
 	}
@@ -1203,13 +1195,9 @@ function img_replace(){
 
 	$fp=fopen(LOG_DIR."alllog.log","r+");
 	flock($fp, LOCK_EX);
-	$alllog_arr=[];
-	while ($_line = fgets($fp)) {
-		if(!trim($_line)){
-			continue;
-		}
-		$alllog_arr[]=$_line;	
-	}
+
+	$alllog_arr = create_array_from_fp($fp);
+
 	if(empty($alllog_arr)){
 		closeFile($fp);
 		if($is_upload){//該当記事が無い時はエラー
@@ -1220,13 +1208,9 @@ function img_replace(){
 	check_open_no($no);
 	$rp=fopen(LOG_DIR."{$no}.log","r+");
 	flock($rp, LOCK_EX);
-	$r_arr=[];
-	while ($line = fgets($rp)) {
-		if(!trim($line)){
-			continue;
-		}
-		$r_arr[]=$line;
-	}
+
+	$r_arr = create_array_from_fp($rp);
+
 	if(empty($r_arr)){
 		closeFile($rp);
 		closeFile($fp);
@@ -1250,7 +1234,7 @@ function img_replace(){
 
 			if(($is_upload && $admindel) || ($pwd && password_verify($pwd,$_hash))){
 				$flag=true;
-			break;
+				break;
 			}
 		}
 	}
@@ -1346,7 +1330,7 @@ function img_replace(){
 		if(!$is_upload && ((string)$time === (string)$chk_time)){
 			$time=(string)(substr($time,0,-6)+1).(string)substr($time,-6);
 		}
-		if($is_upload && $chk_log_md5 && ($chk_log_md5 === $img_md5)){
+		if(!$admindel && $is_upload && ($chk_log_md5 && ($chk_log_md5 === $img_md5))){
 			safe_unlink($upfile);
 			closeFile($fp);
 			closeFile($rp);
@@ -1425,7 +1409,7 @@ function img_replace(){
 		if(($id===$time_ && $no===$no_) &&
 		(($admindel && $is_upload ||
 		($pwd && password_verify($pwd,$hash_))))){
-		$alllog_arr[$i] = $newline;
+			$alllog_arr[$i] = $newline;
 			$flag=true;
 		}
 		if(!$flag){
@@ -1542,13 +1526,9 @@ function confirmation_before_deletion ($edit_mode=''){
 	check_open_no($no);
 	$rp=fopen(LOG_DIR."{$no}.log","r");
 	flock($rp, LOCK_EX);
-	$r_arr=[];
-	while ($r_line = fgets($rp)) {
-		if(!trim($r_line)){
-			continue;
-		}
-		$r_arr[]=$r_line;
-	}
+
+	$r_arr = create_array_from_fp($rp);
+
 	if(empty($r_arr)){
 		closeFile($rp);
 		return error($en?'This operation has failed.':'失敗しました。');
@@ -1625,13 +1605,9 @@ function edit_form($id='',$no=''){
 	}
 	$rp=fopen(LOG_DIR."{$no}.log","r");
 	flock($rp, LOCK_EX);
-	$r_arr=[];
-	while ($r_line = fgets($rp)) {
-		if(!trim($r_line)){
-			continue;
-		}
-		$r_arr[]=$r_line;
-	}
+
+	$r_arr = create_array_from_fp($rp);
+
 	if(empty($r_arr)){
 		closeFile($rp);
 		return error($en?'This operation has failed.':'失敗しました。');
@@ -1735,16 +1711,12 @@ function edit(){
 	$fp=fopen(LOG_DIR."alllog.log","r+");
 	flock($fp, LOCK_EX);
 
-	$r_arr=[];
 	check_open_no($no);
 	$rp=fopen(LOG_DIR."{$no}.log","r+");
 	flock($rp, LOCK_EX);
-	while ($line = fgets($rp)) {
-		if(!trim($line)){
-			continue;
-		}
-		$r_arr[]=$line;
-	}
+
+	$r_arr = create_array_from_fp($rp);
+
 	if(empty($r_arr)){
 		closeFile($rp);
 		closeFile($fp);
@@ -1779,13 +1751,7 @@ function edit(){
 		return error($en?'Please write something.':'何か書いて下さい。');
 	}
 
-	$alllog_arr=[];
-	while ($_line = fgets($fp)) {
-		if(!trim($_line)){
-			continue;
-		}
-		$alllog_arr[]=$_line;	
-	}
+	$alllog_arr = create_array_from_fp($fp);
 
 	$n= 5;
 	$chk_log_arr=array_slice($alllog_arr,0,$n,false);
@@ -1896,13 +1862,9 @@ function del(){
 	check_open_no($no);
 	$rp=fopen(LOG_DIR."{$no}.log","r+");
 	flock($rp, LOCK_EX);
-	$r_arr=[];
-	while ($r_line = fgets($rp)) {
-		if(!trim($r_line)){
-			continue;
-		}
-		$r_arr[]=$r_line;
-	}
+
+	$r_arr = create_array_from_fp($rp);
+
 	if(empty($r_arr)){
 		closeFile ($rp);
 		closeFile($fp);
@@ -1933,13 +1895,9 @@ function del(){
 	$res_oya_deleted=(!$d_name && !$d_com && !$d_url && !$d_imgfile && !$d_userid && ($d_oya==='oya'));
 
 	if(($oya==='oya')||(($count_r_arr===2) && $res_oya_deleted)){//スレッド削除?
-		$alllog_arr=[];
-		while ($_line = fgets($fp)) {
-			if(!trim($_line)){
-				continue;
-			}
-			$alllog_arr[]=$_line;	
-		}
+
+		$alllog_arr = create_array_from_fp($fp);
+
 		if(empty($alllog_arr)){
 			closeFile ($rp);
 			closeFile($fp);
@@ -2192,7 +2150,7 @@ function search(){
 
 	//ページング
 	list($start_page,$end_page)=calc_pagination_range($page,$pagedef);
-	
+
 	//prev next 
 	$next=(($page+$pagedef)<$countarr) ? $page+$pagedef : false;//ページ番号がmaxを超える時はnextのリンクを出さない
 	$prev=((int)$page<=0) ? false : ($page-$pagedef) ;//ページ番号が0の時はprevのリンクを出さない
