@@ -1,5 +1,5 @@
 <?php
-$functions_ver=20230519;
+$functions_ver=20230530;
 //編集モードログアウト
 function logout(){
 	$resno=(int)filter_input(INPUT_GET,'resno',FILTER_VALIDATE_INT);
@@ -294,7 +294,7 @@ function create_res($line,$options=[]){
 
 	$thumbnail = ($thumbnail==='thumbnail'||$thumbnail==='hide_thumbnail') ? $time.'s.jpg' : false; 
 	$link_thumbnail= ($thumbnail || $hide_thumbnail);  
-	$painttime = (!$isset_catalog && is_numeric($painttime)) ? calcPtime($painttime) : false;  
+	$painttime = (!$isset_catalog && is_numeric($painttime)) ? calcPtime($painttime) : [];  
 	$_time=(strlen($time)>15) ? substr($time,0,-6) : substr($time,0,-3);
 	$first_posted_time=(strlen($first_posted_time)>15) ? substr($first_posted_time,0,-6) : substr($first_posted_time,0,-3);
 	$datetime = $do_not_change_posts_time ? $first_posted_time : $_time;
@@ -316,7 +316,8 @@ function create_res($line,$options=[]){
 		'url' => $url ? filter_var($url,FILTER_VALIDATE_URL) : '',
 		'img' => $imgfile,
 		'thumbnail' => $thumbnail,
-		'painttime' => $painttime,
+		'painttime' => $painttime ? $painttime['ja'] : '',
+		'painttime_en' => $painttime ? $painttime['en'] : '',
 		'w' => ($w && is_numeric($w)) ? $w :'',
 		'h' => ($h && is_numeric($h)) ? $h :'',
 		'_w' => ($w && is_numeric($w)) ? $_w :'',
@@ -329,7 +330,7 @@ function create_res($line,$options=[]){
 		'time' => $time,
 		'date' => $date,
 		'datetime' => $datetime,
-		'host' => $host,
+		'host' => admindel_valid() ? $host : '',
 		'userid' => $userid,
 		'check_elapsed_days' => $check_elapsed_days,
 		'encoded_boardname' => $isset_catalog ? urlencode($boardname) : '',
@@ -379,6 +380,23 @@ function create_chk_lins($chk_log_arr,$resno){
 		}
 	}
 	return $chk_lines;
+}
+
+//ファイル名が重複しない投稿時刻を作成
+function create_post_time(){
+	$time = (string)(time().substr(microtime(),2,6));	//投稿時刻
+	//画像重複チェック
+	$testexts=['.gif','.jpg','.png','.webp'];
+	foreach($testexts as $testext){
+		if(is_file(IMG_DIR.$time.$testext)){
+			$time=(string)(substr($time,0,-6)+1).(string)substr($time,-6);
+		break;	
+		}
+	}
+	//一時ファイル重複チェック
+	$time= is_file(TEMP_DIR.$time.'.tmp') ?	(string)(substr($time,0,-6)+1).(string)substr($time,-6) : $time;
+	$time=basename($time);
+	return $time;
 }
 
 //ログファイルを1行ずつ読み込んで配列に入れる
@@ -517,6 +535,11 @@ function delete_files ($imgfile, $time) {
 	safe_unlink(IMG_DIR.$time.'.spch');
 	safe_unlink(IMG_DIR.$time.'.chi');
 	safe_unlink(IMG_DIR.$time.'.psd');
+	safe_unlink(__DIR__.'/template/cache/index_cache.json');
+}
+
+function delete_res_cache () {
+	safe_unlink(__DIR__.'/template/cache/index_cache.json');
 }
 
 //png2jpg
@@ -800,6 +823,7 @@ function init(){
 	check_dir(__DIR__."/thumbnail");
 	check_dir(__DIR__."/log");
 	check_dir(__DIR__."/webp");
+	check_dir(__DIR__."/template/cache");
 	if(!is_file(LOG_DIR.'alllog.log')){
 	file_put_contents(LOG_DIR.'alllog.log','',FILE_APPEND|LOCK_EX);
 	chmod(LOG_DIR.'alllog.log',0600);	
@@ -873,26 +897,26 @@ function image_reduction_display($w,$h,$max_w,$max_h){
  * @return string
  */
 function calcPtime ($psec) {
-	global $en;
 
 	$D = floor($psec / 86400);
 	$H = floor($psec % 86400 / 3600);
 	$M = floor($psec % 3600 / 60);
 	$S = $psec % 60;
 
-	if($en){
-		return
-			($D ? $D.'day '  : '')
-			. ($H ? $H.'hr ' : '')
-			. ($M ? $M.'min ' : '')
-			. ($S ? $S.'sec' : '');
-	}
-		return
+	$result=[
+		'ja'=>
 			($D ? $D.'日'  : '')
 			. ($H ? $H.'時間' : '')
 			. ($M ? $M.'分' : '')
-			. ($S ? $S.'秒' : '');
-}
+			. ($S ? $S.'秒' : ''),
+		'en'=>
+			($D ? $D.'day '  : '')
+			. ($H ? $H.'hr ' : '')
+			. ($M ? $M.'min ' : '')
+			. ($S ? $S.'sec' : '')
+		];
+	return $result;
+	}
 /**
  * 残り時間を計算
  * @param $starttime
