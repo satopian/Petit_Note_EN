@@ -19,6 +19,6 @@ Operation has been confirmed with PHP5.6, PHP7.2, PHP8.1, PHP8.2.
 I recommend using PHP7.4 to PHP8.2.  
 
 ## support
-If you have any questions, you can open an [issues](https://github.com/satopian/Petit_Note_EN/issues) and ask a question.
+If you have any questions, you can open an [issue](https://github.com/satopian/Petit_Note_EN/issues) and ask a question.
 
 
