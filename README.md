@@ -1,4 +1,4 @@
-# Petit_Note_EN
+# Petit Note EN
 
 Petit Note English ver.
 PHP script for PaintBBS,ChickenPaint, and Klecks.
