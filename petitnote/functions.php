@@ -1,5 +1,5 @@
 <?php
-$functions_ver=20230530;
+$functions_ver=20230609;
 //編集モードログアウト
 function logout(){
 	$resno=(int)filter_input(INPUT_GET,'resno',FILTER_VALIDATE_INT);
@@ -185,6 +185,19 @@ function view_nsfw(){
 	$view=(bool)filter_input(INPUT_POST,'view_nsfw',FILTER_VALIDATE_BOOLEAN);
 	if($view){
 		setcookie("nsfwc",'on',time()+(60*60*24*30),"","",false,true);
+	}
+
+	return branch_destination_of_location();
+}
+
+//閲覧注意画像を隠す隠さない
+function set_nsfw_show_hide(){
+
+	$view=(bool)filter_input(INPUT_POST,'set_nsfw_show_hide');
+	if($view){
+		setcookie("p_n_set_nsfw_show_hide",true,time()+(60*60*24*180),"","",false,true);
+	}else{
+		setcookie("p_n_set_nsfw_show_hide",false,time()+(60*60*24*180),"","",false,true);
 	}
 
 	return branch_destination_of_location();
@@ -1115,7 +1128,7 @@ function check_password_input_error_count(){
 	if(count($arr_err)>=5){
 		error($en?'Rejected.':'拒絶されました。');
 	}
-if(!$admin_pass || !$second_pass || $admin_pass === $second_pass || $admin_pass!==(string)filter_input(INPUT_POST,'adminpass')){
+	if(!$admin_pass || !$second_pass || $admin_pass === $second_pass || $admin_pass!==(string)filter_input(INPUT_POST,'adminpass')){
 		$errlog=$userip."\n";
 		file_put_contents(__DIR__.'/template/errorlog/error.log',$errlog,FILE_APPEND);
 		chmod(__DIR__.'/template/errorlog/error.log',0600);
@@ -1123,3 +1136,34 @@ if(!$admin_pass || !$second_pass || $admin_pass === $second_pass || $admin_pass!
 			safe_unlink(__DIR__.'/template/errorlog/error.log');
 		}
 }
+
+// 優先言語のリストをチェックして対応する言語があればその翻訳されたレイヤー名を返す
+function getTranslatedLayerName() {
+	$acceptedLanguages = isset($_SERVER['HTTP_ACCEPT_LANGUAGE']) ? $_SERVER['HTTP_ACCEPT_LANGUAGE'] : '';
+	$languageList = explode(',', $acceptedLanguages);
+
+	foreach ($languageList as $language) {
+		$language = strtolower(trim($language));
+		if (strpos($language, 'ja') === 0) {
+			return "レイヤー";
+		}
+		if (strpos($language, 'en') === 0) {
+			return "Layer";
+		}
+		if (strpos($language, 'zh-tw') === 0) {
+			return "圖層";
+		}
+		if (strpos($language, 'zh-cn') === 0) {
+			return "图层";
+		}
+		if (strpos($language, 'fr') === 0) {
+			return "Calque";
+		}
+		if (strpos($language, 'de') === 0) {
+			return "Ebene";
+		}
+	}
+
+	return "Layer";
+}
+
