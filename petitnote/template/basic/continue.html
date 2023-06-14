@@ -12,10 +12,9 @@
 	<?php if($set_nsfw && !$nsfwc):?>
 	<!-- センシティブコンテンツにブラーをかける -->
 <style>img {filter:blur(15px);}</style>
-<?php if($admindel||$set_nsfw_show_hide):?>
-<style>img{filter: none;}</style>
 <?php endif;?>
-
+<?php if($admindel||$set_nsfw_show_hide):?>
+<style>.hide_thumbnail img{filter: none;}</style>
 <?php endif;?>
 	<title><?=h($boardname)?></title> 
 <style>
@@ -24,7 +23,6 @@
     display: none;
 }
 </style>
-	
 </head>
 <div class="container">
 	<h1 class="title"><a href="./"><?=h($boardname)?></a></h1>
