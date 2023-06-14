@@ -12,6 +12,10 @@
 	<?php if($set_nsfw && !$nsfwc):?>
 	<!-- センシティブコンテンツにブラーをかける -->
 <style>img {filter:blur(15px);}</style>
+<?php if($admindel||$set_nsfw_show_hide):?>
+<style>img{filter: none;}</style>
+<?php endif;?>
+
 <?php endif;?>
 	<title><?=h($boardname)?></title> 
 <style>
