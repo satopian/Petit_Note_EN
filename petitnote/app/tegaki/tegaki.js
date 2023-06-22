@@ -27,7 +27,7 @@ var isJa = browserLanguage.startsWith('ja');
   // Layers
   layer:isJa ? 'レイヤー':'Layer',
   addLayer:isJa ? 'レイヤー追加':'Add layer',
-  delLayers:isJa ? '':'Delete layers',
+  delLayers:isJa ? 'レイヤー削除':'Delete layers',
   mergeLayers:isJa ?  'レイヤー結合':'Merge layers',
   moveLayerUp:isJa ?  '上へ':'Move up',
   moveLayerDown:isJa ?  '下へ':'Move down',
@@ -41,7 +41,7 @@ var isJa = browserLanguage.startsWith('ja');
   export:isJa ? 'エクスポート':'Export',
   undo:isJa ? '取り消し':'Undo',
   redo: isJa ? 'やり直し':'Redo',
-  close: 'Close',
+  close: isJa ? '閉じる':'Close',
   finish:isJa ? '投稿': 'Finish',
   
   // Tool modes
@@ -60,15 +60,15 @@ var isJa = browserLanguage.startsWith('ja');
   tone:isJa ? 'トーン': 'Tone',
   
   // Replay
-  gapless: 'Gapless',
-  play: 'Play',
-  pause: 'Pause',
-  rewind: 'Rewind',
-  slower: 'Slower',
-  faster: 'Faster',
-  recordingEnabled: 'Recording replay',
-  errorLoadReplay: 'Could not load the replay: ',
-  loadingReplay: 'Loading replay…',
+  gapless:isJa ? 'ギャップレス':'Gapless',
+  play:isJa ? '再生':'Play',
+  pause:isJa ? '一時停止':'Pause',
+  rewind:isJa ? '巻き戻し':'Rewind',
+  slower:isJa ? '低速':'Slower',
+  faster:isJa ? '高速':'Faster',
+  recordingEnabled:isJa ? '録画中':'Recording replay',
+  errorLoadReplay:isJa ? '再生できません。':'Could not load the replay: ',
+  loadingReplay:'Loading replay…',
 };
 class TegakiTool {
   constructor() {
@@ -3942,10 +3942,13 @@ var Tegaki = {
 	  TegakiUI.printMsg(TegakiStrings.errorLoadImage);
 	},
 	
-	resizeCanvas: function(width, height) {
-	return;//リサイズ機能を無効化
-	},
-	
+ resizeCanvas: function(width, height) {
+    
+    Tegaki.resetLayers();
+    Tegaki.centerLayersCnt();
+    Tegaki.updatePosOffset();
+  },
+ 	
 	copyContextState: function(src, dest) {
 	  var i, p, props = [
 		'lineCap', 'lineJoin', 'strokeStyle', 'fillStyle', 'globalAlpha',
@@ -5066,7 +5069,8 @@ class TegakiReplayViewer {
 	  
 	  this.destroyed = false;
 	  
-	  this.speedIndex = 1;
+	//   this.speedIndex = 1;
+	  this.speedIndex = 4;//デフォルトの再生速度を10.0に
 	  this.speedList = [0.5, 1.0, 2.0, 5.0, 10.0, 25.0];
 	  this.speed = this.speedList[this.speedIndex];
 	  
@@ -5659,7 +5663,11 @@ var TegakiUI = {
 	  btn.id = 'tegaki-finish-btn';
 	  btn.className = 'tegaki-mb-btn';
 	  btn.textContent = TegakiStrings.close;
-	  $T.on(btn, 'click', Tegaki.onCloseViewerClick);
+	  //   ビューワーの閉じるの本来の動作を無効化して、タブを閉じるに変更する。
+	  $T.on(btn, 'click', function() {
+		window.close();
+	  });
+	//   $T.on(btn, 'click', Tegaki.onCloseViewerClick);
 	  frag.appendChild(btn);
 	  
 	  return frag;

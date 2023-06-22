@@ -114,6 +114,12 @@ $display_link_back_to_home = true;
 $use_paintbbs_neo= true;
 // $use_paintbbs_neo= false;
 
+// Use Tegaki
+// yes: true no: false
+
+$use_tegaki= true;
+// $use_tegaki= false;
+
 // Use ChickenPaint
 // yes: true no: false
 $use_chickenpaint= true;
