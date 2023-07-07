@@ -1,8 +1,8 @@
 <?php
-//Petit Note (c)さとぴあ @satopian 2021-2022
+//Petit Note (c)さとぴあ @satopian 2021-2023
 //1スレッド1ログファイル形式のスレッド式画像掲示板
-$petit_ver='v0.78.7';
-$petit_lot='lot.20230623';
+$petit_ver='v0.80.6';
+$petit_lot='lot.20230708';
 $lang = ($http_langs = isset($_SERVER['HTTP_ACCEPT_LANGUAGE']) ? $_SERVER['HTTP_ACCEPT_LANGUAGE'] : '')
   ? explode( ',', $http_langs )[0] : '';
 $en= (stripos($lang,'ja')!==0);
@@ -16,7 +16,7 @@ if(!is_file(__DIR__.'/functions.php')){
 	return die(__DIR__.'/functions.php'.($en ? ' does not exist.':'がありません。'));
 }
 require_once(__DIR__.'/functions.php');
-if(!isset($functions_ver)||$functions_ver<20230621){
+if(!isset($functions_ver)||$functions_ver<20230706){
 	return die($en?'Please update functions.php to the latest version.':'functions.phpを最新版に更新してください。');
 }
 // jQueryバージョン
@@ -71,6 +71,7 @@ $display_link_back_to_home = isset($display_link_back_to_home) ? $display_link_b
 $password_require_to_continue = isset($password_require_to_continue) ? (bool)$password_require_to_continue : false;
 $subject_input_required = isset($subject_input_required) ? $subject_input_required : false;
 $display_search_nav = isset($display_search_nav) ? $display_search_nav : false;
+$switch_sns = isset($switch_sns) ? $switch_sns : true;
 $mode = (string)filter_input(INPUT_POST,'mode');
 $mode = $mode ? $mode :(string)filter_input(INPUT_GET,'mode');
 $resno=(int)filter_input(INPUT_GET,'resno',FILTER_VALIDATE_INT);
@@ -138,6 +139,10 @@ switch($mode){
 		return logout_admin();
 	case 'logout':
 		return logout();
+	case 'set_share_server':
+		return set_share_server();
+	case 'post_share_server':
+		return post_share_server();
 	case 'search':
 		return search();
 	case 'catalog':
@@ -674,8 +679,6 @@ function post(){
 
 		noticemail::send($data);
 	}
-
-	unset($admin_pass);
 
 	//多重送信防止
 	if($resto){
@@ -1665,7 +1668,7 @@ function edit_form($id='',$no=''){
 
 //編集
 function edit(){
-	global $name_input_required,$max_com,$en,$mark_sensitive_image;
+	global $name_input_required,$max_com,$en,$mark_sensitive_image,$admin_pass;
 
 	check_csrf_token();
 
@@ -1687,7 +1690,8 @@ function edit(){
 	$pwdc=(string)filter_input(INPUT_COOKIE,'pwdc');
 	$pwd = $pwd ? $pwd : $pwdc;
 	session_sta();
-	$admindel=admindel_valid();
+	$admindel=(admindel_valid()||($pwd && $pwd === $admin_pass));
+	
 	$userdel=isset($_SESSION['userdel'])&&($_SESSION['userdel']==='userdel_mode');
 	if(!($admindel||($userdel&&$pwd))){
 		return error($en?"This operation has failed.\nPlease reload.":"失敗しました。\nリロードしてください。");
@@ -1695,13 +1699,6 @@ function edit(){
 
 	//NGワードがあれば拒絶
 	Reject_if_NGword_exists_in_the_post();
-
-	//POSTされた値をログファイルに格納する書式にフォーマット
-	$formatted_post=create_formatted_text_from_post($name,$sub,$url,$com);
-	$name = $formatted_post['name'];
-	$sub = $formatted_post['sub'];
-	$url = $formatted_post['url'];
-	$com = $formatted_post['com'];
 
 	//ログ読み込み
 	if(!is_file(LOG_DIR."{$no}.log")){
@@ -1744,6 +1741,16 @@ function edit(){
 		closeFile($fp);
 		return error($en?'This operation has failed.':'失敗しました。');
 	}
+
+	$sub=($_oya==='res') ? $_sub : $sub; 
+
+	//POSTされた値をログファイルに格納する書式にフォーマット
+	$formatted_post=create_formatted_text_from_post($name,$sub,$url,$com);
+	$name = $formatted_post['name'];
+	$sub = $formatted_post['sub'];
+	$url = $formatted_post['url'];
+	$com = $formatted_post['com'];
+
 	if(!$_imgfile && !$com){
 		closeFile($rp);
 		closeFile($fp);
@@ -1760,7 +1767,7 @@ function edit(){
 	foreach($chk_lines as $line){
 		list($_no_,$_sub_,$_name_,$_verified_,$_com_,$_url_,$_imgfile_,$_w_,$_h_,$_thumbnail_,$_painttime_,$_log_md5_,$_tool_,$_pchext_,$_time_,$_first_posted_time_,$_host_,$_userid_,$_hash_,$_oya_)=explode("\t",trim($line));
 
-		if(!$admindel && ($host===$_host_) && ($id!==$_time_) && ($com && ($com === $_com_))){
+		if(!$admindel && ($host===$_host_) && ($id!==$_time_) && ($com && ($com!==$_com) && ($com === $_com_))){
 			closeFile($fp);
 			closeFile($rp);
 			return error($en?'Post once by this comment.':'同じコメントがありました。');
@@ -1777,9 +1784,6 @@ function edit(){
 	if(in_array($pchext,['.tgkr','hide_tgkr'])){
 		$pchext= $hide_animation ? 'hide_tgkr' : '.tgkr'; 
 	}
-
-	$sub=($_oya==='res') ? $_sub : $sub; 
-	$sub=(!$sub) ? ($en? 'No subject':'無題') : $sub;
 
 	$r_line= "$_no\t$sub\t$name\t$_verified\t$com\t$url\t$_imgfile\t$_w\t$_h\t$thumbnail\t$_painttime\t$_log_md5\t$_tool\t$pchext\t$_time\t$_first_posted_time\t$host\t$userid\t$_hash\t$_oya\n";
 	
@@ -1975,10 +1979,43 @@ function del(){
 	return header('Location: ./?page='.(int)filter_input(INPUT_POST,'postpage',FILTER_VALIDATE_INT));
 }
 
+//シェアするserverの選択画面
+function set_share_server(){
+	global $en,$skindir,$servers,$petit_lot;
+	
+	//ShareするServerの一覧
+	//｢"ラジオボタンに表示するServer名","snsのserverのurl"｣
+	$servers=isset($servers)?$servers:
+	[
+	
+		["Twitter","https://twitter.com"],
+		["mstdn.jp","https://mstdn.jp"],
+		["pawoo.net","https://pawoo.net"],
+		["fedibird.com","https://fedibird.com"],
+		["misskey.io","https://misskey.io"],
+		["misskey.design","https://misskey.design"],
+		["nijimiss.moe","https://nijimiss.moe"],
+		["sushi.ski","https://sushi.ski"],
+	
+	];
+	//設定項目ここまで
+
+	$servers[]=[($en?"Direct input":"直接入力"),"direct"];//直接入力の箇所はそのまま。
+
+	$encoded_t=filter_input(INPUT_GET,"encoded_t");
+	$encoded_u=filter_input(INPUT_GET,"encoded_u");
+	$sns_server_radio_cookie=(string)filter_input(INPUT_COOKIE,"sns_server_radio_cookie");
+	$sns_server_direct_input_cookie=(string)filter_input(INPUT_COOKIE,"sns_server_direct_input_cookie");
+	
+	//HTML出力
+	$templete='set_share_server.html';
+	return include __DIR__.'/'.$skindir.$templete;
+
+}
 //検索画面
 function search(){
 	global $use_aikotoba,$home,$skindir;
-	global $boardname,$petit_ver,$petit_lot,$set_nsfw,$en; 
+	global $boardname,$petit_ver,$petit_lot,$set_nsfw,$en,$mark_sensitive_image; 
 	global $max_search,$search_images_pagedef,$search_comments_pagedef; 
 
 	aikotoba_required_to_view();
@@ -2181,7 +2218,7 @@ function search(){
 //カタログ表示
 function catalog(){
 	global $use_aikotoba,$home,$catalog_pagedef,$skindir,$display_link_back_to_home;
-	global $boardname,$petit_ver,$petit_lot,$set_nsfw,$en; 
+	global $boardname,$petit_ver,$petit_lot,$set_nsfw,$en,$mark_sensitive_image; 
 
 	aikotoba_required_to_view();
 
@@ -2240,7 +2277,7 @@ function catalog(){
 function view(){
 	global $use_aikotoba,$use_upload,$home,$pagedef,$dispres,$allow_comments_only,$use_top_form,$skindir,$descriptions,$max_kb,$root_url;
 	global $boardname,$max_res,$pmax_w,$pmax_h,$use_miniform,$use_diary,$petit_ver,$petit_lot,$set_nsfw,$use_sns_button,$deny_all_posts,$en,$mark_sensitive_image,$only_admin_can_reply; 
-	global $use_paintbbs_neo,$use_chickenpaint,$use_klecs,$use_tegaki,$display_link_back_to_home,$display_search_nav;
+	global $use_paintbbs_neo,$use_chickenpaint,$use_klecs,$use_tegaki,$display_link_back_to_home,$display_search_nav,$switch_sns;
 
 	aikotoba_required_to_view();
 	$page=(int)filter_input(INPUT_GET,'page',FILTER_VALIDATE_INT);
@@ -2341,7 +2378,7 @@ function view(){
 function res (){
 	global $use_aikotoba,$use_upload,$home,$skindir,$root_url,$use_res_upload,$max_kb,$mark_sensitive_image,$only_admin_can_reply;
 	global $boardname,$max_res,$pmax_w,$pmax_h,$petit_ver,$petit_lot,$set_nsfw,$use_sns_button,$deny_all_posts,$sage_all,$view_other_works,$en;
-	global $use_paintbbs_neo,$use_chickenpaint,$use_klecs,$use_tegaki,$display_link_back_to_home,$display_search_nav;
+	global $use_paintbbs_neo,$use_chickenpaint,$use_klecs,$use_tegaki,$display_link_back_to_home,$display_search_nav,$switch_sns;
 
 	aikotoba_required_to_view();
 
@@ -2410,6 +2447,7 @@ function res (){
 		}
 		if (!$flag) {//見つからなければカウントを続ける
 			$j = $count_alllog;
+			//見つからなかった時の$iは初期値の0。
 		} 
 		$articles[$count_alllog]=$line;
 		if($j+20<$count_alllog){//+20件でbreak

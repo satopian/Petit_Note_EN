@@ -5,12 +5,12 @@
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="stylesheet" href="<?=h($skindir)?>index.css?<?=h($petit_lot)?>">
-<link rel="preload" as="style" href="<?=h($skindir)?>icomoon/style.css" onload="this.rel='stylesheet'">
+<link rel="preload" as="style" href="<?=h($skindir)?>icomoon/style.css?<?=h($petit_lot)?>" onload="this.rel='stylesheet'">
 <link rel="preload" as="style" href="lib/luminous/luminous-basic.min.css" onload="this.rel='stylesheet'">
 <link rel="preload" as="script" href="lib/luminous/luminous.min.js">
 <link rel="preload" as="script" href="lib/<?=h(JQUERY)?>">
 <link rel="preload" as="script" href="<?=h($skindir)?>js/common.js?<?=h($petit_lot)?>">
-<?php include('parts/nsfw_css_control.html');?>
+<?php include __DIR__.'/parts/nsfw_css_control.html';?>
 
 <title><?=h($boardname)?></title> 
 </head>
@@ -36,6 +36,10 @@
 <span>[<a href="./"><?php if($en):?>Return<?php else:?>掲示板にもどる<?php endif;?></a>]</span>
 <a href="#bottom">▽</a>
 </nav>
+<?php if($mark_sensitive_image):?>
+	<!-- 閲覧注意画像を隠す/隠さない -->
+	<?php include __DIR__.'/parts/form_set_nsfw_show_hide.html';?>
+<?php endif;?>
 <hr>
 <div class="catalog_wrap">
 	<!-- 親のループ -->
@@ -117,7 +121,7 @@
 		[<a href="<?=h($home)?>">HOME</a> / <a href="./?mode=adminin&catalog=on&page=<?=h($page)?>"><?php if($en):?>Admin<?php else:?>管理<?php endif;?></a>]
 	</div>
 <div class="righit_wrap">
-<?php include(__DIR__.'/parts/copyright.html');?>
+<?php include __DIR__.'/parts/copyright.html';?>
 </div>
 </div>
 </div>

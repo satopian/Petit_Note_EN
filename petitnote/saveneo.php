@@ -1,4 +1,7 @@
 <?php
+//Petit Note 2021-2023 (c)satopian MIT LICENCE
+//https://paintbbs.sakura.ne.jp/
+
 if(($_SERVER["REQUEST_METHOD"]) !== "POST"){
 	return header( "Location: ./ ") ;
 }
@@ -63,7 +66,7 @@ $usercode='';
 if($sendheader){
 	$sendheader = str_replace("&amp;", "&", $sendheader);
 	parse_str($sendheader, $u);
-	$tool = 'neo';
+	$tool = isset($u['tool']) ? $u['tool'] : '';
 	$usercode = isset($u['usercode']) ? $u['usercode'] : '';
 	$resto = isset($u['resto']) ? $u['resto'] : '';
 	$repcode = isset($u['repcode']) ? $u['repcode'] : '';

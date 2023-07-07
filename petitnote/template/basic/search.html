@@ -5,12 +5,12 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="stylesheet" href="<?=h($skindir)?>index.css?<?=h($petit_lot)?>">
 <link rel="stylesheet" href="<?=h($skindir)?>search.css">
-<link rel="preload" as="style" href="<?=h($skindir)?>icomoon/style.css" onload="this.rel='stylesheet'">
+<link rel="preload" as="style" href="<?=h($skindir)?>icomoon/style.css?<?=h($petit_lot)?>" onload="this.rel='stylesheet'">
 <link rel="preload" as="style" href="lib/luminous/luminous-basic.min.css" onload="this.rel='stylesheet'">
 <link rel="preload" as="script" href="lib/luminous/luminous.min.js">
 <link rel="preload" as="script" href="lib/<?=h(JQUERY)?>">
 <link rel="preload" as="script" href="<?=h($skindir)?>js/common.js?<?=h($petit_lot)?>">
-<?php include('parts/nsfw_css_control.html');?>
+<?php include __DIR__.'/parts/nsfw_css_control.html';?>
 
 <title>
 	<?php if($en):?>	
@@ -47,6 +47,11 @@
 					<span>[<a href="?mode=search&page=0&imgsearch=on&q=<?=h($en_q)?>&radio=<?=h($radio)?>"><?php if($en):?>Images<?php else:?>イラスト<?php endif;?></a>]</span>
 				<?php endif;?>
 		</nav>
+	<?php if($mark_sensitive_image):?>
+	<!-- 閲覧注意画像を隠す/隠さない -->
+	<?php include __DIR__.'/parts/form_set_nsfw_show_hide.html';?>
+	<?php endif;?>
+
 		<hr>
 			<h2 class="search_h2">
 				<?php if($en):?>	
@@ -207,7 +212,7 @@
 	[<a href="<?=h($home)?>">HOME</a> / <a href="./?mode=adminin&search=on&page=<?=h($page)?>&imgsearch=<?=h($imgsearch)?>&q=<?=h($en_q)?>&radio=<?=h($radio)?>"><?php if($en):?>Admin<?php else:?>管理<?php endif;?></a>]
 </div>
 <div class="righit_wrap">
-<?php include(__DIR__.'/parts/copyright.html');?>
+<?php include __DIR__.'/parts/copyright.html';?>
 </div>
 </div>
 </div>

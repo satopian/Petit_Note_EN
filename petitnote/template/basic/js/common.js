@@ -92,6 +92,49 @@ function res_form_submit(event, formId = 'res_form') {//第二引数が未指定
 			});
 	}
 }
+//検索画面設定項目 閲覧注意画像を隠す/隠さない
+function form_submit_set_nsfw_show_hide(event) {
+	const form = document.getElementById("set_nsfw_show_hide");	
+	const submitBtn = form.querySelector('input[type="submit"]');	
+	if (form) {
+			event.preventDefault(); // 通常フォームの送信を中断
+			const formData = new FormData(form);
+			fetch("./", {
+			method: "post",
+			mode: 'same-origin',
+			body: formData
+			})
+			.then(function(response) {
+			// レスポンスの処理
+			console.log("Data sent successfully");
+			submitBtn.disabled = false;
+			location.reload();
+			})
+			.catch(function(error) {
+			// エラーハンドリング
+			console.error("Error:", error);
+			submitBtn.disabled = false;
+			});
+			
+			return false;
+		}
+	}
+
+	//shareするSNSのserver一覧を開く
+	var snsWindow = null; // グローバル変数としてウィンドウオブジェクトを保存する
+
+	function open_sns_server_window(event) {
+		event.preventDefault(); // デフォルトのリンクの挙動を中断
+		
+		var url = event.currentTarget.href;
+		var windowFeatures = "width=350,height=490"; // ウィンドウのサイズを指定
+		
+		if (snsWindow && !snsWindow.closed) {
+			snsWindow.focus(); // 既に開かれているウィンドウがあればフォーカスする
+		  } else {
+			snsWindow = window.open(url, "_blank", windowFeatures); // 新しいウィンドウを開く
+		  }
+	}
 // (c)satopian MIT LICENCE ここまで
 
 jQuery(function() {

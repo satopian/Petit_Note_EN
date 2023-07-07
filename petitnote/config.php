@@ -419,13 +419,15 @@ define("CRYPT_METHOD","aes-128-cbc");
 define("CRYPT_IV","T3pkYxNyjN7Wz3pu");//16 single-byte alphanumeric characters
 
 // SNS share function advanced settings
-//Include Mastodon and Misskey servers in the share function 1: Include 0: Do not include
+
+//Include Mastodon and Misskey servers in the share function 
+// Include: true Do not include: false
 
 $switch_sns = true;
 // $switch_sns = false;
 
 // Servers displayed in the list when sharing on SNS
-//Example ["display name","https://example.com(SNS server url)"], (comma is required at the end)
+//Example ["display name","https://example.com (SNS server url)"], (comma is required at the end)
 
 $servers =
 [

@@ -1,4 +1,7 @@
 <?php
+//Petit Note 2021-2023 (c)satopian MIT LICENCE
+//https://paintbbs.sakura.ne.jp/
+
 if(($_SERVER["REQUEST_METHOD"]) !== "POST"){
 	return header( "Location: ./ ") ;
 }
@@ -52,7 +55,7 @@ $u_agent = str_replace("\t", "", $u_agent);
 $imgext='.png';
 /* ---------- 投稿者情報記録 ---------- */
 $userdata = "$u_ip\t$u_host\t$u_agent\t$imgext";
-$tool = 'chi';
+$tool = (string)filter_input(INPUT_GET, 'tool');
 $repcode = (string)filter_input(INPUT_GET, 'repcode');
 $stime = (string)filter_input(INPUT_GET, 'stime',FILTER_VALIDATE_INT);
 $resto = (string)filter_input(INPUT_GET, 'resto',FILTER_VALIDATE_INT);
