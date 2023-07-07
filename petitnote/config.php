@@ -418,6 +418,29 @@ define("CRYPT_PASS","v25Xc9nZ82a5JPT");//Crypt key initial value
 define("CRYPT_METHOD","aes-128-cbc");
 define("CRYPT_IV","T3pkYxNyjN7Wz3pu");//16 single-byte alphanumeric characters
 
+// SNS share function advanced settings
+//Include Mastodon and Misskey servers in the share function 1: Include 0: Do not include
+
+$switch_sns = true;
+// $switch_sns = false;
+
+// Servers displayed in the list when sharing on SNS
+//Example ["display name","https://example.com(SNS server url)"], (comma is required at the end)
+
+$servers =
+[
+
+	["Twitter","https://twitter.com"],
+	["mstdn.jp","https://mstdn.jp"],
+	["pawoo.net","https://pawoo.net"],
+	["fedibird.com","https://fedibird.com"],
+	["misskey.io","https://misskey.io"],
+	["misskey.design","https://misskey.design"],
+	["nijimiss.moe","https://nijimiss.moe"],
+	["sushi.ski","https://sushi.ski"],
+
+];
+
 /* Do not change this part */
 
 // temporary
