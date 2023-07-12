@@ -1,8 +1,8 @@
 <?php
 //Petit Note (c)さとぴあ @satopian 2021-2023
 //1スレッド1ログファイル形式のスレッド式画像掲示板
-$petit_ver='v0.80.8';
-$petit_lot='lot.20230709';
+$petit_ver='v0.81.3';
+$petit_lot='lot.20230712';
 $lang = ($http_langs = isset($_SERVER['HTTP_ACCEPT_LANGUAGE']) ? $_SERVER['HTTP_ACCEPT_LANGUAGE'] : '')
   ? explode( ',', $http_langs )[0] : '';
 $en= (stripos($lang,'ja')!==0);
@@ -16,7 +16,7 @@ if(!is_file(__DIR__.'/functions.php')){
 	return die(__DIR__.'/functions.php'.($en ? ' does not exist.':'がありません。'));
 }
 require_once(__DIR__.'/functions.php');
-if(!isset($functions_ver)||$functions_ver<20230708){
+if(!isset($functions_ver)||$functions_ver<20230710){
 	return die($en?'Please update functions.php to the latest version.':'functions.phpを最新版に更新してください。');
 }
 // jQueryバージョン
@@ -1743,7 +1743,6 @@ function edit(){
 	}
 
 	$sub=($_oya==='res') ? $_sub : $sub; 
-
 	//POSTされた値をログファイルに格納する書式にフォーマット
 	$formatted_post=create_formatted_text_from_post($name,$sub,$url,$com);
 	$name = $formatted_post['name'];
@@ -1784,6 +1783,8 @@ function edit(){
 	if(in_array($pchext,['.tgkr','hide_tgkr'])){
 		$pchext= $hide_animation ? 'hide_tgkr' : '.tgkr'; 
 	}
+
+	$host=($admindel && ($sub === $_sub) && ($url === $_url) && ($com === $_com)) ? $_host : $host;//管理者による閲覧注意への変更時は投稿者のホスト名を変更しない
 
 	$r_line= "$_no\t$sub\t$name\t$_verified\t$com\t$url\t$_imgfile\t$_w\t$_h\t$thumbnail\t$_painttime\t$_log_md5\t$_tool\t$pchext\t$_time\t$_first_posted_time\t$host\t$userid\t$_hash\t$_oya\n";
 	
@@ -2032,9 +2033,10 @@ function search(){
 	$page=(int)filter_input(INPUT_GET,'page',FILTER_VALIDATE_INT);
 	$q=(string)filter_input(INPUT_GET,'q');
 	$q=urldecode($q);
-	$q=mb_convert_kana($q, 'rn', 'UTF-8');
-	$q=str_replace(array(" ", "　"), "", $q);
-	$q=str_replace("〜","～",$q);//波ダッシュを全角チルダに
+	$check_q=mb_convert_kana($q, 'rn', 'UTF-8');
+	$check_q=str_replace(array(" ", "　"), "", $check_q);
+	$check_q=str_replace("〜","～",$check_q);//波ダッシュを全角チルダに
+	$check_q=strtolower($check_q);//小文字に
 	$radio =(int)filter_input(INPUT_GET,'radio',FILTER_VALIDATE_INT);
 
 	if($imgsearch){
@@ -2076,22 +2078,25 @@ function search(){
 					$s_name=mb_convert_kana($name, 'rn', 'UTF-8');//全角英数を半角に
 					$s_name=str_replace(array(" ", "　"), "", $s_name);
 					$s_name=str_replace("〜","～", $s_name);//波ダッシュを全角チルダに
+					$s_name=strtolower($s_name);//小文字に
 				}
 				else{
 					$s_sub=mb_convert_kana($sub, 'rn', 'UTF-8');//全角英数を半角に
 					$s_sub=str_replace(array(" ", "　"), "", $s_sub);
 					$s_sub=str_replace("〜","～", $s_sub);//波ダッシュを全角チルダに
+					$s_sub=strtolower($s_sub);//小文字に
 					$s_com=mb_convert_kana($com, 'rn', 'UTF-8');//全角英数を半角に
 					$s_com=str_replace(array(" ", "　"), "", $s_com);
 					$s_com=str_replace("〜","～", $s_com);//波ダッシュを全角チルダに
+					$s_com=strtolower($s_com);//小文字に
 				}
 				
 				//ログとクエリを照合
-				if($q===''||//空白なら
-						$q!==''&&$radio===3&&stripos($s_com,$q)!==false||//本文を検索
-						$q!==''&&$radio===3&&stripos($s_sub,$q)!==false||//題名を検索
-						$q!==''&&($radio===1||$radio===0)&&stripos($s_name,$q)===0||//作者名が含まれる
-						$q!==''&&($radio===2&&$s_name===$q)//作者名完全一致
+				if($check_q===''||//空白なら
+				$check_q!==''&&$radio===3&&strpos($s_com,$check_q)!==false||//本文を検索
+				$check_q!==''&&$radio===3&&strpos($s_sub,$check_q)!==false||//題名を検索
+				$check_q!==''&&($radio===1||$radio===0)&&strpos($s_name,$check_q)===0||//作者名が含まれる
+				$check_q!==''&&($radio===2&&$s_name===$check_q)//作者名完全一致
 				){
 					$hidethumb = ($thumbnail==='hide_thumbnail'||$thumbnail==='hide_');
 
