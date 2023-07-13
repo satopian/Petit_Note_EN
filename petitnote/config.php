@@ -443,6 +443,14 @@ $servers =
 
 ];
 
+// Width and height of window to open when SNS sharing
+
+//window width initial value 350
+$sns_window_width = 350;
+
+//window height initial value 490 
+$sns_window_height = 490;
+
 /* Do not change this part */
 
 // temporary
