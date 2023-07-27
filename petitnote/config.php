@@ -402,21 +402,6 @@ date_default_timezone_set("asia/tokyo");
 $x_frame_options_deny=true;
 // $x_frame_options_deny=false;
 
-/* Message for notification mail */
-
-define("NOTICE_MAIL_IMG", "Picture");
-define("NOTICE_MAIL_THUMBNAIL", "Thumbnail");
-define("NOTICE_MAIL_URL", "Fixed link");
-define("NOTICE_MAIL_REPLY", " Notification: There is a new reply to a post.");
-define("NOTICE_MAIL_NEWPOST", " Notification: There is a new post");
-
-/* usually don't change */
-
-// Encrypt the $pwd of the paint screen
-
-define("CRYPT_PASS","v25Xc9nZ82a5JPT");//Crypt key initial value
-define("CRYPT_METHOD","aes-128-cbc");
-define("CRYPT_IV","T3pkYxNyjN7Wz3pu");//16 single-byte alphanumeric characters
 
 // SNS share function advanced settings
 
@@ -450,6 +435,46 @@ $sns_window_width = 350;
 
 //window height initial value 490 
 $sns_window_height = 490;
+
+// Misskey note function settings
+ 
+//Enable posting to Misskey
+// yes: true no: false
+
+$use_misskey_note = true;
+// $use_misskey_note = false;
+
+//Misskey servers to display in the list when note to Misskey
+$misskey_servers=
+[
+
+	["misskey.io","https://misskey.io"],
+	["misskey.design","https://misskey.design"],
+	["nijimiss.moe","https://nijimiss.moe"],
+	["sushi.ski","https://sushi.ski"],
+	["misskey.art","https://misskey.art"],
+	["misskey.gamelore.fun","https://misskey.gamelore.fun"],
+	["novelskey.tarbin.net","https://novelskey.tarbin.net"],
+	["tyazzkey.work","https://tyazzkey.work"],
+	["misskey.delmulin.com","https://misskey.delmulin.com"],
+
+];
+
+/* Message for notification mail */
+
+define("NOTICE_MAIL_IMG", "Picture");
+define("NOTICE_MAIL_THUMBNAIL", "Thumbnail");
+define("NOTICE_MAIL_URL", "Fixed link");
+define("NOTICE_MAIL_REPLY", " Notification: There is a new reply to a post.");
+define("NOTICE_MAIL_NEWPOST", " Notification: There is a new post");
+
+/* usually don't change */
+
+// Encrypt the $pwd of the paint screen
+
+define("CRYPT_PASS","v25Xc9nZ82a5JPT");//Crypt key initial value
+define("CRYPT_METHOD","aes-128-cbc");
+define("CRYPT_IV","T3pkYxNyjN7Wz3pu");//16 single-byte alphanumeric characters
 
 /* Do not change this part */
 

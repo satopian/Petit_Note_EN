@@ -1,8 +1,8 @@
 <?php
 //Petit Note (c)さとぴあ @satopian 2021-2023
 //1スレッド1ログファイル形式のスレッド式画像掲示板
-$petit_ver='v0.81.5';
-$petit_lot='lot.20230713';
+$petit_ver='v0.83.8';
+$petit_lot='lot.20230727';
 $lang = ($http_langs = isset($_SERVER['HTTP_ACCEPT_LANGUAGE']) ? $_SERVER['HTTP_ACCEPT_LANGUAGE'] : '')
   ? explode( ',', $http_langs )[0] : '';
 $en= (stripos($lang,'ja')!==0);
@@ -16,9 +16,15 @@ if(!is_file(__DIR__.'/functions.php')){
 	return die(__DIR__.'/functions.php'.($en ? ' does not exist.':'がありません。'));
 }
 require_once(__DIR__.'/functions.php');
-if(!isset($functions_ver)||$functions_ver<20230710){
+if(!isset($functions_ver)||$functions_ver<20230725){
 	return die($en?'Please update functions.php to the latest version.':'functions.phpを最新版に更新してください。');
 }
+check_file(__DIR__.'/misskey_note.inc.php');
+require_once(__DIR__.'/misskey_note.inc.php');
+if(!isset($misskey_note_ver)||$misskey_note_ver<20230727){
+	return die($en?'Please update misskey_note.inc.php to the latest version.':'misskey_note.inc.phpを最新版に更新してください。');
+}
+
 // jQueryバージョン
 const JQUERY='jquery-3.7.0.min.js';
 check_file(__DIR__.'/lib/'.JQUERY);
@@ -74,6 +80,7 @@ $display_search_nav = isset($display_search_nav) ? $display_search_nav : false;
 $switch_sns = isset($switch_sns) ? $switch_sns : true;
 $sns_window_width = isset($sns_window_width) ? (int)$sns_window_width : 350;
 $sns_window_height = isset($sns_window_height) ? (int)$sns_window_height : 490;
+$use_misskey_note = isset($use_misskey_note) ? $use_misskey_note : true;
 $mode = (string)filter_input(INPUT_POST,'mode');
 $mode = $mode ? $mode :(string)filter_input(INPUT_GET,'mode');
 $resno=(int)filter_input(INPUT_GET,'resno',FILTER_VALIDATE_INT);
@@ -145,6 +152,16 @@ switch($mode){
 		return set_share_server();
 	case 'post_share_server':
 		return post_share_server();
+	case 'before_misskey_note':
+		return misskey_note::before_misskey_note();
+	case 'misskey_note_edit_form':
+		return misskey_note::misskey_note_edit_form();
+	case 'create_misskey_note_sessiondata':
+		return misskey_note::create_misskey_note_sessiondata();
+	case 'create_misskey_authrequesturl':
+		return misskey_note::create_misskey_authrequesturl();
+	case 'misskey_success':
+		return misskey_note::misskey_success();
 	case 'search':
 		return search();
 	case 'catalog':
@@ -694,7 +711,7 @@ return header('Location: ./');
 function paint(){
 
 	global $boardname,$skindir,$pmax_w,$pmax_h,$en;
-	global $usercode,$password_require_to_continue,$petit_lot;
+	global $usercode,$petit_lot;
 
 	check_same_origin();
 
@@ -1522,10 +1539,10 @@ function confirmation_before_deletion ($edit_mode=''){
 	$id = t((string)filter_input(INPUT_POST,'id'));//intの範囲外
 	$no = t((string)filter_input(INPUT_POST,'no',FILTER_VALIDATE_INT));
 
+	check_open_no($no);
 	if(!is_file(LOG_DIR."{$no}.log")){
 		return error($en? 'The article does not exist.':'記事がありません。');
 	}
-	check_open_no($no);
 	$rp=fopen(LOG_DIR."{$no}.log","r");
 	flock($rp, LOCK_EX);
 
@@ -1573,6 +1590,7 @@ function confirmation_before_deletion ($edit_mode=''){
 	}
 	return error($en?'This operation has failed.':'失敗しました。');
 }
+
 //編集画面
 function edit_form($id='',$no=''){
 
@@ -1645,7 +1663,7 @@ function edit_form($id='',$no=''){
 
 	$out[0][]=create_res($line);//$lineから、情報を取り出す;
 
-	$resno=(int)filter_input(INPUT_POST,'postresno',FILTER_VALIDATE_INT);//古いバージョンで使用
+	$resno=(int)filter_input(INPUT_POST,'postresno',FILTER_VALIDATE_INT);
 	$page=(int)filter_input(INPUT_POST,'postpage',FILTER_VALIDATE_INT);
 
 	foreach($line as $i => $val){
@@ -1693,7 +1711,7 @@ function edit(){
 	$pwd = $pwd ? $pwd : $pwdc;
 	session_sta();
 	$admindel=(admindel_valid()||($pwd && $pwd === $admin_pass));
-	
+
 	$userdel=isset($_SESSION['userdel'])&&($_SESSION['userdel']==='userdel_mode');
 	if(!($admindel||($userdel&&$pwd))){
 		return error($en?"This operation has failed.\nPlease reload.":"失敗しました。\nリロードしてください。");
@@ -1866,10 +1884,10 @@ function del(){
 	$fp=fopen(LOG_DIR."alllog.log","r+");
 	flock($fp, LOCK_EX);
 
+	check_open_no($no);
 	if(!is_file(LOG_DIR."{$no}.log")){
 		return error($en? 'The article does not exist.':'記事がありません。');
 	}
-	check_open_no($no);
 	$rp=fopen(LOG_DIR."{$no}.log","r+");
 	flock($rp, LOCK_EX);
 
@@ -1984,7 +2002,7 @@ function del(){
 
 //シェアするserverの選択画面
 function set_share_server(){
-	global $en,$skindir,$servers,$petit_lot;
+	global $en,$skindir,$servers,$petit_lot,$boardname;
 	
 	//ShareするServerの一覧
 	//｢"ラジオボタンに表示するServer名","snsのserverのurl"｣
@@ -2267,6 +2285,8 @@ function catalog(){
 	$set_nsfw_show_hide=(bool)filter_input(INPUT_COOKIE,'p_n_set_nsfw_show_hide',FILTER_VALIDATE_BOOLEAN);
 	//token
 	$token=get_csrf_token();
+	//misskey投稿用では無い
+	$misskey_note=false;
 
 	//ページング
 	list($start_page,$end_page)=calc_pagination_range($page,$pagedef);
@@ -2282,7 +2302,7 @@ function catalog(){
 
 //通常表示
 function view(){
-	global $use_aikotoba,$use_upload,$home,$pagedef,$dispres,$allow_comments_only,$use_top_form,$skindir,$descriptions,$max_kb,$root_url;
+	global $use_aikotoba,$use_upload,$home,$pagedef,$dispres,$allow_comments_only,$use_top_form,$skindir,$descriptions,$max_kb,$root_url,$use_misskey_note;
 	global $boardname,$max_res,$pmax_w,$pmax_h,$use_miniform,$use_diary,$petit_ver,$petit_lot,$set_nsfw,$use_sns_button,$deny_all_posts,$en,$mark_sensitive_image,$only_admin_can_reply; 
 	global $use_paintbbs_neo,$use_chickenpaint,$use_klecs,$use_tegaki,$display_link_back_to_home,$display_search_nav,$switch_sns,$sns_window_width,$sns_window_height;
 
@@ -2373,18 +2393,19 @@ function view(){
 	$prev=((int)$page!==0) ? ($page-$pagedef) : false;//ページ番号が0の時はprevのリンクを出さない
 	if($page===0 && !$admindel){
 		if(!is_file(__DIR__.'/template/cache/index_cache.json')){
-		file_put_contents(__DIR__.'/template/cache/index_cache.json',json_encode($out),LOCK_EX);
-		chmod(__DIR__.'/template/cache/index_cache.json',0600);
+			file_put_contents(__DIR__.'/template/cache/index_cache.json',json_encode($out),LOCK_EX);
+			chmod(__DIR__.'/template/cache/index_cache.json',0600);
 		}
-	} 
+	}
+	$use_misskey_note = $use_diary  ? ($adminpost||$admindel) : $use_misskey_note;
 	// HTML出力
 	$templete='main.html';
 	return include __DIR__.'/'.$skindir.$templete;
 }
 //レス画面
 function res (){
-	global $use_aikotoba,$use_upload,$home,$skindir,$root_url,$use_res_upload,$max_kb,$mark_sensitive_image,$only_admin_can_reply;
-	global $boardname,$max_res,$pmax_w,$pmax_h,$petit_ver,$petit_lot,$set_nsfw,$use_sns_button,$deny_all_posts,$sage_all,$view_other_works,$en;
+	global $use_aikotoba,$use_upload,$home,$skindir,$root_url,$use_res_upload,$max_kb,$mark_sensitive_image,$only_admin_can_reply,$use_misskey_note;
+	global $boardname,$max_res,$pmax_w,$pmax_h,$petit_ver,$petit_lot,$set_nsfw,$use_sns_button,$deny_all_posts,$sage_all,$view_other_works,$en,$use_diary;
 	global $use_paintbbs_neo,$use_chickenpaint,$use_klecs,$use_tegaki,$display_link_back_to_home,$display_search_nav,$switch_sns,$sns_window_width,$sns_window_height;
 
 	aikotoba_required_to_view();
@@ -2394,6 +2415,7 @@ function res (){
 	$denny_all_posts=$deny_all_posts;
 	$page='';
 	$resno=(string)filter_input(INPUT_GET,'resno',FILTER_VALIDATE_INT);
+
 	if(!is_file(LOG_DIR."{$resno}.log")){
 		return error($en?'Thread does not exist.':'スレッドがありません');	
 	}
@@ -2405,12 +2427,15 @@ function res (){
 	check_open_no($resno);
 	$rp = fopen(LOG_DIR."{$resno}.log", "r");//個別スレッドのログを開く
 		$out[0]=[];
+		$findimage=false;
 		while ($line = fgets($rp)) {
 			if(!trim($line)){
 				continue;
 			}
 			$_res = create_res(explode("\t",trim($line)));//$lineから、情報を取り出す
-
+			if($_res['img']){
+				$findimage = true;
+			}
 			if($_res['oya']==='oya'){
 
 				$_res['time_left_to_close_the_thread'] = time_left_to_close_the_thread($_res['time']);
@@ -2513,7 +2538,12 @@ function res (){
 
 	//token
 	$token=get_csrf_token();
-	$templete='res.html';
+	
+	$misskey_note = $use_misskey_note ? (bool)filter_input(INPUT_GET,'misskey_note',FILTER_VALIDATE_BOOLEAN) : false;
+	$res_catalog = $misskey_note ? true : (bool)filter_input(INPUT_GET,'res_catalog',FILTER_VALIDATE_BOOLEAN);
+	$use_misskey_note = $use_diary  ? ($adminpost||$admindel) : $use_misskey_note;
+
+	$templete= $res_catalog ? 'res_catalog.html' : 'res.html';
 	return include __DIR__.'/'.$skindir.$templete;
 
 }

@@ -1,5 +1,5 @@
 <?php
-$functions_ver=20230710;
+$functions_ver=20230725;
 //編集モードログアウト
 function logout(){
 	$resno=(int)filter_input(INPUT_GET,'resno',FILTER_VALIDATE_INT);
@@ -210,11 +210,14 @@ function branch_destination_of_location(){
 	$catalog=(bool)filter_input(INPUT_POST,'catalog',FILTER_VALIDATE_BOOLEAN);
 	$search=(bool)filter_input(INPUT_POST,'search',FILTER_VALIDATE_BOOLEAN);
 	$paintcom=(bool)filter_input(INPUT_POST,'paintcom',FILTER_VALIDATE_BOOLEAN);
+	$misskey_note=(bool)filter_input(INPUT_POST,'misskey_note',FILTER_VALIDATE_BOOLEAN);
+
 	if($paintcom){
 		return header('Location: ./?mode=paintcom');
 	}
 	if($resno){
-		return header('Location: ./?resno='.h($resno));
+		$misskey_note = $misskey_note ? '&misskey_note=on':'';
+		return header('Location: ./?resno='.h($resno).$misskey_note);
 	}
 	if($catalog){
 		return header('Location: ./?mode=catalog&page='.h($page));
@@ -264,42 +267,21 @@ function check_cont_pass(){
 //ログ出力の前処理 行から情報を取り出す
 function create_res($line,$options=[]){
 	global $root_url,$boardname,$do_not_change_posts_time,$en,$mark_sensitive_image;
-	list($no,$sub,$name,$verified,$com,$url,$imgfile,$w,$h,$thumbnail,$painttime,$log_md5,$tool,$pchext,$time,$first_posted_time,$host,$userid,$hash,$oya)=$line;
+	list($no,$sub,$name,$verified,$com,$url,$imgfile,$w,$h,$thumbnail,$paintsec,$log_md5,$abbr_toolname,$pchext,$time,$first_posted_time,$host,$userid,$hash,$oya)=$line;
 	$isset_catalog = isset($options['catalog']);
 	$isset_search = isset($options['search']);
 	$res=[];
 
 	$continue = true;
 	$upload_image = false;
+	$tool=switch_tool($abbr_toolname);
 
-	switch($tool){
-		case 'neo':
-			$tool='PaintBBS NEO';
-			break;
-		case 'PaintBBS':
-			$tool='PaintBBS';
-			break;
-		case 'shi-Painter':
-			$tool='shi-Painter';
-			break;
-		case 'chi':
-			$tool='ChickenPaint';
-			break;
-		case 'klecks';
-			$tool='Klecks';
-			break;
-		case 'tegaki';
-			$tool='Tegaki';
-			break;
-		case 'upload':
-			$tool=$en?'Upload':'アップロード';
-			$continue = false;
-			$upload_image = true;
-			break;
-		default:
-			$tool='';
-			$continue = false;
-			break;
+	if($abbr_toolname==='upload'){
+		$continue = false;
+		$upload_image = true;
+	}
+	if(!$tool){
+		$continue = false;
 	}
 
 	$anime = ($pchext==='.pch'||$pchext==='.tgkr'); 
@@ -312,8 +294,8 @@ function create_res($line,$options=[]){
 	}
 
 	$thumbnail = ($thumbnail==='thumbnail'||$thumbnail==='hide_thumbnail') ? $time.'s.jpg' : false; 
-	$link_thumbnail= ($thumbnail || $hide_thumbnail);  
-	$painttime = (!$isset_catalog && is_numeric($painttime)) ? calcPtime($painttime) : [];  
+	$link_thumbnail= ($thumbnail || $hide_thumbnail); 
+	$painttime = (!$isset_catalog && is_numeric($paintsec)) ? calcPtime($paintsec) : [];  
 	$_time=(strlen($time)>15) ? substr($time,0,-6) : substr($time,0,-3);
 	$first_posted_time=(strlen($first_posted_time)>15) ? substr($first_posted_time,0,-6) : substr($first_posted_time,0,-3);
 	$datetime = $do_not_change_posts_time ? $first_posted_time : $_time;
@@ -337,11 +319,13 @@ function create_res($line,$options=[]){
 		'thumbnail' => $thumbnail,
 		'painttime' => $painttime ? $painttime['ja'] : '',
 		'painttime_en' => $painttime ? $painttime['en'] : '',
+		'paintsec' => $paintsec,
 		'w' => ($w && is_numeric($w)) ? $w :'',
 		'h' => ($h && is_numeric($h)) ? $h :'',
 		'_w' => ($w && is_numeric($w)) ? $_w :'',
 		'_h' => ($h && is_numeric($h)) ? $_h :'',
 		'tool' => $tool,
+		'abbr_toolname' => $abbr_toolname,
 		'upload_image' => $upload_image,
 		'pchext' => $pchext,
 		'anime' => $anime,
@@ -372,6 +356,37 @@ function create_res($line,$options=[]){
 	}
 
 	return $res;
+}
+
+function switch_tool($tool){
+	global $en;
+	switch($tool){
+		case 'neo':
+			$tool='PaintBBS NEO';
+			break;
+		case 'PaintBBS':
+			$tool='PaintBBS';
+			break;
+		case 'shi-Painter':
+			$tool='shi-Painter';
+			break;
+		case 'chi':
+			$tool='ChickenPaint';
+			break;
+		case 'klecks';
+			$tool='Klecks';
+			break;
+		case 'tegaki';
+			$tool='Tegaki';
+			break;
+		case 'upload':
+			$tool=$en?'Upload':'アップロード';
+			break;
+		default:
+			$tool='';
+			break;
+	}
+	return $tool;
 }
 
 //重複チェックのための配列を全体ログを元に作成
@@ -593,7 +608,7 @@ function png2jpg ($src) {
 	return false;
 }
 
-function error($str){
+function error($str,$historyback=true){
 
 	global $boardname,$skindir,$en,$aikotoba_required_to_view,$petit_lot;
 
@@ -656,8 +671,7 @@ function check_same_origin(){
 	if(!isset($_SERVER['HTTP_ORIGIN']) || !isset($_SERVER['HTTP_HOST'])){
 		return error($en?'Your browser is not supported. ':'お使いのブラウザはサポートされていません。');
 	}
-	$url_scheme=parse_url($_SERVER['HTTP_ORIGIN'], PHP_URL_SCHEME).'://';
-	if(str_replace($url_scheme,'',$_SERVER['HTTP_ORIGIN']) !== $_SERVER['HTTP_HOST']){
+	if(parse_url($_SERVER['HTTP_ORIGIN'], PHP_URL_HOST) !== $_SERVER['HTTP_HOST']){
 		return error($en?"The post has been rejected.":'拒絶されました。');
 	}
 }
@@ -693,7 +707,7 @@ function deltemp(){
 			//pchアップロードペイントファイル削除
 			//仮差し換えアップロードファイル削除
 			$lapse = time() - filemtime(TEMP_DIR.$file);
-			if(strpos($file,'pchup-')===0) {
+			if(strpos($file,'pchup-')===0){
 				if($lapse > (300)){//5分
 					safe_unlink(TEMP_DIR.$file);
 				}
