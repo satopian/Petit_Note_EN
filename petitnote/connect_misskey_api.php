@@ -7,7 +7,7 @@
 require_once(__DIR__.'/config.php');
 require_once(__DIR__.'/functions.php');
 
-$petit_lot='20230727';
+$petit_lot='20230728';
 
 $lang = ($http_langs = isset($_SERVER['HTTP_ACCEPT_LANGUAGE']) ? $_SERVER['HTTP_ACCEPT_LANGUAGE'] : '')
 ? explode( ',', $http_langs )[0] : '';
@@ -162,7 +162,9 @@ class connect_misskey_api{
 		$tool= $tool ? 'Tool:'.$tool.' ' :'';
 		$painttime= $painttime ? 'Paint time:'.$painttime.' ' :'';
 
-		$fixed_link = $root_url.'?resno='.$no;
+		$src_image_filename = pathinfo($src_image, PATHINFO_FILENAME );//拡張子除去
+
+		$fixed_link = $root_url.'?resno='.$no.'#'.$src_image_filename;
 		$fixed_link = filter_var($fixed_link,FILTER_VALIDATE_URL) ? $fixed_link : '';
 		$article_url_link = $article_url_link ? ' '.$fixed_link : '';
 
