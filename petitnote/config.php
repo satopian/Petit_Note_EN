@@ -205,6 +205,13 @@ $set_nsfw = false;
 // $mark_sensitive_image = true;
 $mark_sensitive_image = false;
 
+// Use option to hide paint time
+// Enabling this option will allow toggling the display of paint time when posting: show / hide.
+// yes: true no: false
+
+// $use_hide_painttime = true;
+$use_hide_painttime = false;
+
 // don't change post date when editing
 // Settings when you do not want to change the date for diary purposes, etc.
 // Yes: If set to true, editing will not change the post date. Normally none: false .

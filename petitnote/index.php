@@ -1,8 +1,8 @@
 <?php
 //Petit Note (c)さとぴあ @satopian 2021-2023
 //1スレッド1ログファイル形式のスレッド式画像掲示板
-$petit_ver='v0.83.9';
-$petit_lot='lot.20230731';
+$petit_ver='v0.85.7';
+$petit_lot='lot.20230806';
 $lang = ($http_langs = isset($_SERVER['HTTP_ACCEPT_LANGUAGE']) ? $_SERVER['HTTP_ACCEPT_LANGUAGE'] : '')
   ? explode( ',', $http_langs )[0] : '';
 $en= (stripos($lang,'ja')!==0);
@@ -16,12 +16,12 @@ if(!is_file(__DIR__.'/functions.php')){
 	return die(__DIR__.'/functions.php'.($en ? ' does not exist.':'がありません。'));
 }
 require_once(__DIR__.'/functions.php');
-if(!isset($functions_ver)||$functions_ver<20230725){
+if(!isset($functions_ver)||$functions_ver<20230806){
 	return die($en?'Please update functions.php to the latest version.':'functions.phpを最新版に更新してください。');
 }
 check_file(__DIR__.'/misskey_note.inc.php');
 require_once(__DIR__.'/misskey_note.inc.php');
-if(!isset($misskey_note_ver)||$misskey_note_ver<20230727){
+if(!isset($misskey_note_ver)||$misskey_note_ver<20230805){
 	return die($en?'Please update misskey_note.inc.php to the latest version.':'misskey_note.inc.phpを最新版に更新してください。');
 }
 
@@ -252,7 +252,8 @@ function post(){
 		check_open_no($resto);
 		$resto=(string)$resto;//(string)厳密な型
 		//描画時間を$userdataをもとに計算
-		if($starttime && is_numeric($starttime) && $postedtime && is_numeric($postedtime)){
+		$hide_painttime=(bool)filter_input(INPUT_POST,'hide_painttime',FILTER_VALIDATE_BOOLEAN);
+		if(!$hide_painttime && $starttime && is_numeric($starttime) && $postedtime && is_numeric($postedtime)){
 			$painttime=(int)$postedtime-(int)$starttime;
 		}
 		if($resto && !$use_res_upload && !$adminpost){
@@ -915,7 +916,7 @@ function paint(){
 // お絵かきコメント 
 function paintcom(){
 	global $use_aikotoba,$boardname,$home,$skindir,$sage_all,$en,$mark_sensitive_image;
-	global $usercode,$petit_lot; 
+	global $usercode,$petit_lot,$use_hide_painttime; 
 
 	aikotoba_required_to_view();
 	$token=get_csrf_token();
@@ -971,7 +972,11 @@ function paintcom(){
 	$pwdc = (string)filter_input(INPUT_COOKIE,'pwdc');
 	$urlc = (string)filter_input(INPUT_COOKIE,'urlc');
 
+	$adminpost = adminpost_valid();
+	$use_hide_painttime = isset($use_hide_painttime) ? $use_hide_painttime : $adminpost;
+
 	// HTML出力
+
 	$templete='paint_com.html';
 	return include __DIR__.'/'.$skindir.$templete;
 }
@@ -1397,7 +1402,7 @@ function img_replace(){
 	//描画時間追加
 
 	$painttime = '';
-	if($starttime && is_numeric($starttime) && $postedtime && is_numeric($postedtime)){
+	if(is_numeric($_painttime) && $starttime && is_numeric($starttime) && $postedtime && is_numeric($postedtime)){
 		$psec=(int)$postedtime-(int)$starttime;
 		$painttime=(int)$_painttime+(int)$psec;
 	}

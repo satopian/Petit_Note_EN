@@ -91,7 +91,6 @@
 <textarea name="com" class="post_com"></textarea><br>
 <?php if($en):?>Password:<?php else:?>パスワード:<?php endif;?><input type="password" name="pwd" value="<?=h($pwdc)?>" autocomplete="current-password">
 <input type="hidden" name="mode" value="regist">
-<!-- <input type="hidden" name="mode" value="post2sns"> -->
 <input type="hidden" name="token" value="<?=h($token)?>">
 <input type="hidden" name="pictmp" value="<?=h($pictmp)?>">
 <div class="post_table_title"><?php if($en):?>Images<?php else:?>画像<?php endif;?>
@@ -108,9 +107,15 @@
 	<span id="paintcom_hide_animation">
 		<input type="checkbox" name="hide_animation" id="hide_animation" value="on"><label for="hide_animation"><?php if($en):?>Hide Animation<?php else:?>動画を表示しない<?php endif;?></label>	
 	</span>
+	<?php if($use_hide_painttime):?>
+		<span>
+			<input type="checkbox" name="hide_painttime" id="hide_painttime" value="on"><label for="hide_painttime"><?php if($en):?>Hide paint time<?php else:?>描画時間を表示しない<?php endif;?></label>
+		</span>
+	<?php endif;?>
+
 	<br>
 		</div>
-	<input type="submit" value="<?php if($en):?>Post<?php else:?>投稿する<?php endif;?>" onclick="to_sns_submitform()">
+	<input type="submit" value="<?php if($en):?>Post<?php else:?>投稿する<?php endif;?>">
 
 	<?php if(!$sage_all):?>
 	<span id="paintcom_sage">
@@ -118,9 +123,9 @@
 	</span>
 	<?php endif;?>
 	<?php if($mark_sensitive_image):?>
-	<span>
-	<input type="checkbox" name="hide_thumbnail" id="hide_thumbnail" value="on"><label for="hide_thumbnail"><?php if($en):?>Sensitive content<?php else:?>閲覧注意にする<?php endif;?></label>
-	</span>
+		<span>
+			<input type="checkbox" name="hide_thumbnail" id="hide_thumbnail" value="on"><label for="hide_thumbnail"><?php if($en):?>Sensitive content<?php else:?>閲覧注意にする<?php endif;?></label>
+		</span>
 	<?php endif;?>
 </form>
 <?php else:?>
