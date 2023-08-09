@@ -91,7 +91,7 @@ textarea.rescom {
 	height: 60px;
 	margin: 10px 0;
 }
-form.postform span {
+form.postform  span {
     margin: 10px 0 0px 10px;
     display: inline-block;
 }
@@ -127,8 +127,8 @@ span.info_name {
     line-height: 1;
     margin: 0 2px 2px 0px;
 }
-span.info_name:hover {background-color: #fff7f7;}
-span.info_name a {
+span.info_name:hover a {background-color: #fff7f7;}
+span.info_name a ,span.info_name > span {
     display: block;
     padding: 5px;
     text-decoration: none;
@@ -266,6 +266,10 @@ label {
 
 input[type="checkbox"]:checked + label{background-color: #ffe6e6;font-weight: 600;}
 input[type="radio"]:checked + label{background-color: #ffe6e6;font-weight: 600;}
+/* チェックボックスが選択された場合のスタイル */
+input[type="checkbox"]:checked + label .info_name {
+	border: none;
+}
 
 select.post_select_image {
     margin: 10px 6px 0;
