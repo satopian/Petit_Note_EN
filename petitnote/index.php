@@ -1,8 +1,8 @@
 <?php
 //Petit Note (c)さとぴあ @satopian 2021-2023
 //1スレッド1ログファイル形式のスレッド式画像掲示板
-$petit_ver='v0.86.1';
-$petit_lot='lot.20230809';
+$petit_ver='v0.86.5';
+$petit_lot='lot.20230813';
 $lang = ($http_langs = isset($_SERVER['HTTP_ACCEPT_LANGUAGE']) ? $_SERVER['HTTP_ACCEPT_LANGUAGE'] : '')
   ? explode( ',', $http_langs )[0] : '';
 $en= (stripos($lang,'ja')!==0);
@@ -21,7 +21,7 @@ if(!isset($functions_ver)||$functions_ver<20230809){
 }
 check_file(__DIR__.'/misskey_note.inc.php');
 require_once(__DIR__.'/misskey_note.inc.php');
-if(!isset($misskey_note_ver)||$misskey_note_ver<20230805){
+if(!isset($misskey_note_ver)||$misskey_note_ver<20230809){
 	return die($en?'Please update misskey_note.inc.php to the latest version.':'misskey_note.inc.phpを最新版に更新してください。');
 }
 
@@ -81,6 +81,7 @@ $switch_sns = isset($switch_sns) ? $switch_sns : true;
 $sns_window_width = isset($sns_window_width) ? (int)$sns_window_width : 350;
 $sns_window_height = isset($sns_window_height) ? (int)$sns_window_height : 490;
 $use_misskey_note = isset($use_misskey_note) ? $use_misskey_note : true;
+$sort_comments_by_newest = isset($sort_comments_by_newest) ? $sort_comments_by_newest : false;
 $mode = (string)filter_input(INPUT_POST,'mode');
 $mode = $mode ? $mode :(string)filter_input(INPUT_GET,'mode');
 $resno=(int)filter_input(INPUT_GET,'resno',FILTER_VALIDATE_INT);
@@ -918,7 +919,7 @@ function paintcom(){
 	global $use_aikotoba,$boardname,$home,$skindir,$sage_all,$en,$mark_sensitive_image;
 	global $usercode,$petit_lot,$use_hide_painttime; 
 
-	aikotoba_required_to_view();
+	aikotoba_required_to_view(true);
 	$token=get_csrf_token();
 	$userip = get_uip();
 	//テンポラリ画像リスト作成
@@ -988,7 +989,7 @@ function to_continue(){
 	global $boardname,$use_diary,$use_aikotoba,$set_nsfw,$skindir,$en,$password_require_to_continue;
 	global $use_paintbbs_neo,$use_chickenpaint,$use_klecs,$use_tegaki,$petit_lot;
 
-	aikotoba_required_to_view();
+	aikotoba_required_to_view(true);
 
 	$appc=(string)filter_input(INPUT_COOKIE,'appc');
 	$pwdc=(string)filter_input(INPUT_COOKIE,'pwdc');
@@ -1522,7 +1523,7 @@ function confirmation_before_deletion ($edit_mode=''){
 	session_sta();
 	$admindel=admindel_valid();
 	$aikotoba = $use_aikotoba ? aikotoba_valid() : true;
-	aikotoba_required_to_view();
+	aikotoba_required_to_view(true);
 
 	$userdel=userdel_valid();
 	$resmode = ((string)filter_input(INPUT_POST,'resmode')==='true');
@@ -2250,7 +2251,7 @@ function search(){
 //カタログ表示
 function catalog(){
 	global $use_aikotoba,$home,$catalog_pagedef,$skindir,$display_link_back_to_home;
-	global $boardname,$petit_ver,$petit_lot,$set_nsfw,$en,$mark_sensitive_image; 
+	global $boardname,$petit_ver,$petit_lot,$set_nsfw,$en,$mark_sensitive_image,$sort_comments_by_newest; 
 
 	aikotoba_required_to_view();
 
@@ -2311,7 +2312,8 @@ function catalog(){
 function view(){
 	global $use_aikotoba,$use_upload,$home,$pagedef,$dispres,$allow_comments_only,$use_top_form,$skindir,$descriptions,$max_kb,$root_url,$use_misskey_note;
 	global $boardname,$max_res,$pmax_w,$pmax_h,$use_miniform,$use_diary,$petit_ver,$petit_lot,$set_nsfw,$use_sns_button,$deny_all_posts,$en,$mark_sensitive_image,$only_admin_can_reply; 
-	global $use_paintbbs_neo,$use_chickenpaint,$use_klecs,$use_tegaki,$display_link_back_to_home,$display_search_nav,$switch_sns,$sns_window_width,$sns_window_height;
+	global $use_paintbbs_neo,$use_chickenpaint,$use_klecs,$use_tegaki,$display_link_back_to_home,$display_search_nav,$switch_sns,$sns_window_width,$sns_window_height,$sort_comments_by_newest;
+
 
 	aikotoba_required_to_view();
 	$page=(int)filter_input(INPUT_GET,'page',FILTER_VALIDATE_INT);
@@ -2413,7 +2415,7 @@ function view(){
 function res (){
 	global $use_aikotoba,$use_upload,$home,$skindir,$root_url,$use_res_upload,$max_kb,$mark_sensitive_image,$only_admin_can_reply,$use_misskey_note;
 	global $boardname,$max_res,$pmax_w,$pmax_h,$petit_ver,$petit_lot,$set_nsfw,$use_sns_button,$deny_all_posts,$sage_all,$view_other_works,$en,$use_diary;
-	global $use_paintbbs_neo,$use_chickenpaint,$use_klecs,$use_tegaki,$display_link_back_to_home,$display_search_nav,$switch_sns,$sns_window_width,$sns_window_height;
+	global $use_paintbbs_neo,$use_chickenpaint,$use_klecs,$use_tegaki,$display_link_back_to_home,$display_search_nav,$switch_sns,$sns_window_width,$sns_window_height,$sort_comments_by_newest;
 
 	aikotoba_required_to_view();
 

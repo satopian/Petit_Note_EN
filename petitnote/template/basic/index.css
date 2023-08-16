@@ -117,6 +117,9 @@ input.form_button {
 input.pchup_button {
     margin: 0 0 10px;
 }
+input.paint_button {
+    padding: 1px 10px;
+}
 
 /* 投稿者名から検索文字列にリンク */
 
@@ -371,7 +374,7 @@ form.paint_form {
 }
 form.aikotoba {
 	text-align: right;
-	margin: 0px;
+	margin: 2px 0;
 	display: inline-block;
 }
 form#set_nsfw_show_hide {

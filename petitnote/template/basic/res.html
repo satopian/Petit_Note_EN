@@ -87,6 +87,9 @@
 	<!-- 親のループ -->
 <?php if(isset($out)):?>
 <?php foreach($out as $ress) : ?>
+	<?php if($sort_comments_by_newest){
+		krsort($ress);
+	}?>
 
 <h2 class="article_title">[<?= h($ress[0]['no'])?>] <?= h($ress[0]['sub'])?></h2>
 	<!-- スレッドのループ -->
@@ -273,7 +276,7 @@
 	</div>
 <?php endif;?>
 
-<?php if($aikotoba && $resform && !$res_max_over):?>
+<?php if($aikotoba && $resform && !$res_max_over && (!$userdel && !$admindel)):?>
 
 <?php if($use_res_upload || $adminpost):?>
 <?php if($use_paint):?>
@@ -287,7 +290,7 @@
 	<?php endif;?>
 <input type="hidden" name="mode" value="paint">
 <input type="hidden" name="resto" value="<?=h($res['no'])?>">
-<input type="submit" value="PAINT" class="paint_button">
+<input type="submit" value="Paint" class="paint_button">
 <?php if($select_app):?>
 <span>Tool:
 <select name="app" class="select_applet">
