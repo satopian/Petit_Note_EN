@@ -1,8 +1,8 @@
 <?php
 //Petit Note (c)さとぴあ @satopian 2021-2023
 //1スレッド1ログファイル形式のスレッド式画像掲示板
-$petit_ver='v0.87.5';
-$petit_lot='lot.20230818';
+$petit_ver='v0.87.8';
+$petit_lot='lot.20230906';
 $lang = ($http_langs = isset($_SERVER['HTTP_ACCEPT_LANGUAGE']) ? $_SERVER['HTTP_ACCEPT_LANGUAGE'] : '')
   ? explode( ',', $http_langs )[0] : '';
 $en= (stripos($lang,'ja')!==0);
@@ -16,7 +16,7 @@ if(!is_file(__DIR__.'/functions.php')){
 	return die(__DIR__.'/functions.php'.($en ? ' does not exist.':'がありません。'));
 }
 require_once(__DIR__.'/functions.php');
-if(!isset($functions_ver)||$functions_ver<20230818){
+if(!isset($functions_ver)||$functions_ver<20230825){
 	return die($en?'Please update functions.php to the latest version.':'functions.phpを最新版に更新してください。');
 }
 check_file(__DIR__.'/misskey_note.inc.php');
@@ -26,7 +26,7 @@ if(!isset($misskey_note_ver)||$misskey_note_ver<20230809){
 }
 check_file(__DIR__.'/save.inc.php');
 require_once(__DIR__.'/save.inc.php');
-if(!isset($save_inc_ver)||$save_inc_ver<20230818){
+if(!isset($save_inc_ver)||$save_inc_ver<20230825){
 	return die($en?'Please update save.inc.php to the latest version.':'save.inc.phpを最新版に更新してください。');
 }
 
@@ -985,7 +985,6 @@ function paintcom(){
 	$use_hide_painttime = ($adminpost || $use_hide_painttime);
 
 	// HTML出力
-
 	$templete='paint_com.html';
 	return include __DIR__.'/'.$skindir.$templete;
 }
@@ -2406,7 +2405,9 @@ function view(){
 	$is_badhost=is_badhost();
 	$aikotoba = $use_aikotoba ? aikotoba_valid() : true;
 	$adminpost=adminpost_valid();
-	$resform = ((!$deny_all_posts && !$only_admin_can_reply && !$use_diary && !$is_badhost && $aikotoba)||$adminpost);
+	$resform = ((!$only_admin_can_reply && !$use_diary && !$is_badhost && $aikotoba)||$adminpost);
+	$resform = $deny_all_posts ? false :$resform;
+
 	//Cookie
 	$namec=h((string)filter_input(INPUT_COOKIE,'namec'));
 	$pwdc=h((string)filter_input(INPUT_COOKIE,'pwdc'));
@@ -2558,7 +2559,8 @@ function res (){
 	$aikotoba = $use_aikotoba ? aikotoba_valid() : true;
 	$userdel=userdel_valid();
 	$adminpost=adminpost_valid();
-	$resform = ((!$deny_all_posts && !$only_admin_can_reply && !$is_badhost)||$adminpost);
+	$resform = ((!$only_admin_can_reply && !$is_badhost && $aikotoba)||$adminpost);
+	$resform = $deny_all_posts ? false :$resform;
 
 	//Cookie
 	$namec=h((string)filter_input(INPUT_COOKIE,'namec'));
