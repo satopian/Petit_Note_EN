@@ -2,7 +2,7 @@
 
 Petit Note English ver.
 PHP script for PaintBBS,ChickenPaint, and Klecks.
-PHP5.6-PHP8.2
+PHP5.6-PHP8.3
 https://paintbbs.sakura.ne.jp/
 
 ## This is English version of Petit Note
