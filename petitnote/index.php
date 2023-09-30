@@ -1,8 +1,8 @@
 <?php
 //Petit Note (c)さとぴあ @satopian 2021-2023
 //1スレッド1ログファイル形式のスレッド式画像掲示板
-$petit_ver='v0.89.0';
-$petit_lot='lot.20230917';
+$petit_ver='v0.92.6';
+$petit_lot='lot.20230930';
 $lang = ($http_langs = isset($_SERVER['HTTP_ACCEPT_LANGUAGE']) ? $_SERVER['HTTP_ACCEPT_LANGUAGE'] : '')
   ? explode( ',', $http_langs )[0] : '';
 $en= (stripos($lang,'ja')!==0);
@@ -365,7 +365,12 @@ function post(){
 			return error($en? 'This file is an unsupported format.':'対応していないファイル形式です。');
 		}
 		$upfile=TEMP_DIR.$time.'.tmp';
-		move_uploaded_file($up_tempfile,$upfile);
+		$move_uploaded = move_uploaded_file($up_tempfile,$upfile);
+		if(!$move_uploaded){//アップロードは成功した?
+			safe_unlink($up_tempfile);
+			return error($en?'This operation has failed.':'失敗しました。');
+		}
+
 		$tool = 'upload'; 
 		$is_upload=true;	
 	}
@@ -461,7 +466,7 @@ function post(){
 		// 画像アップロードと画像なしそれぞれの待機時間
 		$_chk_time_=(strlen($_time_)>15) ? substr($_time_,0,-6) : substr($_time_,0,-3);
 		$interval=(int)time()-(int)$_chk_time_;
-		if($interval>=0 && (($upfile && $interval<30)||(!$upfile && $interval<15))){//待機時間がマイナスの時は通す
+		if($interval>=0 && (($upfile && $interval<30)||(!$upfile && $interval<20))){//待機時間がマイナスの時は通す
 			closeFile($fp);
 			closeFile($rp);
 			safe_unlink($upfile);
@@ -714,7 +719,7 @@ function post(){
 //お絵かき画面
 function paint(){
 
-	global $boardname,$skindir,$pmax_w,$pmax_h,$en;
+	global $boardname,$skindir,$pmax_w,$pmax_h,$max_px,$en;
 	global $usercode,$petit_lot;
 
 	check_same_origin();
@@ -769,34 +774,43 @@ function paint(){
 			$pchext=pathinfo($pchfilename, PATHINFO_EXTENSION);
 			$pchext=strtolower($pchext);//すべて小文字に
 			//拡張子チェック
-			if (!in_array($pchext, ['pch','chi','psd'])) {
-				return error($en?'This file does not supported by the ability to load uploaded files onto the canvas.Supported formats are pch and chi.':'アップロードペイントで使用できるファイルはpch、chi、psdです。');
+			if (!in_array($pchext, ['pch','chi','psd','gif','jpg','jpeg','png','webp'])) {
+				safe_unlink($pchtmp);
+				return error($en? 'This file is an unsupported format.':'対応していないファイル形式です。');
 			}
 			$pchup = TEMP_DIR.'pchup-'.$time.'-tmp.'.$pchext;//アップロードされるファイル名
 
-			if(move_uploaded_file($pchtmp, $pchup)){//アップロード成功なら続行
-
-				$pchup=TEMP_DIR.basename($pchup);//ファイルを開くディレクトリを固定
-				if(!in_array(mime_content_type($pchup),["application/octet-stream","image/vnd.adobe.photoshop"])){
-					safe_unlink($pchup);
-					return error($en? 'This file is an unsupported format.':'対応していないファイル形式です。');
+			$move_uploaded = move_uploaded_file($pchtmp, $pchup);
+			if(!$move_uploaded){//アップロードは成功した?
+				safe_unlink($pchtmp);
+				return error($en?'This operation has failed.':'失敗しました。');
+			
+			}
+			$basename_pchup=basename($pchup);
+			$pchup=TEMP_DIR.$basename_pchup;//ファイルを開くディレクトリを固定
+			$mime_type = mime_content_type($pchup);
+			if(($pchext==="pch") && ($mime_type === "application/octet-stream") && is_neo($pchup)){
+			$app='neo';
+				if($get_pch_size = get_pch_size($pchup)){
+					list($picw,$pich)=$get_pch_size;//pchの幅と高さを取得
 				}
-				if(($pchext==="pch")&&is_neo($pchup)){
-					$app='neo';
-						if($get_pch_size=get_pch_size($pchup)){
-							list($picw,$pich)=$get_pch_size;//pchの幅と高さを取得
-						}
-					$pchfile = $pchup;
-				} elseif($pchext==="chi"){
+			$pchfile = $pchup;
+			} elseif(($pchext==="chi") && ($mime_type === "application/octet-stream")){
 					$app='chi';
-					$img_chi = $pchup;
-				} elseif($pchext==="psd"){
+				$img_chi = $pchup;
+			} elseif(($pchext==="psd") && ($mime_type === "image/vnd.adobe.photoshop")){
 					$app='klecks';
-					$img_klecks = $pchup;
-				}else{
-					safe_unlink($pchup);
-					return error($en? 'This file is an unsupported format.':'対応していないファイル形式です。');
-				}
+				$img_klecks = $pchup;
+			} elseif(in_array($pchext, ['gif','jpg','jpeg','png','webp']) && in_array($mime_type, ['image/gif', 'image/jpeg', 'image/png','image/webp'])){
+				$file_name=pathinfo($pchup,PATHINFO_FILENAME);
+				$max_px=isset($max_px) ? $max_px : 1024;
+				thumb(TEMP_DIR,$basename_pchup,$time,$max_px,$max_px,['toolarge'=>1]);
+				list($picw,$pich) = getimagesize($pchup);
+				$imgfile = $pchup;
+				$anime = false;
+			}else{
+				safe_unlink($pchup);
+				return error($en? 'This file is an unsupported format.':'対応していないファイル形式です。');
 			}
 		}
 	}
@@ -990,7 +1004,7 @@ function paintcom(){
 function to_continue(){
 
 	global $boardname,$use_diary,$use_aikotoba,$set_nsfw,$skindir,$en,$password_require_to_continue;
-	global $use_paintbbs_neo,$use_chickenpaint,$use_klecs,$use_tegaki,$petit_lot;
+	global $use_paintbbs_neo,$use_chickenpaint,$use_klecs,$use_tegaki,$petit_lot,$elapsed_days;
 
 	aikotoba_required_to_view(true);
 
@@ -1021,7 +1035,7 @@ function to_continue(){
 		return error($en? 'The article does not exist.':'記事がありません。');
 	}
 	if(!check_elapsed_days($time)&&!adminpost_valid()){
-		return error($en? 'The article does not exist.':'記事がありません。');
+		return error($en? "Article older than {$elapsed_days} days cannot be edited.":"{$elapsed_days}日以上前の記事は編集できません。");
 	}
 
 	$hidethumbnail = ($thumbnail==='hide_thumbnail'||$thumbnail==='hide_');
@@ -1291,7 +1305,12 @@ function img_replace(){
 	$upfile=TEMP_DIR.$time.'.tmp';
 
 	if($is_upload && ($_tool==='upload') && ( $use_upload || $adminpost || $admindel) && is_file($up_tempfile)){
-		move_uploaded_file($up_tempfile,$upfile);
+		$move_uploaded = move_uploaded_file($up_tempfile,$upfile);
+		if(!$move_uploaded){//アップロード成功なら続行
+			safe_unlink($up_tempfile);
+			return error($en?'This operation has failed.':'失敗しました。');
+		}
+
 	}
 	if(!$is_upload && $repfind && is_file($tempfile) && ($_tool !== 'upload')){
 		copy($tempfile, $upfile);
@@ -2506,50 +2525,85 @@ function res (){
 	$fp=fopen(LOG_DIR."alllog.log","r");
 	$articles=[];
 	$count_alllog=0;
-	$i=0;$j=0;
-	$flag=false;
+	$i=0;
+	$j=0;
+	$find=false;
+	$articles1=[];
+	$articles2=[];
+
 	while ($line = fgets($fp)) {
 		if(!trim($line)){
 			continue;
 		}
-		if (strpos(trim($line), $resno . "\t") === 0) {
-			$flag=true;//現在のスレッドが見つかったら
-			$i=$count_alllog;//$iに配列のキーをセット
+		if (strpos(trim($line), $resno . "\t") === 0) {//現在のスレッド
+			$find=true;
+			$i=$j;
 		}
-		if (!$flag) {//見つからなければカウントを続ける
-			$j = $count_alllog;
-			//見つからなかった時の$iは初期値の0。
-		} 
-		$articles[$count_alllog]=$line;
-		if($j+20<$count_alllog){//+20件でbreak
+		if($find && ($i<$j)){
+			$articles2[$j]=$line;//現在のスレッドより20件後ろの行を取得
+		}
+		if($find && ($i+20)<=$j){
 			break;
 		}
-		++$count_alllog;
+		++$j;
+	}
+	rewind($fp);
+	$j=0;
+	while ($line = fgets($fp)) {//メモリ消費量を削減するため二度ループ
+		if(!trim($line)){
+			continue;
+		}
+		if(($i!==$j) && ($i-20) <= $j){//現在のスレッドより20件手前の行を取得
+			$articles1[$j]=$line;
+		}
+		if($i===$j){
+			break;
+		}
+		++$j;
 	}
 	fclose($fp);
 
-	$next=isset($articles[$i+1])? rtrim($articles[$i+1]) :'';
-	$prev=isset($articles[$i-1])? rtrim($articles[$i-1]) :'';
+	$next=isset($articles2[$i+1])? rtrim($articles2[$i+1]) :'';
+	$prev=isset($articles1[$i-1])? rtrim($articles1[$i-1]) :'';
 	$next=$next ? (create_res(explode("\t",trim($next)),['catalog'=>true])):[];
 	$prev=$prev ? (create_res(explode("\t",trim($prev)),['catalog'=>true])):[];
 	$next=(!empty($next) && is_file(LOG_DIR."{$next['no']}.log"))?$next:[];
 	$prev=(!empty($prev) && is_file(LOG_DIR."{$prev['no']}.log"))?$prev:[];
 
+	$rr1=[];
+	$rr2=[];
 	if($view_other_works){
 		$view_other_works=[];
 		$a=[];
-		$start_view=(($i-7)>=0) ? ($i-7) : 0;
-		$other_articles=array_slice($articles,$start_view,17,false);
-		foreach($other_articles as $val){
-			$b=create_res(explode("\t",trim($val)),['catalog'=>true]);
-			if(!empty($b)&&$b['img']&&$b['no']!==$resno){
-				$a[]=$b;
+		foreach($articles1 as $val){
+
+			$r1=create_res(explode("\t",trim($val)),['catalog'=>true]);
+			if(!empty($r1)&&$r1['img']&&$r1['no']!==$resno){
+				$rr1[]=$r1;
 			}
 		}
-		$c=($i<5) ? 0 : (count($a)>9 ? 4 :0);
-		$view_other_works=array_slice($a,$c,6,false);
-	}
+		foreach($articles2 as $val){
 
+			$r2=create_res(explode("\t",trim($val)),['catalog'=>true]);
+			if(!empty($r2)&&$r2['img']&&$r2['no']!==$resno){
+				$rr2[]=$r2;
+			}
+		}
+		if(($i>=3) && (3<=count($rr1)) && (3<=count($rr2))  ){
+			$rr1 = array_slice($rr1,-3);
+			$rr2 = array_slice($rr2,0,3);
+			$view_other_works= array_merge($rr1,$rr2);
+		
+		}elseif((6>count($rr2))&&(6<=count($rr1))){
+			$view_other_works= array_slice($rr1,-6);
+		}elseif((6>count($rr1))&&(6<=count($rr2))){
+			$view_other_works= array_slice($rr2,0,6);
+		}else{
+			$view_other_works= array_merge($rr1,$rr2);
+			$view_other_works= array_slice($view_other_works,0,6);
+
+		}
+	}
 	//禁止ホスト
 	$is_badhost=is_badhost();
 	//管理者判定処理
