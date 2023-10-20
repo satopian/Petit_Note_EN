@@ -283,6 +283,11 @@ $max_kb = 2048;
 // Only uploaded images are scaled down. Set the maximum drawing size in another item.
 $max_px = 1024;
 
+// Minimum size of width and height that can be drawn
+
+$pmin_w = 300;//width  Setting the size below 300px might result in layout distortion.
+$pmin_h = 300;//height
+
 // Maximum size of width and height that can be drawn
 
 $pmax_w = 800;//width
