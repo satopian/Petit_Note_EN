@@ -285,7 +285,7 @@ $max_px = 1024;
 
 // Minimum size of width and height that can be drawn
 
-$pmin_w = 300;//width  Setting the size below 300px might result in layout distortion.
+$pmin_w = 300;//width
 $pmin_h = 300;//height
 
 // Maximum size of width and height that can be drawn
