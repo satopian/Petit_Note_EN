@@ -1,5 +1,5 @@
 <?php
-$functions_ver=20231005;
+$functions_ver=20231023;
 //編集モードログアウト
 function logout(){
 	$resno=(int)filter_input(INPUT_GET,'resno',FILTER_VALIDATE_INT);
@@ -300,7 +300,7 @@ function create_res($line,$options=[]){
 
 	$thumbnail = ($thumbnail==='thumbnail'||$thumbnail==='hide_thumbnail') ? $time.'s.jpg' : false; 
 	$link_thumbnail= ($thumbnail || $hide_thumbnail); 
-	$painttime = !$isset_catalog ? calcPtime($paintsec) : [];  
+	$painttime = !$isset_catalog ? calcPtime($paintsec) : false;  
 	$_time=(strlen($time)>15) ? substr($time,0,-6) : substr($time,0,-3);
 	$first_posted_time=(strlen($first_posted_time)>15) ? substr($first_posted_time,0,-6) : substr($first_posted_time,0,-3);
 	$datetime = $do_not_change_posts_time ? $first_posted_time : $_time;
@@ -612,7 +612,32 @@ function png2jpg ($src) {
 	}
 	return false;
 }
+//pngをjpegに変換してみてファイル容量が小さくなっていたら元のファイルを上書き
+function convert_andsave_if_smaller_png2jpg($upfile){
+	if ($im_jpg = png2jpg($upfile)) {//PNG→JPEG自動変換
+		clearstatcache();
+		$filesize=filesize($upfile);
+		if(filesize($im_jpg)<$filesize){//JPEGのほうが小さい時だけ
+			rename($im_jpg,$upfile);//JPEGで保存
+			chmod($upfile,0606);
+		} else{//PNGよりファイルサイズが大きくなる時は
+			unlink($im_jpg);//作成したJPEG画像を削除
+		}
+	}
+}
 
+//アップロード画像のファイルサイズが大きすぎる時は削除
+function delete_file_if_sizeexceeds($upfile,$fp,$rp){
+	global $max_kb,$en;
+	clearstatcache();
+	if(filesize($upfile) > $max_kb*1024){
+		closeFile($fp);
+		closeFile($rp);
+		safe_unlink($upfile);
+	return error($en? "Upload failed.\nFile size exceeds {$max_kb}kb.":"アップロードに失敗しました。\nファイル容量が{$max_kb}kbを超えています。");
+	}
+}
+	
 function error($str,$historyback=true){
 
 	global $boardname,$skindir,$en,$aikotoba_required_to_view,$petit_lot;
@@ -938,11 +963,7 @@ function image_reduction_display($w,$h,$max_w,$max_h){
 function calcPtime ($psec) {
 
 	if(!is_numeric($psec)){
-		$result=[
-			'ja'=> '',
-			'en'=> '',
-			];
-		return $result;
+		return false;
 	}
 
 	$D = floor($psec / 86400);
