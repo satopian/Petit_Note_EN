@@ -298,6 +298,10 @@ $pmin_h = 300;//height
 $pmax_w = 800;//width
 $pmax_h = 800;//height
 
+// The increment value for the canvas size in a dropdown menu.
+
+$step_of_canvas_size = 50; 
+
 // Maximum size of width and height of the image displayed when the thread is parent
 
 $max_w = 800;//width
