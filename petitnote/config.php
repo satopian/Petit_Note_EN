@@ -146,13 +146,6 @@ $allow_comments_url = false;
 $use_autolink = true;
 // $use_autolink = false;
 
-// Use the input form on the top page
-// No: If False, only draw buttons are visible.
-// yes: true no: false
-
-$use_top_form = true;
-// $use_top_form = false;
-
 // use image upload function
 //If you are logged in with administrator post mode (diary), you can upload files even if you set it to not use.
 // use: true not use: false
