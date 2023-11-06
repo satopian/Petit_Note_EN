@@ -1,8 +1,8 @@
 <?php
 //Petit Note (c)さとぴあ @satopian 2021-2023
 //1スレッド1ログファイル形式のスレッド式画像掲示板
-$petit_ver='v0.99.0';
-$petit_lot='lot.20231104';
+$petit_ver='v0.99.3';
+$petit_lot='lot.20231105';
 $lang = ($http_langs = isset($_SERVER['HTTP_ACCEPT_LANGUAGE']) ? $_SERVER['HTTP_ACCEPT_LANGUAGE'] : '')
   ? explode( ',', $http_langs )[0] : '';
 $en= (stripos($lang,'ja')!==0);
@@ -16,7 +16,7 @@ if(!is_file(__DIR__.'/functions.php')){
 	return die(__DIR__.'/functions.php'.($en ? ' does not exist.':'がありません。'));
 }
 require_once(__DIR__.'/functions.php');
-if(!isset($functions_ver)||$functions_ver<20231102){
+if(!isset($functions_ver)||$functions_ver<20231105){
 	return die($en?'Please update functions.php to the latest version.':'functions.phpを最新版に更新してください。');
 }
 check_file(__DIR__.'/misskey_note.inc.php');
@@ -92,6 +92,7 @@ $pmin_h = isset($pmin_h) ? $pmin_h : 300;//高さ
 $pdef_w = isset($pdef_w) ? $pdef_w : 300;//幅
 $pdef_h = isset($pdef_h) ? $pdef_h : 300;//高さ
 $step_of_canvas_size = isset($step_of_canvas_size) ? $step_of_canvas_size : 50;
+$use_url_input_field = isset($use_url_input_field) ? $use_url_input_field : true;
 $max_px=isset($max_px) ? $max_px : 1024;
 $mode = (string)filter_input(INPUT_POST,'mode');
 $mode = $mode ? $mode :(string)filter_input(INPUT_GET,'mode');
@@ -194,8 +195,8 @@ switch($mode){
 //投稿処理
 function post(){
 	global $max_log,$max_res,$max_kb,$use_aikotoba,$use_upload,$use_res_upload,$use_diary,$max_w,$max_h,$use_thumb,$mark_sensitive_image;
-	global $allow_comments_only,$res_max_w,$res_max_h,$admin_pass,$name_input_required,$max_com,$max_px,$sage_all,$en,$only_admin_can_reply;
-	global $usercode,$max_file_size_in_png_format_upload,$max_file_size_in_png_format_paint;
+	global $allow_comments_only,$res_max_w,$res_max_h,$name_input_required,$max_com,$max_px,$sage_all,$en,$only_admin_can_reply;
+	global $usercode,$max_file_size_in_png_format_upload,$max_file_size_in_png_format_paint,$use_url_input_field;
 
 	if($use_aikotoba){
 		check_aikotoba();
@@ -210,13 +211,15 @@ function post(){
 	$sub = t((string)filter_input(INPUT_POST,'sub'));
 	$name = t((string)filter_input(INPUT_POST,'name'));
 	$com = t((string)filter_input(INPUT_POST,'com'));
-	$url = t((string)filter_input(INPUT_POST,'url',FILTER_VALIDATE_URL));
 	$resto = t((string)filter_input(INPUT_POST,'resto',FILTER_VALIDATE_INT));
 	$pwd=t((string)filter_input(INPUT_POST, 'pwd'));//パスワードを取得
 	$sage = $sage_all ? true : (bool)filter_input(INPUT_POST,'sage',FILTER_VALIDATE_BOOLEAN);
 	$hide_thumbnail = $mark_sensitive_image ? (bool)filter_input(INPUT_POST,'hide_thumbnail',FILTER_VALIDATE_BOOLEAN) : false;
 	$hide_animation=(bool)filter_input(INPUT_POST,'hide_animation',FILTER_VALIDATE_BOOLEAN);
 	$check_elapsed_days=false;
+
+	$url = t((string)filter_input(INPUT_POST,'url',FILTER_VALIDATE_URL));
+	$url= (adminpost_valid() || $use_url_input_field) ? $url : '';
 
 	//NGワードがあれば拒絶
 	Reject_if_NGword_exists_in_the_post();
@@ -236,7 +239,7 @@ function post(){
 	$tool='';
 
 	$time=create_post_time();//ファイル名が重複しない投稿時刻を作成
-	$adminpost=(adminpost_valid()||($pwd && $pwd === $admin_pass));
+	$adminpost=(adminpost_valid()|| is_adminpass($pwd));
 
 	//お絵かきアップロード
 	$pictmp = (int)filter_input(INPUT_POST, 'pictmp',FILTER_VALIDATE_INT);
@@ -413,8 +416,7 @@ function post(){
 
 
 	//ユーザーid
-	$userid=(isset($_SESSION['userid'])&&$_SESSION['userid'])
-	? $_SESSION['userid'] : getId($userip);
+	$userid=getId($userip);//sessionも確認
 	$userid=t($userid);//タブ除去
 	$_SESSION['userid'] = $userid;
 
@@ -749,8 +751,6 @@ function paint(){
 	$rep=false;
 	$paintmode='paintcom';
 
-	session_sta();
-
 	$adminpost=adminpost_valid();
 
 	//pchファイルアップロードペイント
@@ -1065,7 +1065,6 @@ function to_continue(){
 	}
 
 	//日記判定処理
-	session_sta();
 	$adminpost=adminpost_valid();
 	$adminmode = ($adminpost||admindel_valid());
 	$aikotoba = $use_aikotoba ? aikotoba_valid() : true;
@@ -1145,7 +1144,7 @@ function download_app_dat(){
 function img_replace(){
 
 	global $use_thumb,$max_w,$max_h,$res_max_w,$res_max_h,$max_px,$en,$use_upload,$mark_sensitive_image;
-	global $admin_pass,$max_file_size_in_png_format_upload,$max_file_size_in_png_format_paint,$max_kb;
+	global $max_file_size_in_png_format_upload,$max_file_size_in_png_format_paint,$max_kb;
 
 	$no = t((string)filter_input(INPUT_POST, 'no',FILTER_VALIDATE_INT));
 	$no = $no ? $no :t((string)filter_input(INPUT_GET, 'no',FILTER_VALIDATE_INT));
@@ -1166,7 +1165,7 @@ function img_replace(){
 
 	if(strlen($pwd) > 100) return error($en? 'Password is too long.':'パスワードが長すぎます。');
 
-	$adminpost=(adminpost_valid()||($pwd && $pwd === $admin_pass));
+	$adminpost=(adminpost_valid()|| is_adminpass($pwd));
 	$admindel=admindel_valid();
 
 	//アップロード画像の差し換え
@@ -1540,7 +1539,6 @@ function confirmation_before_deletion ($edit_mode=''){
 	global $deny_all_posts;
 	//管理者判定処理
 	check_same_origin();
-	session_sta();
 	$admindel=admindel_valid();
 	$aikotoba = $use_aikotoba ? aikotoba_valid() : true;
 	aikotoba_required_to_view(true);
@@ -1620,7 +1618,7 @@ function confirmation_before_deletion ($edit_mode=''){
 //編集画面
 function edit_form($id='',$no=''){
 
-	global  $petit_ver,$petit_lot,$home,$boardname,$skindir,$set_nsfw,$en,$max_kb,$use_upload,$mark_sensitive_image;
+	global  $petit_ver,$petit_lot,$home,$boardname,$skindir,$set_nsfw,$en,$max_kb,$use_upload,$mark_sensitive_image,$use_url_input_field;
 
 	check_same_origin();
 
@@ -1705,7 +1703,7 @@ function edit_form($id='',$no=''){
 
 	$hide_thumb_checkd = ($thumbnail==='hide_thumbnail'||$thumbnail==='hide_');
 
-	$admin = ($admindel||$adminpost);
+	$admin = ($admindel||$adminpost||is_adminpass($pwd));
 	
 	$image_rep=true;
 	$admin_pass= null;
@@ -1717,7 +1715,7 @@ function edit_form($id='',$no=''){
 
 //編集
 function edit(){
-	global $name_input_required,$max_com,$en,$mark_sensitive_image,$admin_pass;
+	global $name_input_required,$max_com,$en,$mark_sensitive_image,$use_url_input_field;
 
 	check_csrf_token();
 
@@ -1730,7 +1728,6 @@ function edit(){
 	$sub = t((string)filter_input(INPUT_POST,'sub'));
 	$name = t((string)filter_input(INPUT_POST,'name'));
 	$com = t((string)filter_input(INPUT_POST,'com'));
-	$url = t((string)filter_input(INPUT_POST,'url',FILTER_VALIDATE_URL));
 	$id = t((string)filter_input(INPUT_POST,'id'));//intの範囲外
 	$no = t((string)filter_input(INPUT_POST,'no',FILTER_VALIDATE_INT));
 	$hide_thumbnail = $mark_sensitive_image ? (bool)filter_input(INPUT_POST,'hide_thumbnail',FILTER_VALIDATE_BOOLEAN) : false;
@@ -1738,8 +1735,11 @@ function edit(){
 	$pwd=(string)filter_input(INPUT_POST,'pwd');
 	$pwdc=(string)filter_input(INPUT_COOKIE,'pwdc');
 	$pwd = $pwd ? $pwd : $pwdc;
-	session_sta();
-	$admindel=(admindel_valid()||($pwd && $pwd === $admin_pass));
+	$url = t((string)filter_input(INPUT_POST,'url',FILTER_VALIDATE_URL));
+
+	$admindel=(admindel_valid() || is_adminpass($pwd));
+
+	$url= (adminpost_valid()|| $admindel || $use_url_input_field) ? $url : '';
 
 	$userdel=userdel_valid();
 	if(!($admindel||($userdel&&$pwd))){
@@ -2363,7 +2363,7 @@ function catalog(){
 function view(){
 	global $use_aikotoba,$use_upload,$home,$pagedef,$dispres,$allow_comments_only,$skindir,$descriptions,$max_kb,$root_url,$use_misskey_note;
 	global $boardname,$max_res,$use_miniform,$use_diary,$petit_ver,$petit_lot,$set_nsfw,$use_sns_button,$deny_all_posts,$en,$mark_sensitive_image,$only_admin_can_reply; 
-	global $use_paintbbs_neo,$use_chickenpaint,$use_klecs,$use_tegaki,$display_link_back_to_home,$display_search_nav,$switch_sns,$sns_window_width,$sns_window_height,$sort_comments_by_newest;
+	global $use_paintbbs_neo,$use_chickenpaint,$use_klecs,$use_tegaki,$display_link_back_to_home,$display_search_nav,$switch_sns,$sns_window_width,$sns_window_height,$sort_comments_by_newest,$use_url_input_field;
 
 
 	aikotoba_required_to_view();
@@ -2469,7 +2469,7 @@ function view(){
 function res (){
 	global $use_aikotoba,$use_upload,$home,$skindir,$root_url,$use_res_upload,$max_kb,$mark_sensitive_image,$only_admin_can_reply,$use_misskey_note;
 	global $boardname,$max_res,$petit_ver,$petit_lot,$set_nsfw,$use_sns_button,$deny_all_posts,$sage_all,$view_other_works,$en,$use_diary;
-	global $use_paintbbs_neo,$use_chickenpaint,$use_klecs,$use_tegaki,$display_link_back_to_home,$display_search_nav,$switch_sns,$sns_window_width,$sns_window_height,$sort_comments_by_newest;
+	global $use_paintbbs_neo,$use_chickenpaint,$use_klecs,$use_tegaki,$display_link_back_to_home,$display_search_nav,$switch_sns,$sns_window_width,$sns_window_height,$sort_comments_by_newest,$use_url_input_field;
 
 	aikotoba_required_to_view();
 

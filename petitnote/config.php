@@ -146,6 +146,12 @@ $allow_comments_url = false;
 $use_autolink = true;
 // $use_autolink = false;
 
+// Use URL input field
+// yes: true no: false
+
+$use_url_input_field = true;
+// $use_url_input_field = false;
+
 // use image upload function
 //If you are logged in with administrator post mode (diary), you can upload files even if you set it to not use.
 // use: true not use: false
