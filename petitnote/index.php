@@ -1,8 +1,8 @@
 <?php
 //Petit Note (c)さとぴあ @satopian 2021-2023
 //1スレッド1ログファイル形式のスレッド式画像掲示板
-$petit_ver='v0.99.3';
-$petit_lot='lot.20231105';
+$petit_ver='v1.00.5';
+$petit_lot='lot.20231112';
 $lang = ($http_langs = isset($_SERVER['HTTP_ACCEPT_LANGUAGE']) ? $_SERVER['HTTP_ACCEPT_LANGUAGE'] : '')
   ? explode( ',', $http_langs )[0] : '';
 $en= (stripos($lang,'ja')!==0);
@@ -16,7 +16,7 @@ if(!is_file(__DIR__.'/functions.php')){
 	return die(__DIR__.'/functions.php'.($en ? ' does not exist.':'がありません。'));
 }
 require_once(__DIR__.'/functions.php');
-if(!isset($functions_ver)||$functions_ver<20231105){
+if(!isset($functions_ver)||$functions_ver<20231111){
 	return die($en?'Please update functions.php to the latest version.':'functions.phpを最新版に更新してください。');
 }
 check_file(__DIR__.'/misskey_note.inc.php');
@@ -26,7 +26,7 @@ if(!isset($misskey_note_ver)||$misskey_note_ver<20231026){
 }
 check_file(__DIR__.'/save.inc.php');
 require_once(__DIR__.'/save.inc.php');
-if(!isset($save_inc_ver)||$save_inc_ver<20230930){
+if(!isset($save_inc_ver)||$save_inc_ver<20231106){
 	return die($en?'Please update save.inc.php to the latest version.':'save.inc.phpを最新版に更新してください。');
 }
 
@@ -442,17 +442,17 @@ function post(){
 
 	$chk_com=[];
 	$chk_images=[];
+	$m2time=microtime2time($time);
 	foreach($chk_lines as $chk_line){
 		$chk_ex_line=explode("\t",trim($chk_line));
 		list($no_,$sub_,$name_,$verified_,$com_,$url_,$imgfile_,$w_,$h_,$thumbnail_,$painttime_,$log_md5_,$tool_,$pchext_,$time_,$first_posted_time_,$host_,$userid_,$hash_,$oya_)=$chk_ex_line;
-		$chk_time=(strlen($time_)>15) ? substr($time_,0,-6) : substr($time_,0,-3);
-		if((string)substr($time,0,-6)===(string)$chk_time){//投稿時刻の重複回避
+		if($m2time===microtime2time($time_)){//投稿時刻の重複回避
 			safe_unlink($upfile);
 			closeFile($fp);
 			closeFile($rp);
 			return error($en? 'Please wait a little.':'少し待ってください。');
 		}
-		if($host === $host_){
+		if($userid === $userid_){
 			$chk_com[$time_]=$chk_ex_line;//コメント
 		}
 		if($is_file_upfile && $imgfile_){
@@ -474,8 +474,7 @@ function post(){
 		}
 
 		// 画像アップロードと画像なしそれぞれの待機時間
-		$_chk_time_=(strlen($_time_)>15) ? substr($_time_,0,-6) : substr($_time_,0,-3);
-		$interval=(int)time()-(int)$_chk_time_;
+		$interval=(int)time()-(int)microtime2time($_time_);
 		if($interval>=0 && (($upfile && $interval<30)||(!$upfile && $interval<20))){//待機時間がマイナスの時は通す
 			closeFile($fp);
 			closeFile($rp);
@@ -1310,9 +1309,6 @@ function img_replace(){
 		}
 		//Exifをチェックして画像が回転している時と位置情報が付いている時は上書き保存
 		check_jpeg_exif($upfile);
-		if(!is_file($upfile)){
-			return error($en?'This operation has failed.':'失敗しました。');
-		}
 	}
 	if(!$is_upload && $repfind && is_file($tempfile) && ($_tool !== 'upload')){
 		copy($tempfile, $upfile);
@@ -1354,17 +1350,18 @@ function img_replace(){
 	//$n行分の全体ログをもとにスレッドのログファイルを開いて配列を作成
 	$chk_lines = create_chk_lins($chk_log_arr,$no);//取得済みの$noの配列を除外
 	$chk_images=array_merge($chk_lines,$r_arr);
+	$m2time=microtime2time($time);
 	foreach($chk_images as $chk_line){
 		list($chk_no,$chk_sub,$chk_name,$chk_verified,$chk_com,$chk_url,$chk_imgfile,$chk_w,$chk_h,$chk_thumbnail,$chk_painttime,$chk_log_md5,$chk_tool,$chk_pchext,$chk_time,$chk_first_posted_time,$chk_host,$chk_userid,$chk_hash,$chk_oya_)=explode("\t",trim($chk_line));
-		$_chk_time=(strlen($chk_time)>15) ? substr($chk_time,0,-6) : substr($chk_time,0,-3);//秒単位に戻す
-		if($is_upload && ((string)substr($time,0,-6) === (string)$_chk_time)){//投稿時刻の重複回避
+
+		if($is_upload && ($m2time === microtime2time($chk_time))){//投稿時刻の重複回避
 			safe_unlink($upfile);
 			closeFile($fp);
 			closeFile($rp);
 			return error($en? 'Please wait a little.':'少し待ってください。');
 		}
 		if(!$is_upload && ((string)$time === (string)$chk_time)){
-			$time=(string)(substr($time,0,-6)+1).(string)substr($time,-6);
+			$time=(string)($m2time+1).(string)substr($time,-6);
 		}
 		if(!$admindel && $is_upload && ($chk_log_md5 && ($chk_log_md5 === $img_md5))){
 			safe_unlink($upfile);
@@ -1815,7 +1812,7 @@ function edit(){
 	foreach($chk_lines as $line){
 		list($_no_,$_sub_,$_name_,$_verified_,$_com_,$_url_,$_imgfile_,$_w_,$_h_,$_thumbnail_,$_painttime_,$_log_md5_,$_tool_,$_pchext_,$_time_,$_first_posted_time_,$_host_,$_userid_,$_hash_,$_oya_)=explode("\t",trim($line));
 
-		if(!$admindel && ($host===$_host_) && ($id!==$_time_) && ($com && ($com!==$_com) && ($com === $_com_))){
+		if(!$admindel && ($userid===$_userid_) && ($id!==$_time_) && ($com && ($com!==$_com) && ($com === $_com_))){
 			closeFile($fp);
 			closeFile($rp);
 			return error($en?'Post once by this comment.':'同じコメントがありました。');
@@ -1832,8 +1829,9 @@ function edit(){
 	if(in_array($pchext,['.tgkr','hide_tgkr'])){
 		$pchext= $hide_animation ? 'hide_tgkr' : '.tgkr'; 
 	}
-
-	$host=($admindel && ($sub === $_sub) && ($url === $_url) && ($com === $_com)) ? $_host : $host;//管理者による閲覧注意への変更時は投稿者のホスト名を変更しない
+	$is_admin_set_nsfw = ($admindel && ($sub === $_sub) && ($url === $_url) && ($com === $_com));
+	$host = $is_admin_set_nsfw ? $_host : $host;//管理者による閲覧注意への変更時は投稿者のホスト名を変更しない
+	$userid = $is_admin_set_nsfw ? $_userid : $userid;//管理者による閲覧注意への変更時は投稿者のidを変更しない
 
 	$r_line= "$_no\t$sub\t$name\t$_verified\t$com\t$url\t$_imgfile\t$_w\t$_h\t$thumbnail\t$_painttime\t$_log_md5\t$_tool\t$pchext\t$_time\t$_first_posted_time\t$host\t$userid\t$_hash\t$_oya\n";
 	
@@ -2283,7 +2281,7 @@ function search(){
 	if(!empty($arr)){
 
 		$time= key($arr);
-		$postedtime=(strlen($time)>15) ? substr($time,0,-6) : substr($time,0,-3);
+		$postedtime=microtime2time($time);
 		$lastmodified=date("Y/m/d G:i", (int)$postedtime);
 	}
 
@@ -2364,7 +2362,6 @@ function view(){
 	global $use_aikotoba,$use_upload,$home,$pagedef,$dispres,$allow_comments_only,$skindir,$descriptions,$max_kb,$root_url,$use_misskey_note;
 	global $boardname,$max_res,$use_miniform,$use_diary,$petit_ver,$petit_lot,$set_nsfw,$use_sns_button,$deny_all_posts,$en,$mark_sensitive_image,$only_admin_can_reply; 
 	global $use_paintbbs_neo,$use_chickenpaint,$use_klecs,$use_tegaki,$display_link_back_to_home,$display_search_nav,$switch_sns,$sns_window_width,$sns_window_height,$sort_comments_by_newest,$use_url_input_field;
-
 
 	aikotoba_required_to_view();
 	$page=(int)filter_input(INPUT_GET,'page',FILTER_VALIDATE_INT);
@@ -2616,6 +2613,7 @@ function res (){
 	$adminpost=adminpost_valid();
 	$resform = ((!$only_admin_can_reply && !$is_badhost && $aikotoba)||$adminpost);
 	$resform = $deny_all_posts ? false :$resform;
+	$resform = ($userdel||$admindel) ? false :$resform;
 
 	//Cookie
 	$namec=h((string)filter_input(INPUT_COOKIE,'namec'));
