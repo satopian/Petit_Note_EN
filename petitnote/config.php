@@ -267,6 +267,11 @@ $max_res = 100;
 
 $dispres= 5;
 
+//Number of reply images to display in one thread
+// Display all when reply screen.
+
+$disp_image_res= 5;
+
 // number of items displayed per page in catalog mode
 // Set it in multiples of 20 to fit nicely on the screen.
 
