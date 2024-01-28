@@ -1,8 +1,8 @@
 <?php
 //Petit Note (c)さとぴあ @satopian 2021-2023
 //1スレッド1ログファイル形式のスレッド式画像掲示板
-$petit_ver='v1.12.5';
-$petit_lot='lot.20240125.1';
+$petit_ver='v1.15.5';
+$petit_lot='lot.20240128';
 $lang = ($http_langs = isset($_SERVER['HTTP_ACCEPT_LANGUAGE']) ? $_SERVER['HTTP_ACCEPT_LANGUAGE'] : '')
   ? explode( ',', $http_langs )[0] : '';
 $en= (stripos($lang,'ja')!==0);
@@ -26,7 +26,7 @@ if(!isset($misskey_note_ver)||$misskey_note_ver<20231216){
 }
 check_file(__DIR__.'/save.inc.php');
 require_once(__DIR__.'/save.inc.php');
-if(!isset($save_inc_ver)||$save_inc_ver<20231219){
+if(!isset($save_inc_ver)||$save_inc_ver<20240127){
 	return die($en?'Please update save.inc.php to the latest version.':'save.inc.phpを最新版に更新してください。');
 }
 
@@ -107,7 +107,7 @@ $usercode = $usercode ? $usercode : $session_usercode;
 if(!$usercode){//user-codeがなければ発行
 	$usercode = substr(crypt(md5($userip.uniqid()),'id'),-12);
 	//念の為にエスケープ文字があればアルファベットに変換
-	$usercode = strtr($usercode,"!\"#$%&'()+,/:;<=>?@[\\]^`/{|}~\t","ABCDEFGHIJKLMNOabcdefghijklmno");
+	$usercode = t(strtr($usercode,"!\"#$%&'()+,/:;<=>?@[\\]^`/{|}~\t","ABCDEFGHIJKLMNOabcdefghijklmno"));
 }
 setcookie("usercode", $usercode, time()+(86400*365),"","",false,true);//1年間
 $_SESSION['usercode']=$usercode;
@@ -1008,7 +1008,7 @@ function paintcom(){
 function to_continue(){
 
 	global $boardname,$use_diary,$use_aikotoba,$set_nsfw,$skindir,$en,$password_require_to_continue;
-	global $use_paintbbs_neo,$use_chickenpaint,$use_klecs,$use_tegaki,$petit_lot,$elapsed_days;
+	global $use_paintbbs_neo,$use_chickenpaint,$use_klecs,$use_tegaki,$petit_lot,$elapsed_days,$max_res;
 
 	aikotoba_required_to_view(true);
 
@@ -1018,27 +1018,39 @@ function to_continue(){
 	$no = (string)filter_input(INPUT_GET, 'no',FILTER_VALIDATE_INT);
 	$id = (string)filter_input(INPUT_GET, 'id');//intの範囲外
 
+	$adminpost = adminpost_valid();
+
 	$flag = false;
 
 	if(is_file(LOG_DIR."{$no}.log")){
 		check_open_no($no);
 		$rp=fopen(LOG_DIR."{$no}.log","r");
-		while ($line = fgets($rp)) {
-			if(!trim($line)){
-				continue;
+		$lines = create_array_from_fp($rp);
+		closeFile ($rp);
+		//スレッドが閉じてるかどうか
+		foreach ($lines as $i => $line) {
+
+			list($no_,$sub_,$name_,$verified_,$com_,$url_,$imgfile_,$w_,$h_,$thumbnail_,$painttime_,$log_md5_,$tool_,$pchext_,$time_,$first_posted_time_,$host_,$userid_,$hash,$oya_)=explode("\t",trim($line));
+			if($oya_==="oya"){
+				$oya_time=$time_;
 			}
+		}
+		//閉じていたら $res_max_over が true になる
+		$res_max_over=(!$adminpost && ($i>=$max_res||!check_elapsed_days($oya_time)));
+
+		foreach ($lines as $line) {
+
 			list($_no,$sub,$name,$verified,$com,$url,$imgfile,$w,$h,$thumbnail,$painttime,$log_md5,$tool,$_pchext,$time,$first_posted_time,$host,$userid,$hash,$oya)=explode("\t",trim($line));
 			if($id===$time && $no===$_no){
 				$flag=true;
 				break;
 			}
 		}
-		closeFile ($rp);
 	}
 	if(!$flag || !$imgfile || !is_file(IMG_DIR.$imgfile)){//画像が無い時は処理しない
 		return error($en? 'The article does not exist.':'記事がありません。');
 	}
-	if(!check_elapsed_days($time)&&!adminpost_valid()){
+	if(!check_elapsed_days($time)&&!$adminpost){
 		return error($en? "Article older than {$elapsed_days} days cannot be edited.":"{$elapsed_days}日以上前の記事は編集できません。");
 	}
 
