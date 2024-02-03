@@ -1,8 +1,8 @@
 <?php
 //Petit Note (c)さとぴあ @satopian 2021-2023
 //1スレッド1ログファイル形式のスレッド式画像掲示板
-$petit_ver='v1.15.6';
-$petit_lot='lot.20240129';
+$petit_ver='v1.16.5';
+$petit_lot='lot.20240202';
 $lang = ($http_langs = isset($_SERVER['HTTP_ACCEPT_LANGUAGE']) ? $_SERVER['HTTP_ACCEPT_LANGUAGE'] : '')
   ? explode( ',', $http_langs )[0] : '';
 $en= (stripos($lang,'ja')!==0);
@@ -34,8 +34,8 @@ if(!isset($save_inc_ver)||$save_inc_ver<20240127){
 const JQUERY='jquery-3.7.0.min.js';
 check_file(__DIR__.'/lib/'.JQUERY);
 // luminous
-check_file(__DIR__.'/lib/luminous/luminous.min.js');
-check_file(__DIR__.'/lib/luminous/luminous-basic.min.css');
+check_file(__DIR__.'/lib/lightbox/js/lightbox.min.js');
+check_file(__DIR__.'/lib/lightbox/css/lightbox.min.css');
 
 check_file(__DIR__.'/config.php');
 check_file(__DIR__.'/thumbnail_gd.php');
@@ -2422,6 +2422,7 @@ function view(){
 			}
 			$_res=[];
 			$out[$oya]=[];
+			$find_hide_thumbnail=false;
 			check_open_no($no);
 			$rp = fopen(LOG_DIR."{$no}.log", "r");//個別スレッドのログを開く
 				while ($line = fgets($rp)) {
@@ -2429,9 +2430,15 @@ function view(){
 						continue;
 					}
 					$_res = create_res(explode("\t",trim($line)));//$lineから、情報を取り出す
+					if($_res['img']){
+						if($_res['hide_thumbnail']){
+							$find_hide_thumbnail=true;
+						}
+					}
 					$out[$oya][]=$_res;
 				}	
 			fclose($rp);
+			$out[$oya][0]['find_hide_thumbnail']=$find_hide_thumbnail;
 			if(empty($out[$oya])||$out[$oya][0]['oya']!=='oya'){
 				unset($out[$oya]);
 			}
@@ -2474,6 +2481,7 @@ function view(){
 		}
 	}
 	$use_misskey_note = $use_diary  ? ($adminpost||$admindel) : $use_misskey_note;
+	$lightbox_gallery=false;
 	$resmode=false;
 	$resno=0;
 	$admin_pass= null;
@@ -2506,10 +2514,10 @@ function res (){
 	$oyaname='';
 	$_res['time_left_to_close_the_thread']=false;
 	$_res['descriptioncom']='';
+	$find_hide_thumbnail=false;	
 	check_open_no($resno);
 	$rp = fopen(LOG_DIR."{$resno}.log", "r");//個別スレッドのログを開く
 		$out[0]=[];
-		$findimage=false;
 		while ($line = fgets($rp)) {
 			if(!trim($line)){
 				continue;
@@ -2519,7 +2527,9 @@ function res (){
 				continue;
 			}
 			if($_res['img']){
-				$findimage = true;
+				if($_res['hide_thumbnail']){
+					$find_hide_thumbnail=true;	
+				}
 			}
 			if($_res['oya']==='oya'){
 
@@ -2533,6 +2543,7 @@ function res (){
 					$rresname[] = $_res['name'];
 				}
 		$out[0][]=$_res;
+		$out[0][0]['find_hide_thumbnail']=$find_hide_thumbnail;
 		}	
 	fclose($rp);
 	if(empty($out[0])||$out[0][0]['oya']!=='oya'){
@@ -2658,6 +2669,7 @@ function res (){
 	
 	$use_misskey_note = $use_diary  ? ($adminpost||$admindel) : $use_misskey_note;
 	$resmode=true;
+
 	$page=0;
 
 	$admin_pass= null;
