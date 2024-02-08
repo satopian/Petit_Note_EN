@@ -114,7 +114,7 @@
 				</div>
 			<?php endif;?> 
 			<?php endif;?>
-			<div class="comment"><?=com(h($res['com']))?>
+			<div class="comment"><?=com(h($res['com']),h($res['verified']))?>
 			<?php if(isset($res['not_deleted']) && !$res['not_deleted']):?>
 			<?php if($en):?>This post does not exist.<?php else:?>この記事はありません。<?php endif;?>
 			<?php endif;?>
