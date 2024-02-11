@@ -139,18 +139,18 @@ $use_klecs= true;
 // $allow_comments_url = true;
 $allow_comments_url = false;
 
+// Use URL input field
+// yes: true no: false
+
+$use_url_input_field = true;
+// $use_url_input_field = false;
+
 // Autolink the URL
 // Markdown notation can also be used. [link text](https://example.com/)
 // yes: true no: false
 
 $use_autolink = true;
 // $use_autolink = false;
-
-// Use URL input field
-// yes: true no: false
-
-$use_url_input_field = true;
-// $use_url_input_field = false;
 
 // use image upload function
 //If you are logged in with administrator post mode (diary), you can upload files even if you set it to not use.
@@ -203,6 +203,12 @@ $set_nsfw = false;
 
 // $mark_sensitive_image = true;
 $mark_sensitive_image = false;
+
+// Checked "Sensitive Content" in default settings.
+// yes: true no: false
+
+$nsfw_checked = true;
+// $nsfw_checked = false;
 
 // Use option to hide paint time
 // Enabling this option will allow toggling the display of paint time when posting: show / hide.
