@@ -1,5 +1,5 @@
 <?php
-$functions_ver=20240207;
+$functions_ver=20240217;
 //編集モードログアウト
 function logout(){
 	$resno=(int)filter_input(INPUT_GET,'resno',FILTER_VALIDATE_INT);
@@ -250,7 +250,10 @@ function branch_destination_of_location(){
 	}
 	return header('Location: ./?page='.h($page));
 }
-
+//非同期通信の時にpaintcom()を呼び出すためのリダイレクト
+function location_paintcom(){
+	header('Location: ./?mode=paintcom');
+}
 // コンティニュー認証
 function check_cont_pass(){
 
@@ -817,8 +820,10 @@ function getId ($userip) {
 function check_AsyncRequest($upfile='') {
 	//ヘッダーが確認できなかった時の保険
 	$asyncflag = (bool)filter_input(INPUT_POST,'asyncflag',FILTER_VALIDATE_BOOLEAN);
+	$paint_picrep = (bool)filter_input(INPUT_POST,'paint_picrep',FILTER_VALIDATE_BOOLEAN);
 	$http_x_requested_with= (bool)(isset($_SERVER['HTTP_X_REQUESTED_WITH']));
-	if($http_x_requested_with || $asyncflag){//非同期通信ならエラーチェックだけすませて処理中断。通常フォームでやりなおし。
+	//Paintの画像差し換えの時はAsyncリクエストを継続
+	if(!$paint_picrep && ($http_x_requested_with || $asyncflag)){//非同期通信ならエラーチェックだけすませて処理中断。通常フォームでやりなおし。
 		safe_unlink($upfile);
 		exit;
 	}
