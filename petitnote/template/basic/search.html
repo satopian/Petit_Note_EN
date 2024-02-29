@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ja">
+<?php include __DIR__.'/parts/html.html';?>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -42,10 +42,8 @@
 					<span>[<a href="?mode=search&page=0&imgsearch=on&q=<?=h($en_q)?>&radio=<?=h($radio)?>"><?php if($en):?>Images<?php else:?>イラスト<?php endif;?></a>]</span>
 				<?php endif;?>
 		</nav>
-	<?php if($mark_sensitive_image):?>
 	<!-- 閲覧注意画像を隠す/隠さない -->
 	<?php include __DIR__.'/parts/form_set_nsfw_show_hide.html';?>
-	<?php endif;?>
 
 		<hr>
 			<h2 class="search_h2">

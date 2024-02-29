@@ -1,8 +1,8 @@
 <?php
 //Petit Note (c)さとぴあ @satopian 2021-2023
 //1スレッド1ログファイル形式のスレッド式画像掲示板
-$petit_ver='v1.20.2';
-$petit_lot='lot.20240226';
+$petit_ver='v1.22.2';
+$petit_lot='lot.20240229';
 $lang = ($http_langs = isset($_SERVER['HTTP_ACCEPT_LANGUAGE']) ? $_SERVER['HTTP_ACCEPT_LANGUAGE'] : '')
   ? explode( ',', $http_langs )[0] : '';
 $en= (stripos($lang,'ja')!==0);
@@ -96,13 +96,17 @@ $step_of_canvas_size = isset($step_of_canvas_size) ? $step_of_canvas_size : 50;
 $use_url_input_field = isset($use_url_input_field) ? $use_url_input_field : true;
 $max_px = isset($max_px) ? $max_px : 1024;
 $nsfw_checked = isset($nsfw_checked) ? $nsfw_checked : true;
+$use_darkmode = isset($use_darkmode) ? $use_darkmode : true;
+$darkmode_by_default = isset($darkmode_by_default) ? $darkmode_by_default : false;
 $mode = (string)filter_input(INPUT_POST,'mode');
 $mode = $mode ? $mode :(string)filter_input(INPUT_GET,'mode');
 $resno=(int)filter_input(INPUT_GET,'resno',FILTER_VALIDATE_INT);
 $userip = get_uip();
 //user-codeの発行
 $usercode = t((string)filter_input(INPUT_COOKIE, 'usercode'));//user-codeを取得
+//初期設定でダークモードにする
 session_sta();
+
 $session_usercode = isset($_SESSION['usercode']) ? t((string)$_SESSION['usercode']) : "";
 $usercode = $usercode ? $usercode : $session_usercode;
 if(!$usercode){//user-codeがなければ発行
@@ -117,6 +121,11 @@ $x_frame_options_deny = isset($x_frame_options_deny) ? $x_frame_options_deny : t
 if($x_frame_options_deny){
 	header('X-Frame-Options: DENY');
 }
+//ダークモード
+if(!isset($_COOKIE["p_n_set_darkmode"])&&$darkmode_by_default){
+	setcookie("p_n_set_darkmode","1",time()+(60*60*24*180),"","",false,true);
+}
+
 //初期化
 init();
 deltemp();//テンポラリ自動削除
@@ -164,6 +173,8 @@ switch($mode){
 		return view_nsfw();
 	case 'set_nsfw_show_hide':
 		return set_nsfw_show_hide();
+	case 'set_darkmode':
+		return set_darkmode();
 	case 'logout_admin':
 		return logout_admin();
 	case 'logout':
@@ -1547,6 +1558,7 @@ function pchview(){
 	$appw = $picw < 200 ? 200 : $picw;
 	$apph = $pich < 200 ? 200 : $pich + 26;
 	$parameter_day = date("Ymd");
+
 	// HTML出力
 	if($pchext==='.pch'){
 		$templete='pch_view.html';
@@ -2083,7 +2095,7 @@ function set_share_server(){
 	$encoded_u=filter_input(INPUT_GET,"encoded_u");
 	$sns_server_radio_cookie=(string)filter_input(INPUT_COOKIE,"sns_server_radio_cookie");
 	$sns_server_direct_input_cookie=(string)filter_input(INPUT_COOKIE,"sns_server_direct_input_cookie");
-	
+
 	$admin_pass= null;
 	//HTML出力
 	$templete='set_share_server.html';

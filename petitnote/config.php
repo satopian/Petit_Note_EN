@@ -41,6 +41,18 @@ $subject_input_required = false;
 // Limit the number of characters in the body. (unit byte)
 $max_com=1000;
 
+// Use dark mode
+// yes: true no: false
+
+$use_darkmode = true;
+// $use_darkmode = false;
+
+// Set default display to dark mode.
+// yes: true no: false
+
+// $darkmode_by_default = true;
+$darkmode_by_default = false;
+
 /*-----This is the end of the required setting items. -----*/
 
 /* SNS linkage */

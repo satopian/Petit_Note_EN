@@ -64,7 +64,6 @@ function aikotoba_required_to_view($required_flag=false){
 
 	$page=(int)filter_input(INPUT_GET,'page',FILTER_VALIDATE_INT);
 	$resno=(int)filter_input(INPUT_GET,'resno',FILTER_VALIDATE_INT);
-
 	$admin_pass= null;
 
 	if(!aikotoba_valid()){
@@ -216,6 +215,17 @@ function set_nsfw_show_hide(){
 		setcookie("p_n_set_nsfw_show_hide",true,time()+(60*60*24*180),"","",false,true);
 	}else{
 		setcookie("p_n_set_nsfw_show_hide",false,time()+(60*60*24*180),"","",false,true);
+	}
+
+	return branch_destination_of_location();
+}
+function set_darkmode(){
+
+	$darkmode=(bool)filter_input(INPUT_POST,'darkmode');
+	if($darkmode){
+		setcookie("p_n_set_darkmode","1",time()+(60*60*24*180),"","",false,true);
+	}else{
+		setcookie("p_n_set_darkmode","0",time()+(60*60*24*180),"","",false,true);
 	}
 
 	return branch_destination_of_location();
