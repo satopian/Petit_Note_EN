@@ -1,8 +1,8 @@
 <?php
 //Petit Note (c)さとぴあ @satopian 2021-2023
 //1スレッド1ログファイル形式のスレッド式画像掲示板
-$petit_ver='v1.25.6';
-$petit_lot='lot.20240310';
+$petit_ver='v1.26.8';
+$petit_lot='lot.20240315';
 $lang = ($http_langs = isset($_SERVER['HTTP_ACCEPT_LANGUAGE']) ? $_SERVER['HTTP_ACCEPT_LANGUAGE'] : '')
   ? explode( ',', $http_langs )[0] : '';
 $en= (stripos($lang,'ja')!==0);
@@ -16,7 +16,7 @@ if(!is_file(__DIR__.'/functions.php')){
 	return die(__DIR__.'/functions.php'.($en ? ' does not exist.':'がありません。'));
 }
 require_once(__DIR__.'/functions.php');
-if(!isset($functions_ver)||$functions_ver<20240309){
+if(!isset($functions_ver)||$functions_ver<20240315){
 	return die($en?'Please update functions.php to the latest version.':'functions.phpを最新版に更新してください。');
 }
 check_file(__DIR__.'/misskey_note.inc.php');
@@ -212,7 +212,7 @@ switch($mode){
 
 //投稿処理
 function post(){
-	global $max_log,$max_res,$max_kb,$use_aikotoba,$use_upload,$use_res_upload,$use_diary,$max_w,$max_h,$use_thumb,$mark_sensitive_image;
+	global $max_log,$max_res,$max_kb,$use_aikotoba,$use_upload,$use_res_upload,$use_diary,$max_w,$max_h,$mark_sensitive_image;
 	global $allow_comments_only,$res_max_w,$res_max_h,$name_input_required,$max_com,$max_px,$sage_all,$en,$only_admin_can_reply;
 	global $usercode,$max_file_size_in_png_format_upload,$max_file_size_in_png_format_paint,$use_url_input_field;
 
@@ -505,7 +505,7 @@ function post(){
 	if($is_file_upfile){
 
 		if(!$pictmp2){//実体データの縮小
-			thumb(TEMP_DIR,$time.'.tmp',$time,$max_px,$max_px,['toolarge'=>1]);
+			thumb(TEMP_DIR,$time.'.tmp',$time,$max_px,$max_px,['toolarge'=>true]);
 		}	
 		clearstatcache();
 		$filesize=filesize($upfile);
@@ -572,19 +572,11 @@ function post(){
 		$max_h = $resto ? $res_max_h : $max_h; 
 		//縮小表示
 		list($w,$h)=image_reduction_display($w,$h,$max_w,$max_h);
-		//サムネイル
-		if($use_thumb){
-			if(thumb(IMG_DIR,$imgfile,$time,$max_w,$max_h)){
-				$thumbnail='thumbnail';
-			}
-			if($thumbnail && thumb(IMG_DIR,$imgfile,$time,$max_w,$max_h,['thumbnail_webp'=>true])){
-				$thumbnail='thumbnail_webp';
-			}
-		}
-	$hide_thumbnail=$hide_thumbnail ? 'hide_' : '';
-	$thumbnail =  $hide_thumbnail.$thumbnail;
-		//webpサムネイル
-		thumb(IMG_DIR,$imgfile,$time,300,800,['webp'=>true]);
+		//サムネイル作成
+		$thumbnail = make_thumbnail($imgfile,$time,$max_w,$max_h);
+		$hide_thumbnail=$hide_thumbnail ? 'hide_' : '';
+		$thumbnail =  $hide_thumbnail.$thumbnail;
+
 	}
 	//ログの番号の最大値
 	$no_arr = [];
@@ -819,7 +811,7 @@ function paint(){
 				$img_klecks = $pchup;
 			} elseif(in_array($pchext, ['gif','jpg','jpeg','png','webp']) && in_array($mime_type, ['image/gif', 'image/jpeg', 'image/png','image/webp'])){
 				$file_name=pathinfo($pchup,PATHINFO_FILENAME);
-				thumb(TEMP_DIR,$basename_pchup,$time,$max_px,$max_px,['toolarge'=>1]);
+				thumb(TEMP_DIR,$basename_pchup,$time,$max_px,$max_px,['toolarge'=>true]);
 				list($picw,$pich) = getimagesize($pchup);
 				$imgfile = $pchup;
 				$anime = false;
@@ -1180,7 +1172,7 @@ function download_app_dat(){
 // 画像差し換え
 function img_replace(){
 
-	global $use_thumb,$max_w,$max_h,$res_max_w,$res_max_h,$max_px,$en,$use_upload,$mark_sensitive_image;
+	global $max_w,$max_h,$res_max_w,$res_max_h,$max_px,$en,$use_upload,$mark_sensitive_image;
 	global $max_file_size_in_png_format_upload,$max_file_size_in_png_format_paint,$max_kb;
 
 	$no = t((string)filter_input(INPUT_POST, 'no',FILTER_VALIDATE_INT));
@@ -1364,7 +1356,7 @@ function img_replace(){
 	} 
 	chmod($upfile,0606);
 	if($is_upload){//実体データの縮小
-		thumb(TEMP_DIR,$time.'.tmp',$time,$max_px,$max_px,['toolarge'=>1]);
+		thumb(TEMP_DIR,$time.'.tmp',$time,$max_px,$max_px,['toolarge'=>true]);
 	}	
 	clearstatcache();
 	$filesize=filesize($upfile);
@@ -1445,18 +1437,8 @@ function img_replace(){
 
 	list($w,$h)=image_reduction_display($w,$h,$max_w,$max_h);
 	
-	//サムネイル
-	$thumbnail='';
-	if($use_thumb){
-		if(thumb(IMG_DIR,$imgfile,$time,$max_w,$max_h)){
-			$thumbnail='thumbnail';
-		}
-		if($thumbnail && thumb(IMG_DIR,$imgfile,$time,$max_w,$max_h,['thumbnail_webp'=>true])){
-			$thumbnail='thumbnail_webp';
-		}
-	}
-	//webpサムネイル
-	thumb(IMG_DIR,$imgfile,$time,300,800,['webp'=>true]);
+	$thumbnail = make_thumbnail($imgfile,$time,$max_w,$max_h);//サムネイル作成
+	
 	$hide_thumbnail = ($_imgfile && strpos($_thumbnail,'hide_')!==false) ? 'hide_' : '';
 
 	$thumbnail =  $hide_thumbnail.$thumbnail;
@@ -1866,7 +1848,7 @@ function edit(){
 	}
 
 	$thumbnail=is_file(THUMB_DIR.$_time.'s.jpg') ? 'thumbnail': '';
-	$thumbnail=$thumbnail && is_file(THUMB_DIR.$_time.'s.webp') ? 'thumbnail_webp': 'thumbnail';
+	$thumbnail=($thumbnail && is_file(THUMB_DIR.$_time.'s.webp')) ? 'thumbnail_webp': $thumbnail;
 	$hide_thumbnail=($_imgfile && $hide_thumbnail) ? 'hide_' : '';
 	$thumbnail =  $mark_sensitive_image ? $hide_thumbnail.$thumbnail : $_thumbnail;
 
@@ -2244,14 +2226,13 @@ function search(){
 	$txt_search = !$imgsearch ? ['search' => true] : [];//本文の検索の時にtrue
 	foreach($articles as $i => $line){
 
-		$out[$i] = create_res($line,(['catalog' => true] + $txt_search));//$lineから、情報を取り出す
+		$out[0][$i] = create_res($line,(['catalog' => true] + $txt_search));//$lineから、情報を取り出す
 
 			// マークダウン
-			$com= preg_replace("{\[([^\[\]\(\)]+?)\]\((https?://[\w!\?/\+\-_~=;\.,\*&@#\$%\(\)'\[\]]+)\)}","$1",$out[$i]['com']);
+			$com= preg_replace("{\[([^\[\]\(\)]+?)\]\((https?://[\w!\?/\+\-_~=;\.,\*&@#\$%\(\)'\[\]]+)\)}","$1",$out[0][$i]['com']);
 			$com=h(strip_tags($com));
 			$com=mb_strcut($com,0,180);
-			$out[$i]['com']=$com;
-			$out[$i]['date']=$out[$i]['datetime'] ? (date("y/m/d G:i", $out[$i]['datetime'])) : '';
+			$out[0][$i]['com']=$com;
 
 			$j=$page+$i+1;//表示件数
 		}
@@ -2305,7 +2286,6 @@ function search(){
 		$result_subject=$en ? 'Recent '.$pageno.' Posts' : $boardname.'に投稿された最新の';
 		$pageno=$en ? '':$pageno;
 	}
-
 
 	$count_alllog=count($arr);//配列の数
 	$countarr=$count_alllog;//古いテンプレート互換
@@ -2547,7 +2527,7 @@ function res (){
 			if(!trim($line)){
 				continue;
 			}
-			$_res = create_res(explode("\t",trim($line)));//$lineから、情報を取り出す
+			$_res = create_res(explode("\t",trim($line)),($res_catalog ? ['catalog'=>true] : []));//$lineから、情報を取り出す
 			if($res_catalog && !$_res['img'] && $_res['oya']!=='oya'){
 				continue;
 			}

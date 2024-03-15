@@ -1,5 +1,5 @@
 <?php
-$functions_ver=20240309;
+$functions_ver=20240315;
 //編集モードログアウト
 function logout(){
 	$resno=(int)filter_input(INPUT_GET,'resno',FILTER_VALIDATE_INT);
@@ -726,6 +726,24 @@ global $max_px;
 	// 画像のメモリを解放
 	imagedestroy($im_in);
 	imagedestroy($im_out);
+}
+
+//サムネイル作成
+function make_thumbnail($imgfile,$time,$max_w,$max_h){
+	global $use_thumb; 
+	$thumbnail='';
+	if($use_thumb){//スレッドの画像のサムネイルを使う時
+		if(thumb(IMG_DIR,$imgfile,$time,$max_w,$max_h)){
+			$thumbnail='thumbnail';
+		}
+		if($thumbnail && thumb(IMG_DIR,$imgfile,$time,$max_w,$max_h,['thumbnail_webp'=>true])){
+			$thumbnail='thumbnail_webp';
+		}
+	}
+	//カタログ用webpサムネイル 
+	thumb(IMG_DIR,$imgfile,$time,300,800,['webp'=>true]);
+
+	return $thumbnail;
 }
 
 //アップロード画像のファイルサイズが大きすぎる時は削除
