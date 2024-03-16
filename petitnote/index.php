@@ -1,8 +1,8 @@
 <?php
 //Petit Note (c)さとぴあ @satopian 2021-2023
 //1スレッド1ログファイル形式のスレッド式画像掲示板
-$petit_ver='v1.26.8';
-$petit_lot='lot.20240315';
+$petit_ver='v1.26.9';
+$petit_lot='lot.20240316';
 $lang = ($http_langs = isset($_SERVER['HTTP_ACCEPT_LANGUAGE']) ? $_SERVER['HTTP_ACCEPT_LANGUAGE'] : '')
   ? explode( ',', $http_langs )[0] : '';
 $en= (stripos($lang,'ja')!==0);
@@ -1437,6 +1437,7 @@ function img_replace(){
 
 	list($w,$h)=image_reduction_display($w,$h,$max_w,$max_h);
 	
+	//サムネイル作成
 	$thumbnail = make_thumbnail($imgfile,$time,$max_w,$max_h);//サムネイル作成
 	
 	$hide_thumbnail = ($_imgfile && strpos($_thumbnail,'hide_')!==false) ? 'hide_' : '';
@@ -2166,7 +2167,8 @@ function search(){
 		$rp=fopen("log/{$resno}.log","r");
 		while($line=fgets($rp)){
 
-			list($no,$sub,$name,$verified,$com,$url,$imgfile,$w,$h,$thumbnail,$painttime,$log_md5,$tool,$pchext,$time,$first_posted_time,$host,$userid,$hash,$oya)=explode("\t",$line);
+			$lines=explode("\t",$line);
+			list($no,$sub,$name,$verified,$com,$url,$imgfile,$w,$h,$thumbnail,$painttime,$log_md5,$tool,$pchext,$time,$first_posted_time,$host,$userid,$hash,$oya)=$lines;
 
 			if(!$name && !$com && !$url && !$imgfile && !$userid){//この記事はありませんの時は表示しない
 				continue;
@@ -2201,7 +2203,7 @@ function search(){
 				$check_q!==''&&($radio===1||$radio===0)&&strpos($s_name,$check_q)===0||//作者名が含まれる
 				$check_q!==''&&($radio===2&&$s_name===$check_q)//作者名完全一致
 				){
-					$arr[$time]=[$no,$sub,$name,$verified,$com,$url,$imgfile,$w,$h,$thumbnail,$painttime,$log_md5,$tool,$pchext,$time,$first_posted_time,$host,$userid,$hash,$oya];
+					$arr[$time]=$lines;
 					++$i;
 					if($i>=$max_search&&$j>10){break 2;}//1掲示板あたりの最大検索数 最低でも10スレッド分は取得
 				}
