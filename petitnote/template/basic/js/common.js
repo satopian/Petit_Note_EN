@@ -104,13 +104,13 @@ let isForm_Changed = false;
 document.addEventListener("DOMContentLoaded", (e) => {
 	isForm_Changed = false;
 	const resForm = document.getElementById('res_form');
-    const textarea = resForm.querySelector('textarea');
+	const textarea = resForm.querySelector('textarea');
 
 	textarea.addEventListener("change", ()=>{
 		isForm_Changed = true;
 	});
 	window.addEventListener("beforeunload", (e) => {
-		if (isForm_Changed && !isForm_Submit) {//isForm_submitは非同期通信で設定
+		if (isForm_Changed && !isForm_Submit) {//isForm_Submitは非同期通信で設定
 			e.preventDefault();
 		}
 	});
