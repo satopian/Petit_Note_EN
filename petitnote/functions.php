@@ -1,5 +1,5 @@
 <?php
-$functions_ver=20240521;
+$functions_ver=20240524;
 //編集モードログアウト
 function logout(){
 	$resno=(int)filter_input(INPUT_GET,'resno',FILTER_VALIDATE_INT);
@@ -216,8 +216,6 @@ function set_nsfw_show_hide(){
 	}else{
 		setcookie("p_n_set_nsfw_show_hide",false,time()+(60*60*24*365),"","",false,true);
 	}
-
-	return branch_destination_of_location();
 }
 function set_darkmode(){
 
@@ -227,8 +225,6 @@ function set_darkmode(){
 	}else{
 		setcookie("p_n_set_darkmode","0",time()+(60*60*24*365),"","",false,true);
 	}
-
-	return branch_destination_of_location();
 }
 
 //ログイン・ログアウト時のLocationを分岐
