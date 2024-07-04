@@ -57,8 +57,8 @@ $darkmode_by_default = false;
 
 /* SNS linkage */
 
-// use tweet button
-// Display the URL of the thread and a link to tweet the content.
+// Use SNS share button
+// Create a link to share the thread URL and content.
 // use: true not use: false
 
 $use_sns_button = true;
