@@ -507,6 +507,8 @@ $misskey_servers=
 
 /* Message for notification mail */
 
+define('NOTICE_MAIL_NAME', 'Name');
+define('NOTICE_MAIL_SUBJECT', 'Subject');
 define("NOTICE_MAIL_IMG", "Picture");
 define("NOTICE_MAIL_THUMBNAIL", "Thumbnail");
 define("NOTICE_MAIL_URL", "Fixed link");
