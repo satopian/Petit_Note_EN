@@ -115,7 +115,7 @@ class noticemail{
 	$MailHeaders .= 'Content-Transfer-Encoding: 8bit'."\n";
 
 	// メール本文作成
-	$Message = '■'.$data['subject']."\n";
+	$Message = $data['subject']."\n";
 	$Message .= 'Date: '.date("Y/m/d H:i:s",time())."\n";
 	//ユーザーip
 	$userip = get_uip();
@@ -128,8 +128,8 @@ class noticemail{
 	$Message .= $title ? ($notice_mail_subject.': '.$title."\n") : '';
 	if(is_array($option)){
 		foreach($option as $value){
-			list($optitle,$opvalue)=explode(",", rtrim($value));
-			$Message .=$optitle.': '.$opvalue." \n"; 
+			list($optitle,$opvalue) = $value;
+			$Message .= $optitle.': '.$opvalue."\n"; 
 		}
 	}
 		$Message .= $line;

@@ -1,7 +1,7 @@
 <?php
 //Petit Note (c)さとぴあ @satopian 2021-2023
 //1スレッド1ログファイル形式のスレッド式画像掲示板
-$petit_ver='v1.38.0';
+$petit_ver='v1.38.2';
 $petit_lot='lot.20240709';
 $lang = ($http_langs = isset($_SERVER['HTTP_ACCEPT_LANGUAGE']) ? $_SERVER['HTTP_ACCEPT_LANGUAGE'] : '')
   ? explode( ',', $http_langs )[0] : '';
@@ -691,10 +691,10 @@ function post(){
 	global $send_email,$to_mail,$root_url,$boardname;
 
 	if($send_email){
-	//template_ini.phpで未定義の時の初期値
+	//config.phpで未定義の時の初期値
 	//このままでよければ定義不要
 	defined('NOTICE_MAIL_NAME') or define('NOTICE_MAIL_NAME', '名前');
-	defined('NOTICE_MAIL_SUBJECT') or define('NOTICE_MAIL_SUBJECT', '題名');
+	defined('NOTICE_MAIL_SUBJECT') or define('NOTICE_MAIL_SUBJECT', '記事題名');
 	defined('NOTICE_MAIL_IMG') or define('NOTICE_MAIL_IMG', '投稿画像');
 	defined('NOTICE_MAIL_THUMBNAIL') or define('NOTICE_MAIL_THUMBNAIL', 'サムネイル画像');
 	defined('NOTICE_MAIL_URL') or define('NOTICE_MAIL_URL', '記事URL');
@@ -707,10 +707,10 @@ function post(){
 		$data['url'] = filter_var($url,FILTER_VALIDATE_URL) ? $url:'';
 		$data['title'] = $sub;
 		if($imgfile){
-			$data['option'][] = NOTICE_MAIL_IMG.','.$root_url.IMG_DIR.$imgfile;//拡張子があったら
+			$data['option'][] = [NOTICE_MAIL_IMG,$root_url.IMG_DIR.$imgfile];//拡張子があったら
 		} 
 		if(is_file(THUMB_DIR.$time.'s.jpg')){
-			$data['option'][] = NOTICE_MAIL_THUMBNAIL.','.$root_url.THUMB_DIR.$time.'s.jpg';
+			$data['option'][] = [NOTICE_MAIL_THUMBNAIL,$root_url.THUMB_DIR.$time.'s.jpg'];
 		} 
 		if($resto){
 			$data['subject'] = '['.$boardname.'] No.'.$resto.NOTICE_MAIL_REPLY;
@@ -718,7 +718,7 @@ function post(){
 			$data['subject'] = '['.$boardname.'] '.NOTICE_MAIL_NEWPOST;
 		}
 
-		$data['option'][] = NOTICE_MAIL_URL.",{$root_url}?resno={$resno}#{$time}";
+		$data['option'][] = [NOTICE_MAIL_URL,"{$root_url}?resno={$resno}#{$time}"];
 		$data['comment'] = str_replace('"\n"',"\n",$com);
 
 		noticemail::send($data);
