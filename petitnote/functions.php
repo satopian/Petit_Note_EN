@@ -1,5 +1,5 @@
 <?php
-$functions_ver=20240720;
+$functions_ver=20240724;
 //編集モードログアウト
 function logout(){
 	$resno=(int)filter_input(INPUT_GET,'resno',FILTER_VALIDATE_INT);
@@ -45,7 +45,7 @@ function aikotoba(){
 
 	$_SESSION['aikotoba']='aikotoba';
 
-	// return branch_destination_of_location();
+	// 処理が終了したらJavaScriptでリロード
 
 }
 //記事の表示に合言葉を必須にする
@@ -86,6 +86,7 @@ function admin_in(){
 	$page=(int)filter_input(INPUT_GET,'page',FILTER_VALIDATE_INT);
 	$resno=(int)filter_input(INPUT_GET,'resno',FILTER_VALIDATE_INT);
 	$catalog=(bool)filter_input(INPUT_GET,'catalog',FILTER_VALIDATE_BOOLEAN);
+	$res_catalog=(bool)filter_input(INPUT_GET,'res_catalog',FILTER_VALIDATE_BOOLEAN);
 	$search=(bool)filter_input(INPUT_GET,'search',FILTER_VALIDATE_BOOLEAN);
 	$radio=(int)filter_input(INPUT_GET,'radio',FILTER_VALIDATE_INT);
 	$imgsearch=(bool)filter_input(INPUT_GET,'imgsearch',FILTER_VALIDATE_BOOLEAN);
@@ -231,14 +232,14 @@ function branch_destination_of_location(){
 	$catalog=(bool)filter_input(INPUT_POST,'catalog',FILTER_VALIDATE_BOOLEAN);
 	$search=(bool)filter_input(INPUT_POST,'search',FILTER_VALIDATE_BOOLEAN);
 	$paintcom=(bool)filter_input(INPUT_POST,'paintcom',FILTER_VALIDATE_BOOLEAN);
-	$misskey_note=(bool)filter_input(INPUT_POST,'misskey_note',FILTER_VALIDATE_BOOLEAN);
+	$res_catalog=(bool)filter_input(INPUT_POST,'res_catalog',FILTER_VALIDATE_BOOLEAN);
 
 	if($paintcom){
 		return header('Location: ./?mode=paintcom');
 	}
 	if($resno){
-		$misskey_note = $misskey_note ? '&misskey_note=on':'';
-		return header('Location: ./?resno='.h($resno).$misskey_note);
+		$res_catalog = $res_catalog ? '&res_catalog=on' : ''; 
+		return header('Location: ./?resno='.h($resno).$res_catalog);
 	}
 	if($catalog){
 		return header('Location: ./?mode=catalog&page='.h($page));
@@ -1311,22 +1312,24 @@ function app_to_use(){
 //パスワードを5回連続して間違えた時は拒絶
 function check_password_input_error_count(){
 	global $second_pass,$en,$check_password_input_error_count;
+	$file=__DIR__.'/template/errorlog/error.log';
 	if(!$check_password_input_error_count){
+		safe_unlink($file);
 		return;
 	}
 	$userip = get_uip();
 	check_dir(__DIR__.'/template/errorlog/');
-	$arr_err=is_file(__DIR__.'/template/errorlog/error.log') ? file(__DIR__.'/template/errorlog/error.log'):[];
+	$arr_err=is_file($file) ? file($file):[];
 	if(count($arr_err)>=5){
 		error($en?'Rejected.':'拒絶されました。');
 	}
 	if(!is_adminpass(filter_input(INPUT_POST,'adminpass'))){
 
 		$errlog=$userip."\n";
-		file_put_contents(__DIR__.'/template/errorlog/error.log',$errlog,FILE_APPEND);
-		chmod(__DIR__.'/template/errorlog/error.log',0600);
+		file_put_contents($file,$errlog,FILE_APPEND);
+		chmod($file,0600);
 		}else{
-			safe_unlink(__DIR__.'/template/errorlog/error.log');
+			safe_unlink($file);
 		}
 }
 
