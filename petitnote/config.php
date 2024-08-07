@@ -132,6 +132,12 @@ $use_paintbbs_neo= true;
 $use_tegaki= true;
 // $use_tegaki= false;
 
+// Use Axnos Paint
+// yes: true no: false
+
+$use_axnos = true;
+// $use_axnos = false;
+
 // Use ChickenPaint
 // yes: true no: false
 $use_chickenpaint= true;
