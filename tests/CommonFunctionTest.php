@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 use PHPUnit\Framework\TestCase;
 
@@ -180,10 +182,10 @@ final class CommonFunctionTest extends TestCase
     public function imageReductionDisplayProvider(): array
     {
         return [
-            ['', 0, 0, 0, ['','']],
-            [0, '', 0, 0, ['','']],
-            ['', '', 0, 0, ['','']],
-            [500, '', 400, 400,  ['','']],
+            ['', 0, 0, 0, ['', '']],
+            [0, '', 0, 0, ['', '']],
+            ['', '', 0, 0, ['', '']],
+            [500, '', 400, 400,  ['', '']],
             [0, 0, 0, 0, [0, 0]],
             [400, 400, 0, 0, [0, 0]],
             [400, 400, 400, 400, [400, 400]],
@@ -199,10 +201,8 @@ final class CommonFunctionTest extends TestCase
      * @dataProvider calculatePaintTimeProvider
      * @covers       calcPtime
      */
-    public function testCalcPtime(bool $globalEn, $psec, string $expected): void
+    public function testCalcPtime($psec, array $expected): void
     {
-        global $en;
-        $en = $globalEn;
 
         $actual = calcPtime($psec);
 
@@ -212,24 +212,54 @@ final class CommonFunctionTest extends TestCase
     public function calculatePaintTimeProvider(): array
     {
         return [
-            [false, 0, ''],
-            [false, 1, '1秒'],
+            [0, ['ja' => '', 'en' => '']],
+            [1, ['ja' => '1秒', 'en' => '1sec']],
+            [60, ['ja' => '1分', 'en' => '1min ']],
+            [61, ['ja' => '1分1秒', 'en' => '1min 1sec']],
+            [3600, ['ja' => '1時間', 'en' => '1hr ']],
+            [3661, ['ja' => '1時間1分1秒', 'en' => '1hr 1min 1sec']],
+            [86400, ['ja' => '1日', 'en' => '1day ']],
+            [86461, ['ja' => '1日1分1秒', 'en' => '1day 1min 1sec']],
+            [172861, ['ja' => '2日1分1秒', 'en' => '2day 1min 1sec']],
+        ];
+    }
+    /**
+     * @dataProvider calc_remaining_time_to_close_thread_Provider
+     * @covers       calc_remaining_time_to_close_thread
+     */
+    public function test_calc_remaining_time_to_close_thread(bool $globalEn, $psec, string $expected): void
+    {
+        global $en;
+        $en = $globalEn;
+        $actual = calc_remaining_time_to_close_thread($psec);
+
+        $this->assertEquals($expected, $actual);
+    }
+
+    public function calc_remaining_time_to_close_thread_Provider(): array
+    {
+
+        return [
+            // $en = false (日本語)
+            [false, 0, '0分'],
+            [false, 1, '0分'],
             [false, 60, '1分'],
-            [false, 61, '1分1秒'],
+            [false, 61, '1分'],
             [false, 3600, '1時間'],
-            [false, 3661, '1時間1分1秒'],
+            [false, 3661, '1時間'],
             [false, 86400, '1日'],
-            [false, 86461, '1日1分1秒'],
-            [false, 172861, '2日1分1秒'],
-            [true, 0, ''],
-            [true, 1, '1sec'],
-            [true, 60, '1min '],
-            [true, 61, '1min 1sec'],
-            [true, 3600, '1hr '],
-            [true, 3661, '1hr 1min 1sec'],
-            [true, 86400, '1day '],
-            [true, 86461, '1day 1min 1sec'],
-            [true, 172861, '2day 1min 1sec']
+            [false, 86461, '1日'],
+            [false, 172861, '2日'],
+            // $en = true (英語)
+            [true, 0, '0min'],
+            [true, 1, '0min'],
+            [true, 60, '1min'],
+            [true, 61, '1min'],
+            [true, 3600, '1hours'],
+            [true, 3661, '1hours'],
+            [true, 86400, '1days'],
+            [true, 86461, '1days'],
+            [true, 172861, '2days'],
         ];
     }
 
@@ -239,8 +269,10 @@ final class CommonFunctionTest extends TestCase
      */
     public function testCreateFormattedTextFromPost(bool $globalEn, $name, $subject, $url, $comment, array $expected): void
     {
-        global $en;
+        global $en, $name_input_required, $subject_input_required;
         $en = $globalEn;
+        $name_input_required = false;
+        $subject_input_required = false;
 
         $actual = create_formatted_text_from_post($name, $subject, $url, $comment);
 
@@ -250,7 +282,7 @@ final class CommonFunctionTest extends TestCase
     public function createFormattedTextFromPostProvider(): array
     {
         return [
-            [false, '', '', '', '', ['name' => '', 'sub' => '無題', 'url' => '', 'com' => '']],
+            [false, '', '', '', '', ['name' => 'anonymous', 'sub' => '無題', 'url' => '', 'com' => '']],
             [
                 false,
                 'foo',
@@ -303,11 +335,11 @@ final class CommonFunctionTest extends TestCase
                 false,
                 "fo\to",
                 "ba\tr",
-				"https://example.com/ba\tz",
+                "https://example.com/ba\tz",
                 "qux\tquuxcorge",
                 ['name' => 'foo', 'sub' => 'bar', 'url' => '', 'com' => 'quxquuxcorge']
             ],
-            [true, '', '', '', '', ['name' => '', 'sub' => 'No subject', 'url' => '', 'com' => '']],
+            [true, '', '', '', '', ['name' => 'anonymous', 'sub' => 'No subject', 'url' => '', 'com' => '']],
         ];
     }
 }
