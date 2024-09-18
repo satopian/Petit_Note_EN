@@ -213,14 +213,14 @@ final class CommonFunctionTest extends TestCase
     {
         return [
             [0, ['ja' => '', 'en' => '']],
-            [1, ['ja' => '1秒', 'en' => '1sec']],
-            [60, ['ja' => '1分', 'en' => '1min ']],
-            [61, ['ja' => '1分1秒', 'en' => '1min 1sec']],
-            [3600, ['ja' => '1時間', 'en' => '1hr ']],
-            [3661, ['ja' => '1時間1分1秒', 'en' => '1hr 1min 1sec']],
+            [1, ['ja' => '1秒', 'en' => '1 sec']],
+            [60, ['ja' => '1分', 'en' => '1 min ']],
+            [61, ['ja' => '1分1秒', 'en' => '1 min 1 sec']],
+            [3600, ['ja' => '1時間', 'en' => '1 hr ']],
+            [3661, ['ja' => '1時間1分1秒', 'en' => '1 hr 1 min 1 sec']],
             [86400, ['ja' => '1日', 'en' => '1day ']],
-            [86461, ['ja' => '1日1分1秒', 'en' => '1day 1min 1sec']],
-            [172861, ['ja' => '2日1分1秒', 'en' => '2day 1min 1sec']],
+            [86461, ['ja' => '1日1分1秒', 'en' => '1 day 1 min 1 sec']],
+            [172861, ['ja' => '2日1分1秒', 'en' => '2 days 1 min 1 sec']],
         ];
     }
     /**
@@ -245,21 +245,27 @@ final class CommonFunctionTest extends TestCase
             [false, 1, '0分'],
             [false, 60, '1分'],
             [false, 61, '1分'],
+            [false, 120, '2分'],
+            [false, 121, '2分'],
             [false, 3600, '1時間'],
             [false, 3661, '1時間'],
+            [false, 7200, '2時間'],
             [false, 86400, '1日'],
             [false, 86461, '1日'],
             [false, 172861, '2日'],
             // $en = true (英語)
-            [true, 0, '0min'],
-            [true, 1, '0min'],
-            [true, 60, '1min'],
-            [true, 61, '1min'],
-            [true, 3600, '1hours'],
-            [true, 3661, '1hours'],
-            [true, 86400, '1days'],
-            [true, 86461, '1days'],
-            [true, 172861, '2days'],
+            [true, 0, '0 min'],
+            [true, 1, '0 min'],
+            [true, 60, '1 min'],
+            [true, 61, '1 min'],
+            [true, 120, '2 min'],
+            [true, 121, '2 min'],
+            [true, 3600, '1 hour'],
+            [true, 3661, '1 hour'],
+            [true, 7200, '2 hours'],
+            [true, 86400, '1 day'],
+            [true, 86461, '1 day'],
+            [true, 172861, '2 days'],
         ];
     }
 
