@@ -345,12 +345,12 @@ $res_max_h = 300;//height
 $use_thumb = true;
 // $use_thumb = false;
 
-// Maximum file size to save in png format when uploading
-// Convert to JPEG if the file size exceeds this (unit: kb)
+// Maximum file size to save in WebP format when uploading
+// Convert to WebP if the file size exceeds this (unit: kb)
 $max_file_size_in_png_format_upload = 800;
 
-// Maximum file size to save in png format when painting
-// Convert to JPEG if the file size exceeds this (unit: kb)
+// Maximum file size to save in WebP format when painting
+// Convert to WebP if the file size exceeds this (unit: kb)
 $max_file_size_in_png_format_paint = 1024;
 
 /* secret word setting */
