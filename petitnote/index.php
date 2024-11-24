@@ -1,8 +1,8 @@
 <?php
 //Petit Note (c)さとぴあ @satopian 2021-2024
 //1スレッド1ログファイル形式のスレッド式画像掲示板
-$petit_ver='v1.58.3';
-$petit_lot='lot.20241118';
+$petit_ver='v1.59.0';
+$petit_lot='lot.20241124';
 $lang = ($http_langs = isset($_SERVER['HTTP_ACCEPT_LANGUAGE']) ? $_SERVER['HTTP_ACCEPT_LANGUAGE'] : '')
   ? explode( ',', $http_langs )[0] : '';
 $en= (stripos($lang,'ja')!==0);
@@ -279,7 +279,6 @@ function post(){
 		$uresto=filter_var($uresto,FILTER_VALIDATE_INT);
 		$hide_animation= $hide_animation ? true : ($u_hide_animation==='true');
 		$resto = $uresto ? $uresto : $resto;//変数上書き$userdataのレス先を優先する
-		check_open_no($resto);
 		$resto=(string)$resto;//(string)厳密な型
 		//描画時間を$userdataをもとに計算
 		$hide_painttime=(bool)filter_input(INPUT_POST,'hide_painttime',FILTER_VALIDATE_BOOLEAN);
@@ -681,15 +680,15 @@ function post(){
 	global $send_email,$to_mail,$root_url,$boardname;
 
 	if($send_email){
-	//config.phpで未定義の時の初期値
-	//このままでよければ定義不要
-	defined('NOTICE_MAIL_NAME') or define('NOTICE_MAIL_NAME', '名前');
-	defined('NOTICE_MAIL_SUBJECT') or define('NOTICE_MAIL_SUBJECT', '記事題名');
-	defined('NOTICE_MAIL_IMG') or define('NOTICE_MAIL_IMG', '投稿画像');
-	defined('NOTICE_MAIL_THUMBNAIL') or define('NOTICE_MAIL_THUMBNAIL', 'サムネイル画像');
-	defined('NOTICE_MAIL_URL') or define('NOTICE_MAIL_URL', '記事URL');
-	defined('NOTICE_MAIL_REPLY') or define('NOTICE_MAIL_REPLY', 'へのレスがありました');
-	defined('NOTICE_MAIL_NEWPOST') or define('NOTICE_MAIL_NEWPOST', '新規投稿がありました');
+		//config.phpで未定義の時の初期値
+		//このままでよければ定義不要
+		defined('NOTICE_MAIL_NAME') or define('NOTICE_MAIL_NAME', '名前');
+		defined('NOTICE_MAIL_SUBJECT') or define('NOTICE_MAIL_SUBJECT', '記事題名');
+		defined('NOTICE_MAIL_IMG') or define('NOTICE_MAIL_IMG', '投稿画像');
+		defined('NOTICE_MAIL_THUMBNAIL') or define('NOTICE_MAIL_THUMBNAIL', 'サムネイル画像');
+		defined('NOTICE_MAIL_URL') or define('NOTICE_MAIL_URL', '記事URL');
+		defined('NOTICE_MAIL_REPLY') or define('NOTICE_MAIL_REPLY', 'へのレスがありました');
+		defined('NOTICE_MAIL_NEWPOST') or define('NOTICE_MAIL_NEWPOST', '新規投稿がありました');
 		$data['label_name']=NOTICE_MAIL_NAME;
 		$data['label_subject']=NOTICE_MAIL_SUBJECT;
 		$data['to'] = $to_mail;
@@ -698,8 +697,10 @@ function post(){
 		$data['title'] = $sub;
 		if($imgfile){
 			$data['option'][] = [NOTICE_MAIL_IMG,$root_url.IMG_DIR.$imgfile];//拡張子があったら
-		} 
-		if(is_file(THUMB_DIR.$time.'s.jpg')){
+		}
+		if(is_file(THUMB_DIR.$time.'s.webp')){
+			$data['option'][] = [NOTICE_MAIL_THUMBNAIL,$root_url.THUMB_DIR.$time.'s.webp'];
+		}elseif(is_file(THUMB_DIR.$time.'s.jpg')){
 			$data['option'][] = [NOTICE_MAIL_THUMBNAIL,$root_url.THUMB_DIR.$time.'s.jpg'];
 		} 
 		if($resto){
@@ -785,8 +786,6 @@ function paint(){
 				return error($en?'This operation has failed.':'失敗しました。');
 			
 			}
-			$basename_pchup=basename($pchup);
-			$pchup=TEMP_DIR.$basename_pchup;//ファイルを開くディレクトリを固定
 			$mime_type = mime_content_type($pchup);
 			if(($pchext==="pch") && ($mime_type === "application/octet-stream") && is_neo($pchup)){
 			$app='neo';
@@ -802,7 +801,7 @@ function paint(){
 				$img_klecks = $pchup;
 			} elseif(in_array($pchext, ['gif','jpg','jpeg','png','webp']) && in_array($mime_type, ['image/gif', 'image/jpeg', 'image/png','image/webp'])){
 				$file_name=pathinfo($pchup,PATHINFO_FILENAME);
-				thumbnail_gd::thumb(TEMP_DIR,$basename_pchup,$time,$max_px,$max_px,['toolarge'=>true]);
+				thumbnail_gd::thumb(TEMP_DIR,$pchup,$time,$max_px,$max_px,['toolarge'=>true]);
 				list($picw,$pich) = getimagesize($pchup);
 				$imgfile = $pchup;
 				$anime = false;
@@ -1136,10 +1135,10 @@ function download_app_dat(){
 	$no = (string)filter_input(INPUT_POST, 'no',FILTER_VALIDATE_INT);
 	$id = (string)filter_input(INPUT_POST, 'id');//intの範囲外
 
-	check_open_no($no);
 	if(!is_file(LOG_DIR."{$no}.log")){
 		return error($en? 'The article does not exist.':'記事がありません。');
 	}
+	check_open_no($no);
 	$rp=fopen(LOG_DIR."{$no}.log","r");
 	$flag=false;
 	while ($line = fgets($rp)) {
@@ -1517,10 +1516,10 @@ function pchview(){
 	$imagefile = basename((string)filter_input(INPUT_GET, 'imagefile'));
 	$no = (string)filter_input(INPUT_GET, 'no',FILTER_VALIDATE_INT);
 	$id = pathinfo($imagefile, PATHINFO_FILENAME);
-	check_open_no($no);
 	if(!is_file(LOG_DIR."{$no}.log")){
 		return error($en? 'The article does not exist.':'記事がありません。');
 	}
+	check_open_no($no);
 	$rp=fopen(LOG_DIR."{$no}.log","r");
 	$flag=false;
 	while ($line = fgets($rp)) {
@@ -1588,10 +1587,10 @@ function confirmation_before_deletion ($edit_mode=''){
 	$id = t((string)filter_input(INPUT_POST,'id'));//intの範囲外
 	$no = t((string)filter_input(INPUT_POST,'no',FILTER_VALIDATE_INT));
 
-	check_open_no($no);
 	if(!is_file(LOG_DIR."{$no}.log")){
 		return error($en? 'The article does not exist.':'記事がありません。');
 	}
+	check_open_no($no);
 	$rp=fopen(LOG_DIR."{$no}.log","r");
 	flock($rp, LOCK_EX);
 
@@ -1671,10 +1670,10 @@ function edit_form($id='',$no=''){
 		list($id,$no)=explode(",",trim($id_and_no));
 	}
 
-	check_open_no($no);
 	if(!is_file(LOG_DIR."{$no}.log")){
 		return error($en? 'The article does not exist.':'記事がありません。');
 	}
+	check_open_no($no);
 	$rp=fopen(LOG_DIR."{$no}.log","r");
 	flock($rp, LOCK_EX);
 
@@ -1724,10 +1723,10 @@ function edit_form($id='',$no=''){
 	$com=h(str_replace('"\n"',"\n",$com));
 
 	$pch_exists = in_array($pchext,['.pch','.tgkr','hide_animation','hide_tgkr']);
-	$hide_animation_checkd = ($pchext==='hide_animation'||$pchext==='hide_tgkr');
+	$hide_animation_checkd = (strpos($pchext,'hide_') === 0);
 	$nsfwc=(bool)filter_input(INPUT_COOKIE,'nsfwc',FILTER_VALIDATE_BOOLEAN);
 
-	$hide_thumb_checkd = (strpos($thumbnail,'hide_')!==false);
+	$hide_thumb_checkd = (strpos($thumbnail,'hide_') === 0);
 	$set_nsfw_show_hide=(bool)filter_input(INPUT_COOKIE,'p_n_set_nsfw_show_hide',FILTER_VALIDATE_BOOLEAN);
 
 	$admin = ($admindel||$adminpost||is_adminpass($pwd));
@@ -1944,10 +1943,10 @@ function del(){
 	$fp=fopen(LOG_DIR."alllog.log","r+");
 	flock($fp, LOCK_EX);
 
-	check_open_no($no);
 	if(!is_file(LOG_DIR."{$no}.log")){
 		return error($en? 'The article does not exist.':'記事がありません。');
 	}
+	check_open_no($no);
 	$rp=fopen(LOG_DIR."{$no}.log","r+");
 	flock($rp, LOCK_EX);
 
