@@ -13,6 +13,11 @@
 #span_cont_paint_same_thread {
     display: none;
 }
+<?php if(!$pch_exists):?>
+	#span_hide_animation{
+    display: none;
+}
+<?php endif;?>
 </style>
 </head>
 <div class="container">
@@ -47,12 +52,12 @@
 
 <?php if(!$select_app && $count_arr_apps>1):?>
 	<form action="./" method="get">
-		<span class="continue_menu">	<?php if($en):?>Current tool<?php else:?>現在のアプリ<?php endif;?>:<?=h($current_app)?></span>
+		<span class="continue_menu">	<?php if($en):?>Current tool<?php else:?>現在のツール<?php endif;?>:<?=h($current_app)?></span>
 		<input type="hidden" name="mode" value="to_continue">
 		<input type="hidden" name="id" value="<?=h($time)?>">
 		<input type="hidden" name="no" value="<?=h($no)?>">
 		<input type="hidden" name="enableappselect" value="on">
-		<input type="submit" value="<?php if($en):?>Select another tool<?php else:?>別のアプリを選択する<?php endif;?>">
+		<input type="submit" value="<?php if($en):?>Select another tool<?php else:?>別のツールを選択する<?php endif;?>">
 	</form>	
 <?php endif;?>
 
@@ -61,7 +66,7 @@
 <div id="error_message_paintform"></div>
 <?php if($select_app):?>
 <div>
-	Tool:<select name="app" class="paint_select">
+	Tool:<select name="app" class="paint_select" id="paint_select">
 <!-- ペイントアプリ選択のプルダウンメニューをインクルード -->
 <?php include __DIR__.'/parts/select_apps.html'?>
 </select>
@@ -75,10 +80,10 @@
  <input type="hidden" name="time" value="<?=h($time)?>">
  <input type="hidden" name="imgfile" value="<?=h($imgfile)?>">
  <select name="ctype" class="paint_select">
-   <?php if($ctype_pch):?>
-   <option value="pch"><?php if($en):?>from animation<?php else:?>動画から続きを描く<?php endif;?></option>
-   <?php endif;?>
-   <option value="img"><?php if($en):?>from picture<?php else:?>画像から続きを描く<?php endif;?></option>
+	<?php if($ctype_pch):?>
+	<option value="pch"><?php if($en):?>from animation<?php else:?>動画から続きを描く<?php endif;?></option>
+	<?php endif;?>
+	<option value="img"><?php if($en):?>from picture<?php else:?>画像から続きを描く<?php endif;?></option>
 </select>
 <span class="continue_menu">
 <?php if($en):?>The image is a<?php else:?>画像は<?php endif;?> <select name="type" class="paint_select" id="select_post">
@@ -88,10 +93,8 @@
 	<?php endif;?>
 </select>
 </span>
-<span class="continue_menu">
-<?php if($pch_exists):?>
+<span class="continue_menu" id="span_hide_animation">
 <input type="checkbox" name="hide_animation" id="hide_animation" value="on" <?php if($hide_animation_checkd):?>checked="checked"<?php endif;?>><label for="hide_animation"><?php if($en):?>Hide Animation<?php else:?>動画を表示しない<?php endif;?></label>	
-<?php endif;?>
 </span>
 <?php if(!$res_max_over):?>
 <span class="continue_menu" id="span_cont_paint_same_thread">
@@ -148,6 +151,24 @@ document.getElementById('select_post').addEventListener('change', (e) => {
 	<?php endif;?>
 	}
 });
+const paint_select = document.getElementById('paint_select');
+const hideAnimation = document.getElementById('span_hide_animation');
+
+const toggleHideAnimation = (isNeo) => {
+	if (hideAnimation) {
+		hideAnimation.style.display = isNeo ? "inline-block" : "none";
+	}
+}
+<?php if($select_app):?>
+document.addEventListener('DOMContentLoaded', () => {
+	// セレクトメニューの変更イベント
+	paint_select.addEventListener('change', (e) => {
+		toggleHideAnimation(e.target.value==='neo');
+	});
+	// 初期値の設定を反映
+	toggleHideAnimation(paint_select.value==='neo');
+});
+<?php endif;?>
 </script>
 <div id="bottom"></div>
 <div id="page_top"><a class="icon-angles-up-solid"></a></div>

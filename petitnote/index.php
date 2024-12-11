@@ -1,8 +1,8 @@
 <?php
 //Petit Note (c)さとぴあ @satopian 2021-2024
 //1スレッド1ログファイル形式のスレッド式画像掲示板
-$petit_ver='v1.62.2';
-$petit_lot='lot.20241209';
+$petit_ver='v1.63.5';
+$petit_lot='lot.20241211';
 
 $lang = ($http_langs = isset($_SERVER['HTTP_ACCEPT_LANGUAGE']) ? $_SERVER['HTTP_ACCEPT_LANGUAGE'] : '')
   ? explode( ',', $http_langs )[0] : '';
@@ -756,7 +756,6 @@ function paint(){
 	$pchfile='';
 	$img_chi='';
 	$img_klecks='';
-	$anime=true;
 	$rep=false;
 	$paintmode='paintcom';
 
@@ -809,7 +808,6 @@ function paint(){
 				thumbnail_gd::thumb(TEMP_DIR,$pchup,$time,$max_px,$max_px,['toolarge'=>true]);
 				list($picw,$pich) = getimagesize($pchup);
 				$imgfile = $pchup;
-				$anime = false;
 			}else{
 				safe_unlink($pchup);
 				return error($en? 'This file is an unsupported format.':'対応していないファイル形式です。');
@@ -846,9 +844,6 @@ function paint(){
 		$imgfile = IMG_DIR.$imgfile;
 
 		if($ctype=='img'){//画像から続き
-			$animeform = false;
-			$anime= false;
-
 			if($_pch_ext==='.chi'){
 				$img_chi =IMG_DIR.$time.'.chi';
 			}
@@ -856,6 +851,7 @@ function paint(){
 				$img_klecks =IMG_DIR.$time.'.psd';
 			}
 		}
+
 		$hide_animation = (bool)filter_input(INPUT_POST,'hide_animation',FILTER_VALIDATE_BOOLEAN);
 		$hide_animation = $hide_animation ? 'true' : 'false';
 		if($type==='rep'){//画像差し換え
@@ -927,6 +923,7 @@ function paint(){
 		case 'neo'://PaintBBS NEO
 
 			$tool='neo';
+			$anime= true;//常にtrue
 			$appw = $picw + 150;//NEOの幅
 			$apph = $pich + 172;//NEOの高さ
 			$appw = max($appw,450);//最低幅
@@ -1081,7 +1078,7 @@ function to_continue(){
 	$thumbnail_jpg = (!$thumbnail_webp && strpos($thumbnail,'thumbnail')!==false) ? $time.'s.jpg' : false; 
 
 	$thumbnail_img = $thumbnail_webp ? $thumbnail_webp : $thumbnail_jpg;
-	
+
 	list($picw, $pich) = getimagesize(IMG_DIR.$imgfile);
 	$time = basename($time);
 	$imgfile = basename($imgfile);
