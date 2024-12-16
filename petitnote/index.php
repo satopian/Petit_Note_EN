@@ -1,8 +1,8 @@
 <?php
 //Petit Note (c)さとぴあ @satopian 2021-2024
 //1スレッド1ログファイル形式のスレッド式画像掲示板
-$petit_ver='v1.63.5';
-$petit_lot='lot.20241211';
+$petit_ver='v1.63.7';
+$petit_lot='lot.20241216';
 
 $lang = ($http_langs = isset($_SERVER['HTTP_ACCEPT_LANGUAGE']) ? $_SERVER['HTTP_ACCEPT_LANGUAGE'] : '')
   ? explode( ',', $http_langs )[0] : '';
@@ -17,7 +17,7 @@ if(!is_file(__DIR__.'/functions.php')){
 	return die(__DIR__.'/functions.php'.($en ? ' does not exist.':'がありません。'));
 }
 require_once(__DIR__.'/functions.php');
-if(!isset($functions_ver)||$functions_ver<20241209){
+if(!isset($functions_ver)||$functions_ver<20241216){
 	return die($en?'Please update functions.php to the latest version.':'functions.phpを最新版に更新してください。');
 }
 check_file(__DIR__.'/misskey_note.inc.php');
@@ -86,8 +86,8 @@ $password_require_to_continue = isset($password_require_to_continue) ? (bool)$pa
 $subject_input_required = isset($subject_input_required) ? $subject_input_required : false;
 $display_search_nav = isset($display_search_nav) ? $display_search_nav : false;
 $switch_sns = isset($switch_sns) ? $switch_sns : true;
-$sns_window_width = isset($sns_window_width) ? (int)$sns_window_width : 350;
-$sns_window_height = isset($sns_window_height) ? (int)$sns_window_height : 490;
+$sns_window_width = isset($sns_window_width) ? (int)$sns_window_width : 800;
+$sns_window_height = isset($sns_window_height) ? (int)$sns_window_height : 800;
 $use_misskey_note = isset($use_misskey_note) ? $use_misskey_note : true;
 $sort_comments_by_newest = isset($sort_comments_by_newest) ? $sort_comments_by_newest : false;
 $pmin_w = isset($pmin_w) ? $pmin_w : 300;//幅
@@ -2064,15 +2064,8 @@ function del(){
 	closeFile($fp);
 
 	unset($_SESSION['userdel']);
-	$resno=(string)filter_input(INPUT_POST,'postresno',FILTER_VALIDATE_INT);
 	//多重送信防止
-	if((bool)filter_input(INPUT_POST,'resmode',FILTER_VALIDATE_BOOLEAN)){
-		if(!is_file(LOG_DIR.$resno.'.log')){
-			return header('Location: ./');
-		}
-		return header('Location: ./?resno='.$resno);
-	}
-	return header('Location: ./?page='.(int)filter_input(INPUT_POST,'postpage',FILTER_VALIDATE_INT));
+	branch_destination_of_location();
 }
 
 //シェアするserverの選択画面
@@ -2086,6 +2079,7 @@ function set_share_server(){
 	
 		["X","https://x.com"],
 		["Bluesky","https://bsky.app"],
+		["Threads","https://www.threads.net"],
 		["pawoo.net","https://pawoo.net"],
 		["fedibird.com","https://fedibird.com"],
 		["misskey.io","https://misskey.io"],

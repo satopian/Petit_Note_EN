@@ -468,6 +468,7 @@ $servers =
 
 	["X","https://x.com"],
 	["Bluesky","https://bsky.app"],
+	["Threads","https://www.threads.net"],
 	["pawoo.net","https://pawoo.net"],
 	["fedibird.com","https://fedibird.com"],
 	["misskey.io","https://misskey.io"],
@@ -479,11 +480,11 @@ $servers =
 
 // Width and height of window to open when SNS sharing
 
-//window width initial value 350
-$sns_window_width = 350;
+//window width initial value 600
+$sns_window_width = 600;
 
-//window height initial value 490 
-$sns_window_height = 490;
+//window height initial value 600 
+$sns_window_height = 600;
 
 // Misskey note function settings
  
