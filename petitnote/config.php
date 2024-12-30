@@ -213,6 +213,17 @@ $only_admin_can_reply = false;
 // $set_nsfw = true;
 $set_nsfw = false;
 
+// Make age verification mandatory
+// yes: true no: false
+// When true, age verification will be required to view all content on the board.
+//Only the age verification page will be indexed by search engines; all other pages will be excluded.
+
+// $age_check_required_to_view = true;
+$age_check_required_to_view = false;
+
+// Link destination when "No, under 18" is pressed
+$underage_submit_url="https://www.google.com/";
+
 // Sensitive content settings
 
 // Set sensitive content for each article
@@ -227,6 +238,14 @@ $mark_sensitive_image = false;
 
 $nsfw_checked = true;
 // $nsfw_checked = false;
+
+// Set all images to sensitive content
+// When set to true, all posts' images will be marked as sensitive content instead of individual settings.
+// The "Sensitive content" checkbox will not be displayed during posting.
+// Yes: true No: false
+
+// $set_all_images_to_nsfw = true;
+$set_all_images_to_nsfw = false;
 
 // Use option to hide paint time
 // Enabling this option will allow toggling the display of paint time when posting: show / hide.
@@ -365,6 +384,7 @@ $use_aikotoba=false;
 // require a secret word to view the message board
 // Yes: true No: false
 // Yes: true requires a secret word to view all content on the board.
+// Only the secret word confirmation page will be indexed by search engines; all other pages will be excluded.
 
 // $aikotoba_required_to_view=true;
 $aikotoba_required_to_view=false;
