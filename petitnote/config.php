@@ -38,6 +38,12 @@ $name_input_required = true;
 // $subject_input_required = true;
 $subject_input_required = false;
 
+// require comment
+// yes: true no: false
+
+// $comment_input_required = true;
+$comment_input_required = false;
+
 // Limit the number of characters in the body. (unit byte)
 $max_com=1000;
 
