@@ -15,6 +15,10 @@ $second_pass = "mGeL5dhpQ8e9ugd";
 // name of this board
 $boardname = "Petit Note";
 
+// The name of the website to return to from the bulletin board
+// If left blank, "Home" will be displayed.
+$sitename = "";
+
 // home page (return destination from the bulletin board)
 $home = "./"; //relative path, absolute path, URL any
 
