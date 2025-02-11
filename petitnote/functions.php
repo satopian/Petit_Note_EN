@@ -1,5 +1,5 @@
 <?php
-$functions_ver=20250201;
+$functions_ver=20250211;
 //編集モードログアウト
 function logout(): void {
 	$resno=(int)filter_input(INPUT_GET,'resno',FILTER_VALIDATE_INT);
@@ -346,6 +346,12 @@ function check_cont_pass(): bool {
 	error($en?'password is wrong.':'パスワードが違います。');
 }
 
+//コンティニュー前画面のペイントツールを選択可能に
+function set_app_select_enabled_session() : void {
+	session_sta();
+	$_SESSION['enableappselect'] = true;
+}
+
 //設定済みのペイントツール名かどうか調べる
 function is_paint_tool_name($tool): string {
 	return in_array($tool,['neo','chi','klecks','tegaki','axnos']) ? $tool : '???';
@@ -558,10 +564,10 @@ function calc_pagination_range($page,$pagedef): array {
 
 //ユーザーip
 function get_uip(): string {
-	$ip = isset($_SERVER["HTTP_CLIENT_IP"]) ? $_SERVER["HTTP_CLIENT_IP"] :'';
-	$ip = $ip ? $ip : (isset($_SERVER["HTTP_INCAP_CLIENT_IP"]) ? $_SERVER["HTTP_INCAP_CLIENT_IP"] : '');
-	$ip = $ip ? $ip : (isset($_SERVER["HTTP_X_FORWARDED_FOR"]) ? $_SERVER["HTTP_X_FORWARDED_FOR"] : '');
-	$ip = $ip ? $ip : (isset($_SERVER["REMOTE_ADDR"]) ? $_SERVER["REMOTE_ADDR"] : '');
+	$ip = $_SERVER["HTTP_CLIENT_IP"] ?? '';
+	$ip = $ip ? $ip : ($_SERVER["HTTP_INCAP_CLIENT_IP"] ?? '');
+	$ip = $ip ? $ip : ($_SERVER["HTTP_X_FORWARDED_FOR"] ?? '');
+	$ip = $ip ? $ip : ($_SERVER["REMOTE_ADDR"] ?? '');
 	if (strstr($ip, ', ')) {
 		$ips = explode(', ', $ip);
 		$ip = $ips[0];
@@ -739,7 +745,7 @@ function check_jpeg_exif($upfile): void {
 
 	//画像回転の検出
 	$exif = exif_read_data($upfile);
-	$orientation = isset($exif["Orientation"]) ? $exif["Orientation"] : 1;
+	$orientation = $exif["Orientation"] ?? 1;
 	//位置情報はあるか?
 	$gpsdata_exists =(isset($exif['GPSLatitude']) && isset($exif['GPSLongitude'])); 
 
@@ -934,7 +940,7 @@ function deltemp(): void {
 	global $check_password_input_error_count;
 	$handle = opendir(TEMP_DIR);
 	while ($file = readdir($handle)) {
-		if(!is_dir($file)) {
+		if(!is_dir(TEMP_DIR.$file) && is_file(TEMP_DIR.$file)){
 			$file=basename($file);
 			//pchアップロードペイントファイル削除
 			//仮差し換えアップロードファイル削除
@@ -1418,7 +1424,7 @@ function check_password_input_error_count(): void {
 
 // 優先言語のリストをチェックして対応する言語があればその翻訳されたレイヤー名を返す
 function getTranslatedLayerName(): string {
-	$acceptedLanguages = isset($_SERVER['HTTP_ACCEPT_LANGUAGE']) ? $_SERVER['HTTP_ACCEPT_LANGUAGE'] : '';
+	$acceptedLanguages = $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '';
 	$languageList = explode(',', $acceptedLanguages);
 
 	foreach ($languageList as $language) {

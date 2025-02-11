@@ -1,10 +1,10 @@
 <?php
 //Petit Note (c)さとぴあ @satopian 2021-2025
 //1スレッド1ログファイル形式のスレッド式画像掲示板
-$petit_ver='v1.68.10';
-$petit_lot='lot.20250203';
+$petit_ver='v1.69.1';
+$petit_lot='lot.20250211';
 
-$lang = ($http_langs = isset($_SERVER['HTTP_ACCEPT_LANGUAGE']) ? $_SERVER['HTTP_ACCEPT_LANGUAGE'] : '')
+$lang = ($http_langs = $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '')
   ? explode( ',', $http_langs )[0] : '';
 $en= (stripos($lang,'ja')!==0);
 
@@ -17,7 +17,7 @@ if(!is_file(__DIR__.'/functions.php')){
 	die(__DIR__.'/functions.php'.($en ? ' does not exist.':'がありません。'));
 }
 require_once(__DIR__.'/functions.php');
-if(!isset($functions_ver)||$functions_ver<20250201){
+if(!isset($functions_ver)||$functions_ver<20250211){
 	die($en?'Please update functions.php to the latest version.':'functions.phpを最新版に更新してください。');
 }
 check_file(__DIR__.'/misskey_note.inc.php');
@@ -60,50 +60,50 @@ if(!isset($admin_pass)||!$admin_pass){
 	error($en?'The administrator password has not been set.':'管理者パスワードが設定されていません。');
 }
 $max_log=($max_log<500) ? 500 : $max_log;//最低500スレッド
-$max_com= isset($max_com) ? $max_com : 1000;
-$sage_all= isset($sage_all) ? $sage_all : false;
-$view_other_works= isset($view_other_works) ? $view_other_works : true;
-$deny_all_posts= isset($deny_all_posts) ? $deny_all_posts : (isset($denny_all_posts) ? $denny_all_posts : false);
-$allow_comments_only = isset($allow_comments_only) ? $allow_comments_only : (isset($allow_coments_only) ? $allow_coments_only : false); 
-$dispres = isset($dispres) ? $dispres : (isset($display) ? $display : 5); 
-$disp_image_res = isset($disp_image_res) ? $disp_image_res : 0;//0ですべて表示
-$latest_var=isset($latest_var) ? $latest_var : true;
-$badhost=isset($badhost) ? $badhost :[]; 
-$set_all_images_to_nsfw = isset($set_all_images_to_nsfw) ? $set_all_images_to_nsfw : false ; 
-$mark_sensitive_image = isset($mark_sensitive_image) ? $mark_sensitive_image : false; 
+$max_com= $max_com ?? 1000;
+$sage_all= $sage_all ?? false;
+$view_other_works= $view_other_works ?? true;
+$deny_all_posts= $deny_all_posts ?? ($denny_all_posts ?? false);
+$allow_comments_only = $allow_comments_only ?? ($allow_coments_only ?? false); 
+$dispres = $dispres ?? ($display ?? 5); 
+$disp_image_res = $disp_image_res ?? 0;//0ですべて表示
+$latest_var= $latest_var ?? true;
+$badhost= $badhost ?? []; 
+$set_all_images_to_nsfw = $set_all_images_to_nsfw ?? false ; 
+$mark_sensitive_image = $mark_sensitive_image ?? false; 
 $mark_sensitive_image = $set_all_images_to_nsfw ? false : $mark_sensitive_image;
-$only_admin_can_reply = isset($only_admin_can_reply) ? $only_admin_can_reply : false;
-$check_password_input_error_count = isset($check_password_input_error_count) ? $check_password_input_error_count : false;
-$aikotoba_required_to_view=isset($aikotoba_required_to_view) ? $aikotoba_required_to_view : false;
-$keep_aikotoba_login_status=isset($keep_aikotoba_login_status) ? $keep_aikotoba_login_status : false;
-$use_paintbbs_neo=isset($use_paintbbs_neo) ? $use_paintbbs_neo : true;
-$use_chickenpaint=isset($use_chickenpaint) ? $use_chickenpaint : true;
-$max_file_size_in_png_format_paint = isset($max_file_size_in_png_format_paint) ? $max_file_size_in_png_format_paint : 1024;
-$max_file_size_in_png_format_upload = isset($max_file_size_in_png_format_upload) ? $max_file_size_in_png_format_upload : 800;
-$use_klecs=isset($use_klecs) ? $use_klecs : true;
-$use_tegaki=isset($use_tegaki) ? $use_tegaki : true;
-$use_axnos=isset($use_axnos) ? $use_axnos : true;
-$display_link_back_to_home = isset($display_link_back_to_home) ? $display_link_back_to_home : true;
-$password_require_to_continue = isset($password_require_to_continue) ? (bool)$password_require_to_continue : false;
-$subject_input_required = isset($subject_input_required) ? $subject_input_required : false;
-$comment_input_required = isset($comment_input_required) ? $comment_input_required : false;
-$display_search_nav = isset($display_search_nav) ? $display_search_nav : false;
-$switch_sns = isset($switch_sns) ? $switch_sns : true;
+$only_admin_can_reply = $only_admin_can_reply ?? false;
+$check_password_input_error_count = $check_password_input_error_count ?? false;
+$aikotoba_required_to_view= $aikotoba_required_to_view ?? false;
+$keep_aikotoba_login_status= $keep_aikotoba_login_status ?? false;
+$use_paintbbs_neo= $use_paintbbs_neo ?? true;
+$use_chickenpaint= $use_chickenpaint ?? true;
+$max_file_size_in_png_format_paint = $max_file_size_in_png_format_paint ?? 1024;
+$max_file_size_in_png_format_upload = $max_file_size_in_png_format_upload ?? 800;
+$use_klecs= $use_klecs ?? true;
+$use_tegaki= $use_tegaki ?? true;
+$use_axnos= $use_axnos ?? true;
+$display_link_back_to_home = $display_link_back_to_home ?? true;
+$password_require_to_continue = $password_require_to_continue ?? false;
+$subject_input_required = $subject_input_required ?? false;
+$comment_input_required = $comment_input_required ?? false;
+$display_search_nav = $display_search_nav ?? false;
+$switch_sns = $switch_sns ?? true;
 $sns_window_width = isset($sns_window_width) ? (int)$sns_window_width : 600;
 $sns_window_height = isset($sns_window_height) ? (int)$sns_window_height : 600;
-$use_misskey_note = isset($use_misskey_note) ? $use_misskey_note : true;
-$sort_comments_by_newest = isset($sort_comments_by_newest) ? $sort_comments_by_newest : false;
-$pmin_w = isset($pmin_w) ? $pmin_w : 300;//幅
-$pmin_h = isset($pmin_h) ? $pmin_h : 300;//高さ
-$pdef_w = isset($pdef_w) ? $pdef_w : 300;//幅
-$pdef_h = isset($pdef_h) ? $pdef_h : 300;//高さ
-$step_of_canvas_size = isset($step_of_canvas_size) ? $step_of_canvas_size : 50;
-$use_url_input_field = isset($use_url_input_field) ? $use_url_input_field : true;
-$max_px = isset($max_px) ? $max_px : 1024;
-$nsfw_checked = isset($nsfw_checked) ? $nsfw_checked : true;
-$use_darkmode = isset($use_darkmode) ? $use_darkmode : true;
-$darkmode_by_default = isset($darkmode_by_default) ? $darkmode_by_default : false;
-$sitename = isset($sitename) ? $sitename : '';
+$use_misskey_note = $use_misskey_note ?? true;
+$sort_comments_by_newest = $sort_comments_by_newest ?? false;
+$pmin_w = $pmin_w ?? 300;//幅
+$pmin_h = $pmin_h ?? 300;//高さ
+$pdef_w = $pdef_w ?? 300;//幅
+$pdef_h = $pdef_h ?? 300;//高さ
+$step_of_canvas_size = $step_of_canvas_size ?? 50;
+$use_url_input_field = $use_url_input_field ?? true;
+$max_px = $max_px ?? 1024;
+$nsfw_checked = $nsfw_checked ?? true;
+$use_darkmode = $use_darkmode ?? true;
+$darkmode_by_default = $darkmode_by_default ?? false;
+$sitename = $sitename ?? '';
 $mode = (string)filter_input(INPUT_POST,'mode');
 $mode = $mode ? $mode :(string)filter_input(INPUT_GET,'mode');
 $resno=(int)filter_input(INPUT_GET,'resno',FILTER_VALIDATE_INT);
@@ -121,7 +121,7 @@ if(!$usercode){//user-codeがなければ発行
 setcookie("usercode", $usercode, time()+(86400*365),"","",false,true);//1年間
 $_SESSION['usercode']=$usercode;
 
-$x_frame_options_deny = isset($x_frame_options_deny) ? $x_frame_options_deny : true;
+$x_frame_options_deny = $x_frame_options_deny ?? true;
 if($x_frame_options_deny){
 	header('X-Frame-Options: DENY');
 }
@@ -153,6 +153,8 @@ switch($mode){
 			check_cont_pass();
 		} 
 		return paint();
+	case 'set_app_select_enabled_session':
+		return set_app_select_enabled_session();
 	case 'picrep':
 		return img_replace();
 	case 'before_del':
@@ -377,7 +379,7 @@ function post(): void {
 	$com = $formatted_post['com'];
 
 	//ファイルアップロード
-	$up_tempfile = isset($_FILES['imgfile']['tmp_name']) ? $_FILES['imgfile']['tmp_name'] : ''; // 一時ファイル名
+	$up_tempfile = $_FILES['imgfile']['tmp_name'] ?? ''; // 一時ファイル名
 	if(isset($_FILES['imgfile']['error']) && in_array($_FILES['imgfile']['error'],[1,2])){//容量オーバー
 		error($en? "Upload failed.\nThe file size is too large.":"アップロードに失敗しました。\nファイルサイズが大きすぎます。");
 	} 
@@ -770,7 +772,7 @@ function paint(): void {
 
 		$pchfilename = isset($_FILES['pchup']['name']) ? basename($_FILES['pchup']['name']) : '';
 		
-		$pchtmp=isset($_FILES['pchup']['tmp_name']) ? $_FILES['pchup']['tmp_name'] : '';
+		$pchtmp= $_FILES['pchup']['tmp_name'] ?? '';
 
 		if(isset($_FILES['pchup']['error']) && in_array($_FILES['pchup']['error'],[1,2])){//容量オーバー
 			error($en? 'The file size is too large.':'ファイルサイズが大きすぎます。');
@@ -828,6 +830,9 @@ function paint(): void {
 		$no = (string)filter_input(INPUT_POST, 'no',FILTER_VALIDATE_INT);
 		$time = basename((string)filter_input(INPUT_POST, 'time'));
 		$cont_paint_same_thread=(bool)filter_input(INPUT_POST, 'cont_paint_same_thread',FILTER_VALIDATE_BOOLEAN);
+
+		session_sta();
+		unset ($_SESSION['enableappselect']);
 
 		if(is_file(LOG_DIR."{$no}.log")){
 			if($type!=='rep'){
@@ -1024,7 +1029,7 @@ function paintcom(): void {
 	$urlc = (string)filter_input(INPUT_COOKIE,'urlc');
 
 	$adminpost = adminpost_valid();
-	$use_hide_painttime = isset($use_hide_painttime) ? $use_hide_painttime : false;
+	$use_hide_painttime = $use_hide_painttime ?? false;
 	$use_hide_painttime = ($adminpost || $use_hide_painttime);
 	$admin_pass= null;
 	// HTML出力
@@ -1046,8 +1051,10 @@ function to_continue(): void {
 
 	$no = (string)filter_input(INPUT_GET, 'no',FILTER_VALIDATE_INT);
 	$id = (string)filter_input(INPUT_GET, 'id');//intの範囲外
-	$enableappselect = (string)filter_input(INPUT_GET, 'enableappselect');
+	
 	$adminpost = adminpost_valid();
+	session_sta();
+	$enableappselect= $_SESSION['enableappselect'] ?? false;
 
 	$flag = false;
 
@@ -1228,7 +1235,7 @@ function img_replace(): void {
 	$admindel=admindel_valid();
 
 	//アップロード画像の差し換え
-	$up_tempfile = isset($_FILES['imgfile']['tmp_name']) ? $_FILES['imgfile']['tmp_name'] : ''; // 一時ファイル名
+	$up_tempfile = $_FILES['imgfile']['tmp_name'] ?? ''; // 一時ファイル名
 	if (isset($_FILES['imgfile']['error']) && $_FILES['imgfile']['error'] === UPLOAD_ERR_NO_FILE){
 		error($en?'Please attach an image.':'画像を添付してください。');
 	} 
@@ -2095,7 +2102,7 @@ function set_share_server(): void {
 	
 	//ShareするServerの一覧
 	//｢"ラジオボタンに表示するServer名","snsのserverのurl"｣
-	$servers=isset($servers)?$servers:
+	$servers= $servers ??
 	[
 	
 		["X","https://x.com"],
@@ -2157,12 +2164,12 @@ function search(): void {
 	aikotoba_required_to_view();
 
 	//検索可能最大数
-	$max_search= isset($max_search) ? $max_search : 300;
+	$max_search= $max_search ?? 300;
 
 	//画像検索の時の1ページあたりの表示件数
-	$search_images_pagedef = isset($search_images_pagedef) ? $search_images_pagedef : 60;
+	$search_images_pagedef = $search_images_pagedef ?? 60;
 	//通常検索の時の1ページあたりの表示件数
-	$search_comments_pagedef = isset($search_comments_pagedef) ? $search_comments_pagedef : 30;
+	$search_comments_pagedef = $search_comments_pagedef ?? 30;
 
 	$imgsearch=(bool)filter_input(INPUT_GET,'imgsearch',FILTER_VALIDATE_BOOLEAN);
 	$page=(int)filter_input(INPUT_GET,'page',FILTER_VALIDATE_INT);
@@ -2232,7 +2239,7 @@ function search(): void {
 			}
 		}
 		fclose($rp);
-		if($j>=5000){break;}//1掲示板あたりの最大行数
+		if($j>=10000){break;}//1掲示板あたりの最大行数
 		++$j;
 	}
 	fclose($fp);
@@ -2430,6 +2437,9 @@ function view(): void {
 	$denny_all_posts=$deny_all_posts;//互換性
 	$allow_coments_only=$allow_comments_only;//互換性
 
+	session_sta();
+	unset ($_SESSION['enableappselect']);
+
 	$fp=fopen(LOG_DIR."alllog.log","r");
 	$article_nos=[];
 	$count_alllog=0;
@@ -2544,6 +2554,9 @@ function res (): void {
 	$misskey_note = $use_misskey_note ? (bool)filter_input(INPUT_GET,'misskey_note',FILTER_VALIDATE_BOOLEAN) : false;
 	$res_catalog = $misskey_note ? true : (bool)filter_input(INPUT_GET,'res_catalog',FILTER_VALIDATE_BOOLEAN);
 
+	session_sta();
+	unset ($_SESSION['enableappselect']);
+
 	if(!is_file(LOG_DIR."{$resno}.log")){
 		error($en?'Thread does not exist.':'スレッドがありません');	
 	}
@@ -2638,8 +2651,8 @@ function res (): void {
 	}
 	fclose($fp);
 
-	$next=isset($articles2[$i+1])? $articles2[$i+1] :'';
-	$prev=isset($articles1[$i-1])? $articles1[$i-1] :'';
+	$next=$articles2[$i+1] ?? '';
+	$prev=$articles1[$i-1] ?? '';
 	$next=$next ? (create_res(explode("\t",trim($next)),['catalog'=>true])):[];
 	$prev=$prev ? (create_res(explode("\t",trim($prev)),['catalog'=>true])):[];
 	$next=(!empty($next) && is_file(LOG_DIR."{$next['no']}.log"))?$next:[];
