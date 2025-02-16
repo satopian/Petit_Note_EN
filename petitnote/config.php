@@ -3,13 +3,13 @@
 
 /*------Required setting items-----*/
 
-//Be sure to change the admin password.
+// Be sure to change the admin password.
 $admin_pass = "adminpass";
 
-//Please change the second password.
+// Please change the second password.
 // Password to double check that you are an admin when posting or deleting with admin privileges.
-// You don't have to remember it because it's handled internally.
-//The second password cannot be the same as the admin password.
+// There is no need to remember it as it is for internal system use only.
+// The second password cannot be the same as the admin password.
 $second_pass = "mGeL5dhpQ8e9ugd";
 
 // name of this board
@@ -276,7 +276,7 @@ $do_not_change_posts_time = false;
 // yes: set to true to prevent thread position from changing on replies. All will be treated as sage.
 // initial value false
 
-//$sage_all = true;
+// $sage_all = true;
 $sage_all = false;
 
 // Add admin mark to posts by admin.
@@ -320,7 +320,7 @@ $max_res = 100;
 
 $dispres= 5;
 
-//Number of reply images to display in one thread
+// Number of reply images to display in one thread
 // Display all when reply screen.
 
 $disp_image_res= 5;
@@ -336,7 +336,7 @@ $catalog_pagedef = 60;
 
 $max_kb = 2048;
 
-//Specify the maximum width and height of the image that can be posted in px.
+// Specify the maximum width and height of the image that can be posted in px.
 // Only uploaded images are scaled down. Set the maximum drawing size in another item.
 $max_px = 1024;
 
@@ -419,19 +419,19 @@ $keep_aikotoba_login_status=false;
 // $display_search_nav = true;
 $display_search_nav = false;
 
-//Maximum searchable number
-//If this value is increased, the number of searchable items will increase, but the load on the server will increase.
+// Maximum searchable number
+// If this value is increased, the number of searchable items will increase, but the load on the server will increase.
 $max_search= 300;
 
-//Number of items displayed per page when searching for images
+// Number of items displayed per page when searching for images
 $search_images_pagedef = 60;
 
-//Number of items displayed per page during normal search
+// Number of items displayed per page during normal search
 $search_comments_pagedef = 30;
 
 /* safety */
 
-//Reject if admin password is wrong for her 5 times in a row
+// Reject if admin password is wrong for her 5 times in a row
 // yes: true no: false
 // yes: true for more security, but if the login page is locked it will take more effort to unlock it.
 
@@ -484,14 +484,14 @@ $x_frame_options_deny=true;
 
 // SNS share function advanced settings
 
-//Include Mastodon and Misskey servers in the share function 
+// Include Mastodon and Misskey servers in the share function 
 // Include: true Do not include: false
 
 $switch_sns = true;
 // $switch_sns = false;
 
 // Servers displayed in the list when sharing on SNS
-//Example ["Display name","https://example.com (SNS server URL)"], (comma is required at the end)
+// Example ["Display name","https://example.com (SNS server URL)"], (comma is required at the end)
 
 $servers =
 [
@@ -510,21 +510,21 @@ $servers =
 
 // Width and height of window to open when SNS sharing
 
-//window width initial value 600
+// window width initial value 600
 $sns_window_width = 600;
 
-//window height initial value 600 
+// window height initial value 600 
 $sns_window_height = 600;
 
 // Misskey note function settings
  
-//Enable posting to Misskey
+// Enable posting to Misskey
 // yes: true no: false
 
 $use_misskey_note = true;
 // $use_misskey_note = false;
 
-//Misskey servers to display in the list when note to Misskey
+// Misskey servers to display in the list when note to Misskey
 $misskey_servers=
 [
 
@@ -552,6 +552,14 @@ define("NOTICE_MAIL_THUMBNAIL", "Thumbnail");
 define("NOTICE_MAIL_URL", "Fixed link");
 define("NOTICE_MAIL_REPLY", " Notification: There is a new reply to a post.");
 define("NOTICE_MAIL_NEWPOST", " Notification: There is a new post");
+
+
+// Changing the session name to something unique can enhance security.
+// There is no need to remember it as it is for internal system use only.
+$session_name = "session_petit";
+
+// The session name can't consist of digits only, at least one letter must be present. Otherwise a new session id is generated every time.
+// https://www.php.net/manual/en/function.session-name.php
 
 /* usually don't change */
 
