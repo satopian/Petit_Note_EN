@@ -1,7 +1,7 @@
 <?php
 //Petit Note (c)さとぴあ @satopian 2021-2025
 //1スレッド1ログファイル形式のスレッド式画像掲示板
-$petit_ver='v1.70.1';
+$petit_ver='v1.70.5';
 $petit_lot='lot.20250223';
 
 $lang = ($http_langs = $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '')
@@ -849,8 +849,8 @@ function paint(): void {
 
 		$rp=fopen(LOG_DIR."{$no}.log","r");
 		while($_line=fgets($rp)){
-			if(strpos($_line,$time)!==false){
-				list($_no,,,,,,$_imgfile,,,,,,$_tool,,$_time,$_first_posted_time,,,,)=explode("\t",trim($_line));
+			if(strpos($_line,$imgfile)!==false){
+				list($_no,,,,,,$_imgfile,,,,,,$_tool,,$_time,$_first_posted_time,)=explode("\t",trim($_line));
 				if($imgfile === $_imgfile && $_tool === 'upload'){
 					error($en?'This operation has failed.':'失敗しました。');
 					break;
@@ -1907,12 +1907,14 @@ function edit(): void {
 	$_chk_lines = create_chk_lins($chk_log_arr,$no);//取得済みの$chk_restoの配列を除外
 	$chk_lines=array_merge($_chk_lines,$r_arr);
 	foreach($chk_lines as $line){
-		list($_no_,$_sub_,$_name_,$_verified_,$_com_,$_url_,$_imgfile_,$_w_,$_h_,$_thumbnail_,$_painttime_,$_log_img_hash_,$_tool_,$_pchext_,$_time_,$_first_posted_time_,$_host_,$_userid_,$_hash_,$_oya_)=explode("\t",trim($line));
+		if(strpos($line,$userid)!==false){
+			list($_no_,$_sub_,$_name_,$_verified_,$_com_,$_url_,$_imgfile_,$_w_,$_h_,$_thumbnail_,$_painttime_,$_log_img_hash_,$_tool_,$_pchext_,$_time_,$_first_posted_time_,$_host_,$_userid_,$_hash_,$_oya_)=explode("\t",trim($line));
 
-		if(!$admindel && ($userid===$_userid_) && ($id!==$_time_) && ($com && ($com!==$_com) && ($com === $_com_))){
-			closeFile($fp);
-			closeFile($rp);
-			error($en?'Post once by this comment.':'同じコメントがありました。');
+			if(!$admindel && ($userid===$_userid_) && ($id!==$_time_) && ($com && ($com!==$_com) && ($com === $_com_))){
+				closeFile($fp);
+				closeFile($rp);
+				error($en?'Post once by this comment.':'同じコメントがありました。');
+			}
 		}
 	}
 
