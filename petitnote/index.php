@@ -1,8 +1,8 @@
 <?php
 //Petit Note (c)さとぴあ @satopian 2021-2025
 //1スレッド1ログファイル形式のスレッド式画像掲示板
-$petit_ver='v1.70.8';
-$petit_lot='lot.20250224';
+$petit_ver='v1.71.15';
+$petit_lot='lot.20250225';
 
 $lang = ($http_langs = $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '')
   ? explode( ',', $http_langs )[0] : '';
@@ -298,7 +298,7 @@ function post(): void {
 		$resto=(string)$resto;//(string)厳密な型
 		//描画時間を$userdataをもとに計算
 		$hide_painttime=(bool)filter_input(INPUT_POST,'hide_painttime',FILTER_VALIDATE_BOOLEAN);
-		if(!$hide_painttime && $starttime && is_numeric($starttime) && $postedtime && is_numeric($postedtime)){
+		if(!$hide_painttime && $starttime && ctype_digit($starttime) && $postedtime && ctype_digit($postedtime)){
 			$painttime=(int)$postedtime-(int)$starttime;
 		}
 		if($resto && !$use_res_upload && !$adminpost){
@@ -849,7 +849,7 @@ function paint(): void {
 		$find=false;
 		$rp=fopen(LOG_DIR."{$no}.log","r");
 		while($_line=fgets($rp)){
-			if(strpos($_line,$imgfile)!==false){
+			if(strpos($_line,"\t".$imgfile."\t")!==false){
 				list($_no,,,,,,$_imgfile,,,,,,$_tool,,$_time,$_first_posted_time,)=explode("\t",trim($_line));
 				if($no===$_no && $time===$_time && $imgfile === $_imgfile && $_tool !== 'upload'){
 					$find=true;
@@ -1095,7 +1095,7 @@ function to_continue(): void {
 		$res_max_over=(!$adminpost && ($i>=$max_res||!check_elapsed_days($oya_time)));
 
 		foreach ($lines as $line) {
-			if(strpos($line,$id)!==false){
+			if(strpos($line,"\t".$id."\t")!==false){
 				list($_no,$sub,$name,$verified,$com,$url,$imgfile,$w,$h,$thumbnail,$painttime,$log_img_hash,$tool,$_pchext,$time,$first_posted_time,$host,$userid,$hash,$oya)=explode("\t",trim($line));
 				if($id===$time && $no===$_no && $tool!=='upload'){
 					$flag=true;
@@ -1197,7 +1197,7 @@ function download_app_dat(): void {
 		if(!trim($line)){
 			continue;
 		}
-		if(strpos($line,$id)!==false){
+		if(strpos($line,"\t".$id."\t")!==false){
 			list($_no,$sub,$name,$verified,$com,$url,$imgfile,$w,$h,$thumbnail,$painttime,$log_img_hash,$tool,$_pchext,$time,$first_posted_time,$host,$userid,$hash,$oya)=explode("\t",trim($line));
 			if($id===$time && $no===$_no){
 				if(!adminpost_valid()&&!admindel_valid()&&(!$pwd || !password_verify($pwd,$hash))){
@@ -1359,7 +1359,7 @@ function img_replace(): void {
 	$flag=false;
 
 	foreach($r_arr as $i => $line){
-		if(strpos($line,$id)!==false){
+		if(strpos($line,"\t".$id."\t")!==false){
 			list($_no,$_sub,$_name,$_verified,$_com,$_url,$_imgfile,$_w,$_h,$_thumbnail,$_painttime,$_log_img_hash,$_tool,$_pchext,$_time,$_first_posted_time,$_host,$_userid,$_hash,$_oya)=explode("\t",trim($line));
 			if($id===$_time && $no===$_no){
 
@@ -1508,7 +1508,7 @@ function img_replace(): void {
 	//描画時間追加
 
 	$painttime = '';
-	if(is_numeric($_painttime) && $starttime && is_numeric($starttime) && $postedtime && is_numeric($postedtime)){
+	if(ctype_digit($_painttime) && $starttime && ctype_digit($starttime) && $postedtime && ctype_digit($postedtime)){
 		$psec=(int)$postedtime-(int)$starttime;
 		$painttime=(int)$_painttime+(int)$psec;
 	}
@@ -1590,7 +1590,7 @@ function pchview(): void {
 		if(!trim($line)){
 			continue;
 		}
-		if(strpos($line,$id)!==false){
+		if(strpos($line,"\t".$id."\t")!==false){
 			list($_no,$sub,$name,$verified,$com,$url,$imgfile,$w,$h,$thumbnail,$painttime,$log_img_hash,$tool,$pchext,$time,$first_posted_time,$host,$userid,$hash,$oya)=explode("\t",trim($line));
 			if($id===$time && $no===$_no){
 				$flag=true;
@@ -1602,12 +1602,12 @@ function pchview(): void {
 
 	$pchext=basename($pchext);
 
-	$view_replay = in_array($pchext,['.pch','.tgkr']) && check_pch_ext(IMG_DIR . $time);
-	if(!$view_replay||!is_file(IMG_DIR.$imagefile)){
-		error('ファイルがありません。');
-	}
+	$view_replay = in_array($pchext,['.pch','.tgkr']);
 	$pch=$time;
 	$pchfile = IMG_DIR.$time.$pchext;
+	if(!$flag||!$view_replay||!is_file($pchfile)){
+		error($en?'This operation has failed.':'失敗しました。');
+	}
 	list($picw, $pich) = getimagesize(IMG_DIR.$imagefile);
 	$appw = $picw < 200 ? 200 : $picw;
 	$apph = $pich < 200 ? 200 : $pich + 26;
@@ -1669,7 +1669,7 @@ function confirmation_before_deletion ($edit_mode=''): void {
 	}
 	$find=false;
 	foreach($r_arr as $i =>$val){
-		if(strpos($val,$id)!==false){
+		if(strpos($val,"\t".$id."\t")!==false){
 			$_line=explode("\t",trim($val));
 			list($_no,$sub,$name,$verified,$com,$url,$imgfile,$w,$h,$thumbnail,$painttime,$log_img_hash,$tool,$pchext,$time,$first_posted_time,$host,$userid,$hash,$oya)=$_line;
 			if($id===$time && $no===$_no){
@@ -1756,7 +1756,7 @@ function edit_form($id='',$no=''): void {
 
 	$flag=false;
 	foreach($r_arr as $val){
-		if(strpos($val,$id)!==false){
+		if(strpos($val,"\t".$id."\t")!==false){
 			$line=explode("\t",trim($val));
 			list($_no,$sub,$name,$verified,$com,$url,$imgfile,$w,$h,$thumbnail,$painttime,$log_img_hash,$tool,$pchext,$time,$first_posted_time,$host,$userid,$hash,$oya)=$line;
 			if($id===$time && $no===$_no){
@@ -1868,7 +1868,7 @@ function edit(): void {
 
 	$flag=false;
 	foreach($r_arr as $i => $line){
-		if(strpos($line,$id)!==false){
+		if(strpos($line,"\t".$id."\t")!==false){
 
 			list($_no,$_sub,$_name,$_verified,$_com,$_url,$_imgfile,$_w,$_h,$_thumbnail,$_painttime,$_log_img_hash,$_tool,$pchext,$_time,$_first_posted_time,$_host,$_userid,$_hash,$_oya)=explode("\t",trim($line));
 
@@ -1912,7 +1912,7 @@ function edit(): void {
 	$_chk_lines = create_chk_lins($chk_log_arr,$no);//取得済みの$chk_restoの配列を除外
 	$chk_lines=array_merge($_chk_lines,$r_arr);
 	foreach($chk_lines as $line){
-		if(strpos($line,$userid)!==false){
+		if(strpos($line,"\t".$userid."\t")!==false){
 			list($_no_,$_sub_,$_name_,$_verified_,$_com_,$_url_,$_imgfile_,$_w_,$_h_,$_thumbnail_,$_painttime_,$_log_img_hash_,$_tool_,$_pchext_,$_time_,$_first_posted_time_,$_host_,$_userid_,$_hash_,$_oya_)=explode("\t",trim($line));
 
 			if(!$admindel && ($userid===$_userid_) && ($id!==$_time_) && ($com && ($com!==$_com) && ($com === $_com_))){
@@ -2037,7 +2037,7 @@ function del(): void {
 
 	$find=false;
 	foreach($r_arr as $i =>$val){
-		if(strpos($val,$id)!==false){
+		if(strpos($val,"\t".$id."\t")!==false){
 			list($_no,$sub,$name,$verified,$com,$url,$imgfile,$w,$h,$thumbnail,$painttime,$log_img_hash,$tool,$pchext,$time,$first_posted_time,$host,$userid,$hash,$oya)=explode("\t",trim($val));
 			if($id===$time && $no===$_no){
 				if(!$admindel){
