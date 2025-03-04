@@ -325,16 +325,6 @@ $dispres= 5;
 
 $disp_image_res= 5;
 
-// Also fetch an array of skipped (hidden) replies
-// Enable: true, Disable: false
-
-// When set to false, the array of hidden replies will not be fetched, improving display speed.
-// Setting it to false requires updating to a template from v1.73.0 or later.
-// Relevant file: template/basic/parts/threads_loop.html
-
-$fetch_articles_to_skip = false;
-// $fetch_articles_to_skip = true;
-
 // number of items displayed per page in catalog mode
 // Set it in multiples of 20 to fit nicely on the screen.
 
@@ -572,6 +562,17 @@ $session_name = "session_petit";
 // https://www.php.net/manual/en/function.session-name.php
 
 /* usually don't change */
+
+// Also fetch an array of skipped (hidden) replies
+// yes: true no: false
+
+// When set to false, the array of hidden replies will not be fetched, improving display speed.
+// Setting it to false requires updating to a template from v1.73.0 or later.
+// Relevant file: template/basic/parts/threads_loop.html
+// If this setting already exists from the beginning, the template is already compatible, so no changes are necessary.
+
+$fetch_articles_to_skip = false;
+// $fetch_articles_to_skip = true;
 
 // Encrypt the $pwd of the paint screen
 
