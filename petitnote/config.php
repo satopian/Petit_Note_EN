@@ -563,10 +563,10 @@ $session_name = "session_petit";
 
 /* usually don't change */
 
-// Also fetch an array of skipped (hidden) replies
+// Also fetch an array of omitted replies
 // yes: true no: false
 
-// When set to false, the array of hidden replies will not be fetched, improving display speed.
+// When set to false, the array of omitted replies will not be fetched, making the display faster.
 // Setting it to false requires updating to a template from v1.73.0 or later.
 // Relevant file: template/basic/parts/threads_loop.html
 // If this setting already exists from the beginning, the template is already compatible, so no changes are necessary.
