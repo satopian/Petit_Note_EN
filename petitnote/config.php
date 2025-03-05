@@ -556,6 +556,7 @@ define("NOTICE_MAIL_NEWPOST", " Notification: There is a new post");
 
 // Changing the session name to something unique can enhance security.
 // There is no need to remember it as it is for internal system use only.
+
 $session_name = "session_petit";
 
 // The session name can't consist of digits only, at least one letter must be present. Otherwise a new session id is generated every time.
