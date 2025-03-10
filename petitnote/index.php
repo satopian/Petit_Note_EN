@@ -1,8 +1,8 @@
 <?php
 //Petit Note (c)さとぴあ @satopian 2021-2025
 //1スレッド1ログファイル形式のスレッド式画像掲示板
-$petit_ver='v1.75.3';
-$petit_lot='lot.20250308';
+$petit_ver='v1.78.1';
+$petit_lot='lot.20250310';
 
 $lang = ($http_langs = $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '')
   ? explode( ',', $http_langs )[0] : '';
@@ -13,11 +13,14 @@ if (version_compare(PHP_VERSION, '7.1.0', '<')) {
 		"エラー。本プログラムの動作には PHPバージョン 7.1.0 以上が必要です。<br>\n(現在のPHPバージョン：".PHP_VERSION.")"
 	);
 }
+
 if(!is_file(__DIR__.'/functions.php')){
 	die(__DIR__.'/functions.php'.($en ? ' does not exist.':'がありません。'));
 }
 require_once(__DIR__.'/functions.php');
-if(!isset($functions_ver)||$functions_ver<20250307){
+
+
+if(!isset($functions_ver)||$functions_ver<20250308){
 	die($en?'Please update functions.php to the latest version.':'functions.phpを最新版に更新してください。');
 }
 check_file(__DIR__.'/misskey_note.inc.php');
@@ -30,6 +33,16 @@ require_once(__DIR__.'/save.inc.php');
 if(!isset($save_inc_ver)||$save_inc_ver<20250308){
 	die($en?'Please update save.inc.php to the latest version.':'save.inc.phpを最新版に更新してください。');
 }
+check_file(__DIR__.'/thumbnail_gd.inc.php');
+require_once(__DIR__.'/thumbnail_gd.inc.php');
+if(!isset($thumbnail_gd_ver)||$thumbnail_gd_ver<20241102){
+	error($en?'Please update thumbmail_gd.inc.php to the latest version.':'thumbnail_gd.inc.phpを最新版に更新してください。');
+}
+check_file(__DIR__.'/config.php');
+require_once(__DIR__.'/config.php');
+
+check_file(__DIR__.'/noticemail.inc.php');
+require_once(__DIR__.'/noticemail.inc.php');
 
 // jQueryバージョン
 const JQUERY='jquery-3.7.0.min.js';
@@ -38,20 +51,8 @@ check_file(__DIR__.'/lib/'.JQUERY);
 check_file(__DIR__.'/lib/lightbox/js/lightbox.min.js');
 check_file(__DIR__.'/lib/lightbox/css/lightbox.min.css');
 
-check_file(__DIR__.'/config.php');
-check_file(__DIR__.'/thumbnail_gd.inc.php');
-check_file(__DIR__.'/noticemail.inc.php');
-
-require_once(__DIR__.'/config.php');
-require_once(__DIR__.'/thumbnail_gd.inc.php');
-require_once(__DIR__.'/noticemail.inc.php');
-
 //テンプレート
 $skindir='template/'.$skindir;
-
-if(!isset($thumbnail_gd_ver)||$thumbnail_gd_ver<20241102){
-	error($en?'Please update thumbmail_gd.inc.php to the latest version.':'thumbnail_gd.inc.phpを最新版に更新してください。');
-}
 
 if(!$max_log){
 	error($en?'The maximum number of threads has not been set.':'最大スレッド数が設定されていません。');
@@ -292,7 +293,7 @@ function post(): void {
 			error($en? 'Posting failed.':'投稿に失敗しました。');
 		}
 		$tool= is_paint_tool_name($tool);
-		$uresto=(string)filter_var($uresto,FILTER_VALIDATE_INT);
+		$uresto = (string)filter_var($uresto,FILTER_VALIDATE_INT);
 		$hide_animation= $hide_animation ? true : ($u_hide_animation==='true');
 		$resto = $uresto ? $uresto : $resto;//変数上書き$userdataのレス先を優先する
 		$resto=(string)$resto;//(string)厳密な型
@@ -2191,21 +2192,14 @@ function saveimage(): void {
 	}
 
 }
-//検索画面
-function search(): void {
-	global $use_aikotoba,$home,$skindir;
-	global $boardname,$petit_ver,$petit_lot,$set_nsfw,$en,$mark_sensitive_image; 
+//検索結果の配列を取得
+function create_search_array() : array {
 	global $max_search,$search_images_pagedef,$search_comments_pagedef; 
 
 	aikotoba_required_to_view();
 
 	//検索可能最大数
 	$max_search= $max_search ?? 300;
-
-	//画像検索の時の1ページあたりの表示件数
-	$search_images_pagedef = $search_images_pagedef ?? 60;
-	//通常検索の時の1ページあたりの表示件数
-	$search_comments_pagedef = $search_comments_pagedef ?? 30;
 
 	$imgsearch=(bool)filter_input_data('GET','imgsearch',FILTER_VALIDATE_BOOLEAN);
 	$page=(int)filter_input_data('GET','page',FILTER_VALIDATE_INT);
@@ -2217,14 +2211,35 @@ function search(): void {
 	$check_q=create_formatted_text_for_search($q);
 	$radio =(int)filter_input_data('GET','radio',FILTER_VALIDATE_INT);
 
-	if($imgsearch){
-		$pagedef=$search_images_pagedef;//画像検索の時の1ページあたりの表示件数
-	}
-	else{
-		$pagedef=$search_comments_pagedef;//通常検索の時の1ページあたりの表示件数
-	}
 	//ログの読み込み
 	$arr=[];
+
+	session_sta();
+
+	$cache_file = __DIR__.'/template/cache/index_cache.json';
+
+	// キャッシュのタイムスタンプ取得
+	$cache_last_modified = is_file($cache_file) ? filemtime($cache_file) : 0;
+	// キャッシュが更新されていたらSESSIONクリア
+	if (!$cache_last_modified ||//キャッシュがない
+	 $cache_last_modified > ($_SESSION['search_start_time'] ?? 0)) {//キャッシュが更新されている
+			unset($_SESSION['search_result']);//検索結果のキャッシュをクリア
+	}
+	//同じ検索条件での検索結果をキャッシュする
+	if(isset($_SESSION['imgsearch']) && $_SESSION['imgsearch']===$imgsearch
+	&& isset($_SESSION['search_q']) && $_SESSION['search_q']===$q
+	&& isset($_SESSION['search_radio']) && $_SESSION['search_radio']===$radio){
+		$arr=$_SESSION['search_result'] ?? [];
+	}
+	//検索条件をセッションに保存	
+	$_SESSION['imgsearch']=$imgsearch;	
+	$_SESSION['search_q']=$q;
+	$_SESSION['search_radio']=$radio;
+	$_SESSION['search_start_time'] = time();
+
+	if($arr){
+		return $arr;//SESSIONの検索結果の配列を返す
+	}
 	$i=0;
 	$j=0;
 	$fp=fopen("log/alllog.log","r");
@@ -2242,7 +2257,8 @@ function search(): void {
 		while($line=fgets($rp)){
 
 			$lines=explode("\t",$line);
-			list($no,$sub,$name,$verified,$com,$url,$imgfile,$w,$h,$thumbnail,$painttime,$log_img_hash,$tool,$pchext,$time,$first_posted_time,$host,$userid,$hash,$oya)=$lines;
+			//ホスト名とパスワードハッシュは含めない
+			list($no,$sub,$name,$verified,$com,$url,$imgfile,$w,$h,$thumbnail,$painttime,$log_img_hash,$tool,$pchext,$time,$first_posted_time,,$userid,,$oya)=$lines;
 
 			if(!$name && !$com && !$url && !$imgfile && !$userid){//この記事はありませんの時は表示しない
 				continue;
@@ -2280,8 +2296,39 @@ function search(): void {
 	}
 	fclose($fp);
 
-	krsort($arr);
+	$_SESSION['search_result']=$arr;
+	return $arr;
+}
+//検索画面
+function search(): void {
 
+	global $use_aikotoba,$home,$skindir;
+	global $boardname,$petit_ver,$petit_lot,$set_nsfw,$en,$mark_sensitive_image; 
+	global $search_images_pagedef,$search_comments_pagedef; 
+
+	$imgsearch=(bool)filter_input_data('GET','imgsearch',FILTER_VALIDATE_BOOLEAN);
+	$page=(int)filter_input_data('GET','page',FILTER_VALIDATE_INT);
+	$page=$page<0 ? 0 : $page;
+	$q=(string)filter_input_data('GET','q');
+	$q=urldecode($q);
+	$q_len=strlen((string)$q);
+	$q=1000<$q_len ? "" :$q; 
+	$radio =(int)filter_input_data('GET','radio',FILTER_VALIDATE_INT);
+
+	//画像検索の時の1ページあたりの表示件数
+	$search_images_pagedef = $search_images_pagedef ?? 60;
+	//通常検索の時の1ページあたりの表示件数
+	$search_comments_pagedef = $search_comments_pagedef ?? 30;
+
+	if($imgsearch){
+		$pagedef=$search_images_pagedef;//画像検索の時の1ページあたりの表示件数
+	}
+	else{
+		$pagedef=$search_comments_pagedef;//通常検索の時の1ページあたりの表示件数
+	}
+	//検索結果の配列を取得
+	$arr=create_search_array();
+	krsort($arr);
 	//検索結果の出力
 	$j=0;
 	$out=[];
