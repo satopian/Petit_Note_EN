@@ -1,6 +1,7 @@
 <?php
+$noticemail_inc_ver = 20250315;
 /*
-** メール通知クラス(UTF-8) lot.20240708 for PetitNote
+** メール通知クラス(UTF-8) lot.20250314 for PetitNote
 ** https://paintbbs.sakura.ne.jp/
 ** 
 ** originalscript (C)SakaQ 2004-2007
@@ -89,52 +90,58 @@ noticemail::send($data);
 ・著作権は放棄しませんが、改造・再配布は自由にどうぞ。
 */
 
-class noticemail{
+class noticemail
+{
 
-	public static function send($data){
-	
-	mb_language( 'uni' );
-	mb_internal_encoding("UTF-8");
+	public static function send($data): void
+	{
 
-	$label_name= isset($data['label_name']) ? $data['label_name'] : "Name";
-	$label_subject = isset($data['label_subject']) ? $data['label_subject'] : "Subject";
+		mb_language('uni');
+		mb_internal_encoding("UTF-8");
 
-	$name = isset($data['name']) ? $data['name'] : '';
-	$url = isset($data['url']) ? $data['url'] : '';
-	$title = isset($data['title']) ? $data['title'] : '';
-	$comment = isset($data['comment']) ? $data['comment'] : '';
-	$subject = isset($data['subject']) ? $data['subject'] : '';
-	$option = isset($data['option']) ? $data['option'] : [];
+		$label_name = $data['label_name'] ?? "Name";
+		$label_subject = $data['label_subject'] ?? "Subject";
 
-	$line = "---------------------------------------------------------------------\n";
-
-	// ヘッダを指定
-	
-	$MailHeaders = 'Mime-Version: 1.0'."\n";
-	$MailHeaders .= 'Content-Type: text/plain; charset=utf-8'."\n";
-	$MailHeaders .= 'Content-Transfer-Encoding: 8bit'."\n";
-
-	// メール本文作成
-	$Message = $data['subject']."\n";
-	$Message .= 'Date: '.date("Y/m/d H:i:s",time())."\n";
-	//ユーザーip
-	$userip = get_uip();
-	$host= $userip ? gethostbyaddr($userip) :'';
-	$Message .= 'Host: '.$host."\n";
-	$Message .= 'UserAgent: '.$_SERVER["HTTP_USER_AGENT"]."\n";
-	$Message .= $line;
-	$Message .= $name ? ($label_name.': '.$name."\n") :'';
-	$Message .= filter_var($url,FILTER_VALIDATE_URL) ? ('URL: '.$url."\n") : '';
-	$Message .= $title ? ($label_subject.': '.$title."\n") : '';
-	if(is_array($option)){
-		foreach($option as $value){
-			list($optitle,$opvalue) = $value;
-			$Message .= $optitle.': '.$opvalue."\n"; 
+		$name = $data['name'] ?? '';
+		$url = $data['url'] ?? '';
+		$title = $data['title'] ?? '';
+		$comment = $data['comment'] ?? '';
+		$subject = $data['subject'] ?? '';
+		$option = $data['option'] ?? [];
+		$to = filter_var(($data['to'] ?? ""),FILTER_VALIDATE_EMAIL);
+		if(!$to){
+			return;
 		}
-	}
+
+		$line = "---------------------------------------------------------------------\n";
+
+		// ヘッダを指定
+
+		$MailHeaders = 'Mime-Version: 1.0' . "\n";
+		$MailHeaders .= 'Content-Type: text/plain; charset=utf-8' . "\n";
+		$MailHeaders .= 'Content-Transfer-Encoding: 8bit' . "\n";
+
+		// メール本文作成
+		$Message = $data['subject'] . "\n";
+		$Message .= 'Date: ' . date("Y/m/d H:i:s", time()) . "\n";
+		//ユーザーip
+		$userip = get_uip();
+		$host = $userip ? gethostbyaddr($userip) : '';
+		$Message .= 'Host: ' . $host . "\n";
+		$Message .= 'UserAgent: ' . $_SERVER["HTTP_USER_AGENT"] . "\n";
 		$Message .= $line;
-		if($comment){
-			$com = str_replace(["\r\n","\r"], "\n", $comment);// 改行文字の統一
+		$Message .= $name ? ($label_name . ': ' . $name . "\n") : '';
+		$Message .= filter_var($url, FILTER_VALIDATE_URL) ? ('URL: ' . $url . "\n") : '';
+		$Message .= $title ? ($label_subject . ': ' . $title . "\n") : '';
+		if (is_array($option)) {
+			foreach ($option as $value) {
+				list($optitle, $opvalue) = $value;
+				$Message .= $optitle . ': ' . $opvalue . "\n";
+			}
+		}
+		$Message .= $line;
+		if ($comment) {
+			$com = str_replace(["\r\n", "\r"], "\n", $comment); // 改行文字の統一
 			$com = preg_replace("/^(\n)+|(\n)+$/i", "", $com);	// 連続改行を消す
 			$Message .= $com;
 		}
@@ -142,18 +149,24 @@ class noticemail{
 		// 半角対応
 		$Message = mb_convert_kana($Message);
 		$name = mb_convert_kana($name);
-		$name = str_replace('"', "", $name);//ダブルクオートを除去
-	
-		// メールアドレスの入力欄が無いので代替え
-		$from = 'nomail@'.$_SERVER["HTTP_HOST"];
-		$name = mb_encode_mimeheader($name);
-		// ヘッダにFrom追加
-		$MailHeaders .= 'From: '.$name.' <'.$from.'>'."\n";
-		// メール送信
-		mb_send_mail($data['to'],
-		$subject,
-		$Message,$MailHeaders);
+		$name = str_replace('"', "", $name); //ダブルクオートを除去
 
-		return true;
+		// メールアドレスの入力欄が無いので代替え
+		$from = 'nomail@' . $_SERVER["HTTP_HOST"];
+		$from = filter_var($from, FILTER_VALIDATE_EMAIL);
+		$name = str_replace(["\r", "\n"], '', $name); // 改行コードを除去
+		$name = mb_encode_mimeheader($name);
+
+		$subject = str_replace(["\r", "\n"], '', $subject); // 改行コードを除去
+
+		// ヘッダにFrom追加
+		$MailHeaders .= 'From: ' . $name . ' <' . $from . '>' . "\n";
+		// メール送信
+		mb_send_mail(
+			$to,
+			$subject,
+			$Message,
+			$MailHeaders
+		);
 	}
 }
