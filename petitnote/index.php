@@ -24,7 +24,7 @@ if(!isset($functions_ver)||$functions_ver<20250308){
 
 check_file(__DIR__.'/misskey_note.inc.php');
 require_once(__DIR__.'/misskey_note.inc.php');
-if(!isset($misskey_note_ver)||$misskey_note_ver<20250317){
+if(!isset($misskey_note_ver)||$misskey_note_ver<20250318){
 	die($en?'Please update misskey_note.inc.php to the latest version.':'misskey_note.inc.phpを最新版に更新してください。');
 }
 
