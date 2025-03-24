@@ -36,8 +36,6 @@
 <input type="password" name="pwd" value="<?=h($pwdc)?>" autocomplete="current-password">
 <?php endif;?>
 <input type="hidden" name="mode" value="edit_form">
-<input type="hidden" name="postresno" value="<?=h($postresno)?>">
-<input type="hidden" name="postpage" value="<?=h($postpage)?>">
 <input type="submit" value="<?php if($en):?>Edit<?php else:?>編集<?php endif;?>">
 </form>
 <?php else:?>
@@ -48,8 +46,8 @@
 <div class="clear"></div>
 <hr>
 <div class="copy">
-<div class="left_wrap">[<a href="<?=h($home)?>">HOME</a> /
-<?php include __DIR__.'/parts/edit_to_admin_login_link.html';?>
+<div class="left_wrap">
+<?php include __DIR__.'/parts/admin_login_link.html';?>
 </div>
 
 <div class="righit_wrap">

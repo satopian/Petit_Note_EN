@@ -1,7 +1,7 @@
 <?php
 //Petit Note (C)2021-2025 さとぴあ(@satopian)
 //MIT License
-$search_inc_ver = 20250311;
+$search_inc_ver = 20250320;
 class processsearch
 {
 
@@ -27,6 +27,7 @@ class processsearch
 		global $search_images_pagedef, $search_comments_pagedef;
 
 		aikotoba_required_to_view();
+		set_page_context_to_session();
 
 		self::init();
 		$imgsearch = self::$imgsearch;
@@ -220,7 +221,7 @@ class processsearch
 			if (!trim($log)) {
 				continue;
 			}
-			list($resno) = explode("\t", $log);
+			list($resno) = explode("\t", $log, 2);
 			$resno = basename($resno);
 			//個別スレッドのループ
 			if (!is_file(LOG_DIR . "{$resno}.log")) {

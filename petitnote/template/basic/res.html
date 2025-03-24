@@ -47,9 +47,9 @@
 		<?php endif;?>
 		<span>
 		<?php if($userdel || $admindel):?>
-			[<a href="./?mode=logout&resno=<?=h($resno)?>" rel="nofollow"><?php if($en):?>Exit edit mode<?php else:?>編集モード終了<?php endif;?></a>]
+			[<a href="./?mode=logout" rel="nofollow"><?php if($en):?>Exit edit mode<?php else:?>編集モード終了<?php endif;?></a>]
 		<?php else:?>
-			[<a href="./?mode=userdel&resno=<?=h($resno)?>" rel="nofollow"><?php if($en):?>Edit<?php else:?>編集<?php endif;?></a>]
+			[<a href="./?mode=userdel" rel="nofollow"><?php if($en):?>Edit<?php else:?>編集<?php endif;?></a>]
 		<?php endif;?>
 	<?php endif;?>
 	<a href="#bottom">▽</a>
@@ -193,7 +193,7 @@ Size:
 </nav>
 <div class="copy">
 <div class="left_wrap">
-	[<a href="<?=h($home)?>">HOME</a> / <a href="./?mode=adminin&resno=<?=h($resno)?>"><?php if($en):?>Admin<?php else:?>管理<?php endif;?></a>]
+<?php include __DIR__.'/parts/admin_login_link.html';?>
 </div>
 <div class="righit_wrap">
 <?php include __DIR__.'/parts/copyright.html';?>

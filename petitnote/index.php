@@ -1,8 +1,8 @@
 <?php
 //Petit Note (c)さとぴあ @satopian 2021-2025
 //1スレッド1ログファイル形式のスレッド式画像掲示板
-$petit_ver='v1.80.3';
-$petit_lot='lot.20250318';
+$petit_ver='v1.81.3';
+$petit_lot='lot.20250324';
 
 $lang = ($http_langs = $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '')
   ? explode( ',', $http_langs )[0] : '';
@@ -18,13 +18,13 @@ if(!is_file(__DIR__.'/functions.php')){
 	die(__DIR__.'/functions.php'.($en ? ' does not exist.':'がありません。'));
 }
 require_once(__DIR__.'/functions.php');
-if(!isset($functions_ver)||$functions_ver<20250318){
+if(!isset($functions_ver)||$functions_ver<20250323){
 	die($en?'Please update functions.php to the latest version.':'functions.phpを最新版に更新してください。');
 }
 
 check_file(__DIR__.'/misskey_note.inc.php');
 require_once(__DIR__.'/misskey_note.inc.php');
-if(!isset($misskey_note_ver)||$misskey_note_ver<20250318){
+if(!isset($misskey_note_ver)||$misskey_note_ver<20250323){
 	die($en?'Please update misskey_note.inc.php to the latest version.':'misskey_note.inc.phpを最新版に更新してください。');
 }
 
@@ -36,7 +36,7 @@ if(!isset($save_inc_ver)||$save_inc_ver<20250308){
 
 check_file(__DIR__.'/search.inc.php');
 require_once(__DIR__.'/search.inc.php');
-if(!isset($search_inc_ver)||$search_inc_ver<20250310){
+if(!isset($search_inc_ver)||$search_inc_ver<20250320){
 	die($en?'Please update search.inc.php to the latest version.':'search.inc.phpを最新版に更新してください。');
 }
 
@@ -1646,12 +1646,14 @@ function confirmation_before_deletion ($edit_mode=''): void {
 	$admindel=admindel_valid();
 	$aikotoba = $use_aikotoba ? aikotoba_valid() : true;
 	aikotoba_required_to_view(true);
-
 	$userdel=userdel_valid();
+
 	$resmode = false;//使っていない
-	$postpage = (int)filter_input_data('POST','postpage',FILTER_VALIDATE_INT);
-	$postresno = (int)filter_input_data('POST','postresno',FILTER_VALIDATE_INT);
-	$postresno = $postresno ? $postresno : false; 
+
+	$page= $_SESSION['current_page_context']["page"] ?? 0;
+	$resno= $_SESSION['current_page_context']["resno"] ?? 0;
+	$postpage = $page;//古いテンプレート互換
+	$postresno = $resno;//古いテンプレート互換
 
 	$pwdc=(string)filter_input_data('COOKIE','pwdc');
 	$edit_mode = (string)filter_input_data('POST','edit_mode');
@@ -1794,10 +1796,10 @@ function edit_form($id='',$no=''): void {
 
 	$out[0][]=create_res($line);//$lineから、情報を取り出す;
 
-	$postpage=(int)filter_input_data('POST','postpage',FILTER_VALIDATE_INT);
-	$postresno=(int)filter_input_data('POST','postresno',FILTER_VALIDATE_INT);
-	$page = $postpage;
-	$resno = $postresno;
+	$page= $_SESSION['current_page_context']["page"] ?? 0;
+	$resno= $_SESSION['current_page_context']["resno"] ?? 0;
+	$postpage = $page;//古いテンプレート互換
+	$postresno = $resno;//古いテンプレート互換
 
 	foreach($line as $i => $val){//エスケープ処理
 		$line[$i]=h($val);
@@ -2211,6 +2213,7 @@ function catalog(): void {
 	global $boardname,$petit_ver,$petit_lot,$set_nsfw,$en,$mark_sensitive_image; 
 
 	aikotoba_required_to_view();
+	set_page_context_to_session();
 
 	$page=(int)filter_input_data('GET','page',FILTER_VALIDATE_INT);
 	$page=$page<0 ? 0 : $page;
@@ -2275,6 +2278,8 @@ function view(): void {
 	global $disp_image_res,$nsfw_checked,$sitename,$fetch_articles_to_skip; 
 
 	aikotoba_required_to_view();
+	set_page_context_to_session();
+
 	$page=(int)filter_input_data('GET','page',FILTER_VALIDATE_INT);
 	$page=$page<0 ? 0 : $page;
 	//管理者判定処理
@@ -2297,7 +2302,7 @@ function view(): void {
 			continue;
 		}
 		if($page <= $count_alllog && $count_alllog < $page+$pagedef){
-			list($_no)=explode("\t",trim($_line));
+			list($_no)=explode("\t",trim($_line),2);
 			$article_nos[]=$_no;	
 		}
 		++$count_alllog;//処理の後半で記事数のカウントとして使用
@@ -2413,6 +2418,7 @@ function res (): void {
 	global $use_paintbbs_neo,$use_chickenpaint,$use_klecs,$use_tegaki,$use_axnos,$display_link_back_to_home,$display_search_nav,$switch_sns,$sns_window_width,$sns_window_height,$sort_comments_by_newest,$use_url_input_field,$set_all_images_to_nsfw;
 
 	aikotoba_required_to_view();
+	set_page_context_to_session();
 
 	$max_byte = $max_kb * 1024*2;
 
