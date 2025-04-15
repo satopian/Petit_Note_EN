@@ -1,8 +1,8 @@
 <?php
 //Petit Note (c)さとぴあ @satopian 2021-2025
 //1スレッド1ログファイル形式のスレッド式画像掲示板
-$petit_ver='v1.83.2';
-$petit_lot='lot.20250412';
+$petit_ver='v1.85.2';
+$petit_lot='lot.20250414';
 
 $lang = ($http_langs = $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '')
   ? explode( ',', $http_langs )[0] : '';
@@ -18,7 +18,7 @@ if(!is_file(__DIR__.'/functions.php')){
 	die(__DIR__.'/functions.php'.($en ? ' does not exist.':'がありません。'));
 }
 require_once(__DIR__.'/functions.php');
-if(!isset($functions_ver)||$functions_ver<20250327){
+if(!isset($functions_ver)||$functions_ver<20250412){
 	die($en?'Please update functions.php to the latest version.':'functions.phpを最新版に更新してください。');
 }
 
@@ -472,6 +472,13 @@ function post(): void {
 	file_lock($fp, LOCK_EX);
 
 	$alllog_arr = create_array_from_fp($fp);
+	if($resto){//投稿数が0の時には空になるため、レス時のみチェック
+		if(empty($alllog_arr)){
+			closeFile($fp);
+			safe_unlink($upfile);
+			error($en?'This operation has failed.':'失敗しました。');
+		}
+	}
 
 	//チェックするスレッド数。画像ありなら15、コメントのみなら5 
 	$n= $is_file_upfile ? 15 : 5;
@@ -1058,9 +1065,9 @@ function paintcom(): void {
 	}
 	$aikotoba = $use_aikotoba ? aikotoba_valid() : true;
 
-	$namec = (string)filter_input_data('COOKIE','namec');
-	$pwdc = (string)filter_input_data('COOKIE','pwdc');
-	$urlc = (string)filter_input_data('COOKIE','urlc');
+	$namec=h((string)filter_input_data('COOKIE','namec'));
+	$pwdc=h((string)filter_input_data('COOKIE','pwdc'));
+	$urlc=h((string)filter_input_data('COOKIE','urlc',FILTER_VALIDATE_URL));
 
 	$adminpost = adminpost_valid();
 	$use_hide_painttime = $use_hide_painttime ?? false;
@@ -2385,7 +2392,7 @@ function view(): void {
 	//Cookie
 	$namec=h((string)filter_input_data('COOKIE','namec'));
 	$pwdc=h((string)filter_input_data('COOKIE','pwdc'));
-	$urlc=h((string)filter_input_data('COOKIE','urlc'));
+	$urlc=h((string)filter_input_data('COOKIE','urlc',FILTER_VALIDATE_URL));
 	$nsfwc=(bool)filter_input_data('COOKIE','nsfwc',FILTER_VALIDATE_BOOLEAN);
 	$set_nsfw_show_hide=(bool)filter_input_data('COOKIE','p_n_set_nsfw_show_hide',FILTER_VALIDATE_BOOLEAN);
 
@@ -2592,7 +2599,7 @@ function res (): void {
 	//Cookie
 	$namec=h((string)filter_input_data('COOKIE','namec'));
 	$pwdc=h((string)filter_input_data('COOKIE','pwdc'));
-	$urlc=h((string)filter_input_data('COOKIE','urlc'));
+	$urlc=h((string)filter_input_data('COOKIE','urlc',FILTER_VALIDATE_URL));
 	$nsfwc=(bool)filter_input_data('COOKIE','nsfwc',FILTER_VALIDATE_BOOLEAN);
 	$set_nsfw_show_hide=(bool)filter_input_data('COOKIE','p_n_set_nsfw_show_hide',FILTER_VALIDATE_BOOLEAN);
 
