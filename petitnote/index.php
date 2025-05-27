@@ -1,8 +1,8 @@
 <?php
 //Petit Note (c)さとぴあ @satopian 2021-2025
 //1スレッド1ログファイル形式のスレッド式画像掲示板
-$petit_ver='v1.87.1';
-$petit_lot='lot.20250522';
+$petit_ver='v1.88.7';
+$petit_lot='lot.20250527';
 
 $lang = ($http_langs = $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '')
   ? explode( ',', $http_langs )[0] : '';
@@ -18,7 +18,7 @@ if(!is_file(__DIR__.'/functions.php')){
 	die(__DIR__.'/functions.php'.($en ? ' does not exist.':'がありません。'));
 }
 require_once(__DIR__.'/functions.php');
-if(!isset($functions_ver)||$functions_ver<20250522){
+if(!isset($functions_ver)||$functions_ver<20250525){
 	die($en?'Please update functions.php to the latest version.':'functions.phpを最新版に更新してください。');
 }
 
@@ -138,7 +138,7 @@ $_SESSION['usercode']=$usercode;
 
 $x_frame_options_deny = $x_frame_options_deny ?? true;
 if($x_frame_options_deny){
-	header('X-Frame-Options: DENY');
+	header("Content-Security-Policy: frame-ancestors 'none';");
 }
 //ダークモード
 if(!isset($_COOKIE["p_n_set_darkmode"])&&$darkmode_by_default){
@@ -246,6 +246,9 @@ function post(): void {
 		check_aikotoba();
 	}
 	check_csrf_token();
+
+	//投稿間隔をチェック
+	check_submission_interval(3);//3秒間隔で投稿を制限
 
 	//POSTされた内容を取得
 	$userip =t(get_uip());
@@ -1075,6 +1078,10 @@ function paintcom(): void {
 	$adminpost = adminpost_valid();
 	$use_hide_painttime = $use_hide_painttime ?? false;
 	$use_hide_painttime = ($adminpost || $use_hide_painttime);
+
+	//フォームの表示時刻をセット
+	set_form_display_time();
+
 	$admin_pass= null;
 	// HTML出力
 	$templete='paint_com.html';
@@ -1656,8 +1663,9 @@ function confirmation_before_deletion ($edit_mode=''): void {
 
 	global $boardname,$home,$petit_ver,$petit_lot,$skindir,$use_aikotoba,$set_nsfw,$en;
 	global $deny_all_posts;
-	//管理者判定処理
+
 	check_same_origin();
+	//管理者判定処理
 	$admindel=admindel_valid();
 	$aikotoba = $use_aikotoba ? aikotoba_valid() : true;
 	aikotoba_required_to_view(true);
@@ -1838,6 +1846,9 @@ function edit_form($id='',$no=''): void {
 
 	$_SESSION['current_id']	= $id;
 
+	//フォームの表示時刻をセット
+	set_form_display_time();
+
 	$admin_pass= null;
 	// HTML出力
 	$templete='edit_form.html';
@@ -1852,6 +1863,9 @@ function edit(): void {
 	//Fetch API以外からのPOSTを拒否
 	check_post_via_javascript();
 	check_csrf_token();
+
+	//投稿間隔をチェック
+	check_submission_interval();
 
 	//POSTされた内容を取得
 	$userip =t(get_uip());
@@ -2431,6 +2445,10 @@ function view(): void {
 	$resmode=false;
 	$resno=0;
 	$sitename= preg_replace("/\A\s*\z/u","",$sitename);//連続する空行を削除
+
+	//フォームの表示時刻をセット
+	set_form_display_time();
+
 	$admin_pass= null;
 	// HTML出力
 	$templete='main.html';
@@ -2624,6 +2642,9 @@ function res (): void {
 	$resmode=true;
 
 	$page=0;
+
+	//フォームの表示時刻をセット
+	set_form_display_time();
 
 	$admin_pass= null;
 	$templete= $res_catalog ? 'res_catalog.html' : 'res.html';

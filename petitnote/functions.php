@@ -1,5 +1,5 @@
 <?php
-$functions_ver=20250522;
+$functions_ver=20250525;
 //編集モードログアウト
 function logout(): void {
 	session_sta();
@@ -149,6 +149,9 @@ function admin_in(): void {
 	$resno= $_SESSION['current_page_context']["resno"] ?? 0;
 	$id = $_SESSION['current_id']	?? "";
 
+	//フォームの表示時刻をセット
+	set_form_display_time();
+
 	$admin_pass= null;
 	// HTML出力
 	$templete='admin_in.html';
@@ -166,7 +169,14 @@ function check_aikotoba(): bool {
 function adminpost(): void {
 	global $second_pass,$en;
 
+	//Fetch API以外からのPOSTを拒否
+	check_post_via_javascript();
+	
 	check_same_origin();
+
+	//投稿間隔をチェック
+	check_submission_interval();
+
 	check_password_input_error_count();
 	session_sta();
 	if(!is_adminpass(filter_input_data('POST','adminpass'))){
@@ -187,7 +197,14 @@ function adminpost(): void {
 function admin_del(): void {
 	global $second_pass,$en;
 
+	//Fetch API以外からのPOSTを拒否
+	check_post_via_javascript();
+	
 	check_same_origin();
+
+	//投稿間隔をチェック
+	check_submission_interval();
+
 	check_password_input_error_count();
 
 	session_sta();
@@ -974,6 +991,27 @@ function check_post_via_javascript(): void {
 	}
 }
 
+//フォームの表示時刻をセット
+function set_form_display_time(): void {
+	session_sta();
+	$_SESSION['form_display_time'] = time();
+}
+//投稿間隔をチェック
+function check_submission_interval($min_interval=2): void {
+	// デフォルトで最低2秒の間隔を設ける
+	global $en;
+	session_sta();
+	if (!isset($_SESSION['form_display_time'])) {
+		error($en?"The post has been rejected.":'拒絶されました。');
+	}
+	$form_display_time = $_SESSION['form_display_time'];
+	$now = time();
+
+	if (($now - $form_display_time) < $min_interval) {
+		set_form_display_time();
+		error($en? 'Please wait a little.':'少し待ってください。');
+	}
+}
 // テンポラリ内のゴミ除去 
 function deltemp(): void {
 	global $check_password_input_error_count;
