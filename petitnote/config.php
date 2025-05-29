@@ -31,19 +31,19 @@ $root_url = "http://example.com/oekaki/";
 
 // require name
 // None: Posting an empty name when false makes it "anonymous".
-// yes: true no: false
+// Enable: true / Disable: false
 
 $name_input_required = true;
 // $name_input_required = false;
 
 // require thread subject
-// yes: true no: false
+// Enable: true / Disable: false
 
 // $subject_input_required = true;
 $subject_input_required = false;
 
 // require comment
-// yes: true no: false
+// Enable: true / Disable: false
 
 // $comment_input_required = true;
 $comment_input_required = false;
@@ -52,13 +52,13 @@ $comment_input_required = false;
 $max_com=1000;
 
 // Use dark mode
-// yes: true no: false
+// Enable: true / Disable: false
 
 $use_darkmode = true;
 // $use_darkmode = false;
 
 // Set default display to dark mode.
-// yes: true no: false
+// Enable: true / Disable: false
 
 // $darkmode_by_default = true;
 $darkmode_by_default = false;
@@ -92,7 +92,7 @@ $descriptions = ["You can draw from PC, iPad or smartphone.","Enjoy drawing."];
 /* email notification */
 
 // Notify posts by email
-// yes: true no: false
+// Enable: true / Disable: false
 
 // $send_email = true;
 $send_email = false;
@@ -124,37 +124,47 @@ $badstr_B = ["Chanel","Supreme","Balenciaga","Brand"];
 // hostname to reject
 $badhost =["example.com","example.org"];
 
+// Reject posts from IP addresses that cannot be reverse-resolved to a hostname
+// Enable: true / Disable: false
+
+// $reject_if_no_reverse_dns = true;
+$reject_if_no_reverse_dns = false;
+
+// Note: Many users may have IP addresses that cannot be reverse-resolved.
+// Setting this to true may prevent some legitimate users from posting.
+
+
 /*Settings by Purpose of Use*/
 
 // Display a link back to the home page in the top menu
-// yes: true no: false
+// Enable: true / Disable: false
 $display_link_back_to_home = true;
 // $display_link_back_to_home = false;
 
 //Use PaintBBS NEO 
-// yes: true no: false
+// Enable: true / Disable: false
 $use_paintbbs_neo= true;
 // $use_paintbbs_neo= false;
 
 // Use Tegaki
-// yes: true no: false
+// Enable: true / Disable: false
 
 $use_tegaki= true;
 // $use_tegaki= false;
 
 // Use Axnos Paint
-// yes: true no: false
+// Enable: true / Disable: false
 
 $use_axnos = true;
 // $use_axnos = false;
 
 // Use ChickenPaint
-// yes: true no: false
+// Enable: true / Disable: false
 $use_chickenpaint= true;
 // $use_chickenpaint= false;
 
 //Use Klecks
-// yes: true no: false
+// Enable: true / Disable: false
 $use_klecs= true;
 // $use_klecs= false;
 
@@ -162,20 +172,20 @@ $use_klecs= true;
 // allow writing URLs in the body
 // to filter spam that writes a URL: false
 // Admins can write URLs in the body regardless of the setting.
-// yes: true no: false
+// Enable: true / Disable: false
 
 // $allow_comments_url = true;
 $allow_comments_url = false;
 
 // Use URL input field
-// yes: true no: false
+// Enable: true / Disable: false
 
 $use_url_input_field = true;
 // $use_url_input_field = false;
 
 // Autolink the URL
 // Markdown notation can also be used. [link text](https://example.com/)
-// yes: true no: false
+// Enable: true / Disable: false
 
 $use_autolink = true;
 // $use_autolink = false;
@@ -197,34 +207,34 @@ $use_res_upload = true;
 
 // Whether to allow comment-only posts on new posts.
 // None: false, an image is required when creating a new thread.
-// yes: true no: false
+// Enable: true / Disable: false
 
 // $allow_comments_only = true;
 $allow_comments_only = false;
 
 // use diary mode
-// Yes: if true, new thread creation is restricted to admins only.
-// yes: true no: false
+// Enable: if true, new thread creation is restricted to admins only.
+// Enable: true / Disable: false
 
 // $use_diary = true;
 $use_diary = false;
 
 // Only admins can reply
-// Yes: true if only admins can reply.
+// Enable: true if only admins can reply.
 //When used with diary mode, all entries are admin-only posts.
 
 // $only_admin_can_reply = true;
 $only_admin_can_reply = false;
 
 // set this entire board as NSFW content
-// Yes: If set to true, the image will be blurred until the confirm button is pressed.
-// yes: true no: false
+// Enable: If set to true, the image will be blurred until the confirm button is pressed.
+// Enable: true / Disable: false
 
 // $set_nsfw = true;
 $set_nsfw = false;
 
 // Make age verification mandatory
-// yes: true no: false
+// Enable: true / Disable: false
 // When true, age verification will be required to view all content on the board.
 //Only the age verification page will be indexed by search engines; all other pages will be excluded.
 
@@ -237,14 +247,14 @@ $underage_submit_url="https://www.google.com/";
 // Sensitive content settings
 
 // Set sensitive content for each article
-// Yes: Set to true to set sensitive content warnings. Blur images of sensitive content.
-// yes: true no: false
+// Enable: Set to true to set sensitive content warnings. Blur images of sensitive content.
+// Enable: true / Disable: false
 
 // $mark_sensitive_image = true;
 $mark_sensitive_image = false;
 
 // Checked "Sensitive Content" in default settings.
-// yes: true no: false
+// Enable: true / Disable: false
 
 $nsfw_checked = true;
 // $nsfw_checked = false;
@@ -252,56 +262,56 @@ $nsfw_checked = true;
 // Set all images to sensitive content
 // When set to true, all posts' images will be marked as sensitive content instead of individual settings.
 // The "Sensitive content" checkbox will not be displayed during posting.
-// Yes: true No: false
+// Enable: true / Disable: false
 
 // $set_all_images_to_nsfw = true;
 $set_all_images_to_nsfw = false;
 
 // Use option to hide paint time
 // Enabling this option will allow toggling the display of paint time when posting: show / hide.
-// yes: true no: false
+// Enable: true / Disable: false
 
 // $use_hide_painttime = true;
 $use_hide_painttime = false;
 
-// don't change post date when editing
-// Settings when you do not want to change the date for diary purposes, etc.
-// Yes: If set to true, editing will not change the post date. Normally none: false .
-// yes: true no: false
+// Keep original post date when editing
+// Useful for diary-like posts where you don't want the date to update.
+// When enabled, editing a post will not change its timestamp. Default: false
+// Enable: true / Disable: false
 
 // $do_not_change_posts_time = true;
 $do_not_change_posts_time = false;
 
 // all sage
-// yes: set to true to prevent thread position from changing on replies. All will be treated as sage.
+// Enable: set to true to prevent thread position from changing on replies. All will be treated as sage.
 // initial value false
 
 // $sage_all = true;
 $sage_all = false;
 
 // Add admin mark to posts by admin.
-// yes: yes, add admin mark to admin posts.
+// Enable: yes, add admin mark to admin posts.
 //If you log in admin mode or if the passwords match, you are considered an admin.
-// yes: true no: false
+// Enable: true / Disable: false
 
 $verified_adminpost = true;
 // $verified_adminpost = false;
 
-// Display images of the previous and next threads on the screen below the thread Yes: true No: false
-// yes: true no: false
+// Display images of the previous and next threads on the screen below the thread Enable: true / Disable: false
+// Enable: true / Disable: false
 
 $view_other_works = true;
 // $view_other_works = false;
 
 
 // show latest release version and link on admin page
-// yes: true no: false
+// Enable: true / Disable: false
 
 $latest_var = true;
 // $latest_var = false;
 
 // When drawing a continuation, require a password even for new posts
-// yes: true no: false// $password_require_to_continue = true;
+// Enable: true / Disable: false// $password_require_to_continue = true;
 // $password_require_to_continue = true;
 $password_require_to_continue = false;
 
@@ -369,7 +379,7 @@ $res_max_w = 300;//width
 $res_max_h = 300;//height
 
 // create a thumbnail if it exceeds the maximum width and height to display
-// yes: true no: false
+// Enable: true / Disable: false
 
 $use_thumb = true;
 // $use_thumb = false;
@@ -385,15 +395,15 @@ $max_file_size_in_png_format_paint = 1024;
 /* secret word setting */
 
 // Require a secret word in posts
-// Yes: true requires a secret word for posts.
-// Yes: true No: false
+// Enable: true requires a secret word for posts.
+// Enable: true / Disable: false
 
 // $use_aikotoba = true;
 $use_aikotoba=false;
 
 // require a secret word to view the message board
-// Yes: true No: false
-// Yes: true requires a secret word to view all content on the board.
+// Enable: true / Disable: false
+// Enable: true requires a secret word to view all content on the board.
 // Only the secret word confirmation page will be indexed by search engines; all other pages will be excluded.
 
 // $aikotoba_required_to_view=true;
@@ -405,8 +415,8 @@ $aikotoba_required_to_view=false;
 $aikotoba = "secret";
 
 // Maintain the login status of the secret Word
-// Yes: true No: false
-// Yes: keep password login status for 30 days.
+// Enable: true / Disable: false
+// Enable: keep password login status for 30 days.
 
 // $keep_aikotoba_login_status=true;
 $keep_aikotoba_login_status=false;
@@ -414,7 +424,7 @@ $keep_aikotoba_login_status=false;
 /* search function */
 
 // Display a search link in the top menu
-// yes: true no: false
+// Enable: true / Disable: false
 
 // $display_search_nav = true;
 $display_search_nav = false;
@@ -432,8 +442,8 @@ $search_comments_pagedef = 30;
 /* safety */
 
 // Reject if admin password is wrong for her 5 times in a row
-// yes: true no: false
-// yes: true for more security, but if the login page is locked it will take more effort to unlock it.
+// Enable: true / Disable: false
+// Enable: true for more security, but if the login page is locked it will take more effort to unlock it.
 
 // $check_password_input_error_count = true;
 $check_password_input_error_count = false;
@@ -463,8 +473,8 @@ $elapsed_days=180;
 
 // reject all posts
 // Set this if the administrator is away for a long time or wants to display only.
-// Yes: true, disallow all posts. Initial value false.
-// yes: true no: false
+// Enable: true, disallow all posts. Initial value false.
+// Enable: true / Disable: false
 
 // $deny_all_posts = true;
 $deny_all_posts = false;
@@ -519,7 +529,7 @@ $sns_window_height = 600;
 // Misskey note function settings
  
 // Enable posting to Misskey
-// yes: true no: false
+// Enable: true / Disable: false
 
 $use_misskey_note = true;
 // $use_misskey_note = false;
@@ -565,7 +575,7 @@ $session_name = "session_petit";
 /* usually don't change */
 
 // Also fetch an array of omitted replies
-// yes: true no: false
+// Enable: true / Disable: false
 
 // When set to false, the array of omitted replies will not be fetched, making the display faster.
 // Setting it to false requires updating to a template from v1.73.0 or later.
