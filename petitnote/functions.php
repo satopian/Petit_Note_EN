@@ -1,5 +1,5 @@
 <?php
-$functions_ver=20250529;
+$functions_ver=20250601;
 //編集モードログアウト
 function logout(): void {
 	session_sta();
@@ -326,7 +326,6 @@ function branch_destination_of_location(): void {
 		redirect('./?mode=catalog&page='.h($page));
 	}
 	if($search){
-		
 		redirect('./?mode=search&page='.h($page).'&imgsearch='.h($imgsearch).'&q='.h($q).'&radio='.h($radio));
 	}
 	//ここまでに別処理がなければ通常ページ
@@ -405,6 +404,8 @@ function create_res($line,$options=[]): array {
 
 	$isset_catalog = isset($options['catalog']);
 	$isset_search = isset($options['search']);
+	$is_badhost = $options['is_badhost'] ?? false;
+	
 	$res=[];
 
 	$continue = true;
@@ -465,7 +466,7 @@ function create_res($line,$options=[]): array {
 		'upload_image' => $upload_image,
 		'pchext' => $pchext,
 		'anime' => $anime,
-		'continue' => $check_elapsed_days ? $continue : (adminpost_valid() ? $continue : false),
+		'continue' => ($check_elapsed_days && !$is_badhost) ? $continue : (adminpost_valid() ? $continue : false),
 		'time' => $time,
 		'date' => $date,
 		'datetime' => $datetime,
@@ -1003,7 +1004,7 @@ function check_submission_interval(): void {
 	$mode = (int)filter_input_data('POST', 'mode',FILTER_VALIDATE_INT);
 	$pictmp = (int)filter_input_data('POST', 'pictmp',FILTER_VALIDATE_INT);//お絵かきコメントなら2になる
 	// デフォルトで最低2秒の間隔を設ける
-	$min_interval = ($mode==='regist' && $pictmp!==2) ? 3 : 2; // お絵かきコメント以外の投稿は3秒待機
+	$min_interval = ($mode==='regist' && $pictmp===2) ? 1 : 2; // お絵かきコメント以外の投稿は2秒待機
 
 	session_sta();
 	if (!isset($_SESSION['form_display_time'])) {
@@ -1055,6 +1056,10 @@ function deltemp(): void {
 function Reject_if_NGword_exists_in_the_post(): void {
 	global $use_japanesefilter,$badstring,$badname,$badurl,$badstr_A,$badstr_B,$allow_comments_url,$max_com,$en;
 
+	if(is_badhost()){
+		error($en?'Post was rejected.':'拒絶されました。');
+	}
+
 	$admin =(adminpost_valid()||admindel_valid());
 
 	$name = t(filter_input_data('POST','name'));
@@ -1065,9 +1070,6 @@ function Reject_if_NGword_exists_in_the_post(): void {
 
 	if($admin || is_adminpass($pwd)){
 		return;
-	}
-	if(is_badhost()){
-		error($en?'Post was rejected.':'拒絶されました。');
 	}
 
 	$com_len=strlen((string)$com);
