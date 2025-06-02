@@ -127,8 +127,11 @@ function is_adminpass($pwd): bool {
 }
 
 function admin_in(): void {
-
 	global $boardname,$use_diary,$use_aikotoba,$petit_lot,$petit_ver,$skindir,$en,$latest_var;
+
+	if(is_badhost()){
+		error($en? 'Rejected.' : '拒絶されました。');
+	}
 
 	aikotoba_required_to_view();
 
@@ -1151,8 +1154,8 @@ function is_ngword ($ngwords, $strs): bool {
 function is_badhost(): bool {
 	global $badhost,$reject_if_no_reverse_dns;
 	session_sta();
-	$session_badhost = $_SESSION['is_badhost'] ?? false; //SESSIONに保存された値を取得
-	if($session_badhost){//セッションに保存されている場合はチェックしない
+	$session_is_badhost = $_SESSION['is_badhost'] ?? false; //SESSIONに保存された値を取得
+	if($session_is_badhost){//セッションに保存されている場合はチェックしない
 		return true;
 	}
 	//ホスト取得
