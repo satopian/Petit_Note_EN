@@ -133,11 +133,12 @@ $reject_if_no_reverse_dns = false;
 // Note: Many users may have IP addresses that cannot be reverse-resolved.
 // Setting this to true may prevent some legitimate users from posting.
 
+
 // $use_badhost_session_cache = true;
 $use_badhost_session_cache = false;
 
 // Note: Caches bad host detection result in the session.
-// If misclassified, the user may be blocked from posting until the browser is restarted.
+// Once flagged, it won't be cleared until the browser is restarted.
 
 /*Settings by Purpose of Use*/
 
