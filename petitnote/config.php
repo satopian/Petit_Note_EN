@@ -136,7 +136,7 @@ $reject_if_no_reverse_dns = false;
 // $use_badhost_session_cache = true;
 $use_badhost_session_cache = false;
 
-// ※Caches bad host detection result in the session.
+// Note: Caches bad host detection result in the session.
 // If misclassified, the user may be blocked from posting until the browser is restarted.
 
 /*Settings by Purpose of Use*/
