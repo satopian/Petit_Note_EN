@@ -1,5 +1,5 @@
 <?php
-$functions_ver=20250608;
+$functions_ver=20250613;
 //編集モードログアウト
 function logout(): void {
 	session_sta();
@@ -21,11 +21,10 @@ function logout_admin(): void {
 function aikotoba(): void {
 	global $aikotoba,$en,$keep_aikotoba_login_status;
 
+	//禁止ホストをチェック
+	check_badhost();
 	//投稿間隔をチェック
 	check_submission_interval();
-	if(is_badhost()){
-		error($en? 'Rejected.' : '拒絶されました。');
-	}
 	//Fetch API以外からのPOSTを拒否
 	check_post_via_javascript();
 	check_same_origin();
@@ -137,10 +136,8 @@ function is_adminpass($pwd): bool {
 function admin_in(): void {
 	global $boardname,$use_diary,$use_aikotoba,$petit_lot,$petit_ver,$skindir,$en,$latest_var;
 
-	if(is_badhost()){
-		error($en? 'Rejected.' : '拒絶されました。');
-	}
-
+	//禁止ホストをチェック
+	check_badhost();
 	aikotoba_required_to_view();
 
 	//古いテンプレート用の使用しない変数
@@ -180,12 +177,10 @@ function check_aikotoba(): bool {
 function adminpost(): void {
 	global $second_pass,$en;
 
+	//禁止ホストをチェック
+	check_badhost();
 	//投稿間隔をチェック
 	check_submission_interval();
-
-	if(is_badhost()){
-		error($en? 'Rejected.' : '拒絶されました。');
-	}
 	//Fetch API以外からのPOSTを拒否
 	check_post_via_javascript();
 	check_same_origin();
@@ -210,13 +205,10 @@ function adminpost(): void {
 function admin_del(): void {
 	global $second_pass,$en;
 
+	//禁止ホストをチェック
+	check_badhost();
 	//投稿間隔をチェック
 	check_submission_interval();
-
-	if(is_badhost()){
-		error($en? 'Rejected.' : '拒絶されました。');
-	}
-
 	//Fetch API以外からのPOSTを拒否
 	check_post_via_javascript();
 	check_same_origin();
@@ -240,6 +232,8 @@ function admin_del(): void {
 //ユーザー削除モード
 function userdel_mode(): void {
 
+	//禁止ホストをチェック
+	check_badhost();
 	session_sta();
 	$_SESSION['userdel']='userdel_mode';
 
@@ -628,6 +622,9 @@ function get_uip(): string {
 		$ips = explode(', ', $ip);
 		$ip = $ips[0];
 	}
+	if(filter_var($ip, FILTER_VALIDATE_IP) === false){
+		return $ip = '';
+	}
 	return $ip;
 }
 
@@ -969,6 +966,15 @@ function check_same_origin(): void {
 	}
 }
 
+//禁止ホストなら拒絶
+function check_badhost(): void {
+	global $en;
+	if(is_badhost()){
+		error($en? 'Rejected.' : '拒絶されました。');
+	}
+}
+
+//記事の番号かどうかチェック
 function check_open_no($no): void {
 	global $en;
 	$no=(string)$no;
@@ -1076,9 +1082,8 @@ function deltemp(): void {
 function Reject_if_NGword_exists_in_the_post(): void {
 	global $use_japanesefilter,$badstring,$badname,$badurl,$badstr_A,$badstr_B,$allow_comments_url,$max_com,$en;
 
-	if(is_badhost()){
-		error($en?'Post was rejected.':'拒絶されました。');
-	}
+	//禁止ホストをチェック
+	check_badhost();
 
 	$admin =(adminpost_valid()||admindel_valid());
 
@@ -1188,8 +1193,10 @@ function is_badhost(): bool {
 
 	if($host === $userip){//ホスト名がipアドレスになる場合は
 		if($reject_if_no_reverse_dns){
-			$_SESSION['is_badhost'] = true;
-			return true; //リバースDNSがない場合は拒絶
+			if(filter_var($userip, FILTER_VALIDATE_IP,FILTER_FLAG_IPV4)){//IPv4アドレスなら
+				$_SESSION['is_badhost'] = true;
+				return true; //リバースDNSがない場合は拒絶
+			}
 		}
 		foreach($badhost as $value){
 			if (preg_match("/\A$value/i",$host)) {//前方一致
