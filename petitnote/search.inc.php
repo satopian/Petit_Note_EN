@@ -1,7 +1,8 @@
 <?php
-//Petit Note (C)2021-2025 さとぴあ(@satopian)
-//MIT License
-$search_inc_ver = 20250505;
+//Petit Note (c)さとぴあ @satopian 2021-2025 MIT License
+//https://paintbbs.sakura.ne.jp/
+
+$search_inc_ver = 20250619;
 class processsearch
 {
 
@@ -22,12 +23,14 @@ class processsearch
 	public static function search(): void
 	{
 
-		global $use_aikotoba, $home, $skindir;
+		global $home, $skindir;
 		global $boardname, $petit_ver, $petit_lot, $set_nsfw, $en, $mark_sensitive_image;
 		global $search_images_pagedef, $search_comments_pagedef;
+		global $age_check_required_to_view;
 
 		aikotoba_required_to_view();
 		set_page_context_to_session();
+		$agecheck_passed = (bool)filter_input_data('COOKIE','agecheck_passed_');
 
 		self::init();
 		$imgsearch = self::$imgsearch;
@@ -134,11 +137,7 @@ class processsearch
 
 		//ページング
 		list($start_page, $end_page) = calc_pagination_range($page, $pagedef);
-
-		//prev next 
-		$next = (($page + $pagedef) < $count_alllog) ? $page + $pagedef : false; //ページ番号がmaxを超える時はnextのリンクを出さない
-		$prev = ((int)$page <= 0) ? false : ($page - $pagedef); //ページ番号が0の時はprevのリンクを出さない
-		$prev = ($prev < 0) ? 0 : $prev;
+		list($prev,$next)=get_prev_next_pages($page,$pagedef,$count_alllog);
 
 		//最終更新日時を取得
 		$postedtime = '';

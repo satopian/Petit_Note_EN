@@ -1,5 +1,9 @@
 <?php
-$functions_ver=20250613;
+//Petit Note (c)さとぴあ @satopian 2021-2025 MIT License
+//https://paintbbs.sakura.ne.jp/
+
+$functions_ver=20250619;
+
 //編集モードログアウト
 function logout(): void {
 	session_sta();
@@ -21,10 +25,10 @@ function logout_admin(): void {
 function aikotoba(): void {
 	global $aikotoba,$en,$keep_aikotoba_login_status;
 
-	//禁止ホストをチェック
-	check_badhost();
 	//投稿間隔をチェック
 	check_submission_interval();
+	//禁止ホストをチェック
+	check_badhost();
 	//Fetch API以外からのPOSTを拒否
 	check_post_via_javascript();
 	check_same_origin();
@@ -134,7 +138,7 @@ function is_adminpass($pwd): bool {
 }
 
 function admin_in(): void {
-	global $boardname,$use_diary,$use_aikotoba,$petit_lot,$petit_ver,$skindir,$en,$latest_var;
+	global $boardname,$use_diary,$petit_lot,$petit_ver,$skindir,$en,$latest_var;
 
 	//禁止ホストをチェック
 	check_badhost();
@@ -149,9 +153,6 @@ function admin_in(): void {
 	$aikotoba=aikotoba_valid();
 	$userdel=isset($_SESSION['userdel'])&&($_SESSION['userdel']==='userdel_mode');
 	$adminpost=adminpost_valid();
-	if(!$use_aikotoba){
-		$aikotoba=true;
-	}
 
 	$page= $_SESSION['current_page_context']["page"] ?? 0;
 	$resno= $_SESSION['current_page_context']["resno"] ?? 0;
@@ -166,12 +167,14 @@ function admin_in(): void {
 	include __DIR__.'/'.$skindir.$templete;
 }
 //合言葉を再確認	
-function check_aikotoba(): bool {
-	global $en;
+function check_aikotoba(): void {
+	global $en,$use_aikotoba,$aikotoba_required_to_view;
+	if(!$use_aikotoba && !$aikotoba_required_to_view){
+		return;//合言葉のチェックが必要ない時
+	}
 	if(!aikotoba_valid()){
 		error($en?'The secret word is wrong.':'合言葉が違います。');
 	}
-	return true;
 }
 //管理者投稿モード
 function adminpost(): void {
@@ -257,7 +260,10 @@ function userdel_valid(): bool {
 }
 //合言葉の確認
 function aikotoba_valid(): bool {
-	global $keep_aikotoba_login_status,$aikotoba;
+	global $keep_aikotoba_login_status,$aikotoba,$use_aikotoba,$aikotoba_required_to_view;
+	if(!$use_aikotoba && !$aikotoba_required_to_view){
+		return true;//合言葉のチェックが必要ない時
+	}
 	session_sta();
 	$keep=$keep_aikotoba_login_status ? ($aikotoba && hash_equals($aikotoba,(string)filter_input_data('COOKIE','aikotoba'))
 	) : false;
@@ -601,6 +607,7 @@ function create_array_from_fp($fp): array {
 }
 
 //ページング
+//最初と最後のページ番号を取得
 function calc_pagination_range($page,$pagedef): array {
 
 	$start_page=$page-$pagedef*8;
@@ -611,6 +618,14 @@ function calc_pagination_range($page,$pagedef): array {
 	}
 	return [$start_page,$end_page];	
 }	
+//ページング
+//前のページと次のページのページの番号を取得
+function get_prev_next_pages($page,$pagedef,$count_alllog): array {
+	$next=(($page+$pagedef)<$count_alllog) ? $page+$pagedef : false;//ページ番号がmaxを超える時はnextのリンクを出さない
+	$prev=((int)$page<=0) ? false : ($page-$pagedef);//ページ番号が0の時はprevのリンクを出さない
+	$prev=($prev<0) ? 0 : $prev;
+	return [$prev,$next];
+}
 
 //ユーザーip
 function get_uip(): string {
@@ -623,7 +638,7 @@ function get_uip(): string {
 		$ip = $ips[0];
 	}
 	if(filter_var($ip, FILTER_VALIDATE_IP) === false){
-		return $ip = '';
+		return '';
 	}
 	return $ip;
 }
@@ -885,7 +900,7 @@ function delete_file_if_sizeexceeds($upfile,$fp,$rp): void {
 
 function error($str,$historyback=true): void {
 
-	global $boardname,$skindir,$en,$aikotoba_required_to_view,$petit_lot;
+	global $boardname,$skindir,$en,$petit_lot;
 
 	$petit_lot = $petit_lot ?? time();
 
@@ -895,7 +910,6 @@ function error($str,$historyback=true): void {
 		header('Content-type: text/plain');
 		die(h("error\n{$str}"));
 	}
-	$boardname = ($aikotoba_required_to_view && !aikotoba_valid()) ? '' : $boardname; 
 
 	$admin_pass= null;
 	$templete='error.html';
@@ -993,8 +1007,8 @@ function getId ($userip): string {
 	session_sta();
 	return 
 	(isset($_SESSION['userid'])&&$_SESSION['userid']) ?
-	$_SESSION['userid'] :
-	substr(hash('sha256', $userip, false),-8);
+	t($_SESSION['userid']) :
+	t(substr(hash('sha256', $userip, false),-8));
 
 }
 
