@@ -26,11 +26,9 @@ class processsearch
 		global $home, $skindir;
 		global $boardname, $petit_ver, $petit_lot, $set_nsfw, $en, $mark_sensitive_image;
 		global $search_images_pagedef, $search_comments_pagedef;
-		global $age_check_required_to_view;
 
 		aikotoba_required_to_view();
 		set_page_context_to_session();
-		$agecheck_passed = (bool)filter_input_data('COOKIE','agecheck_passed_');
 
 		self::init();
 		$imgsearch = self::$imgsearch;
