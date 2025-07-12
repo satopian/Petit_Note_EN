@@ -2,7 +2,7 @@
 //Petit Note (c)さとぴあ @satopian 2021-2025 MIT License
 //https://paintbbs.sakura.ne.jp/
 
-$functions_ver=20250709;
+$functions_ver=20250710;
 
 //編集モードログアウト
 function logout(): void {
@@ -406,7 +406,6 @@ function is_paint_tool_name($tool): string {
 function create_res($line,$options=[]): array {
 	global $root_url,$boardname,$do_not_change_posts_time,$en,$mark_sensitive_image,$set_all_images_to_nsfw;
 	list($no,$sub,$name,$verified,$com,$url,$imgfile,$w,$h,$thumbnail,$paintsec,$log_hash_img,$abbr_toolname,$pchext,$time,$first_posted_time,$host,$userid,$hash,$oya)=$line;
-
 	$time = basename($time);
 
 	$isset_catalog = isset($options['catalog']);
@@ -452,7 +451,7 @@ function create_res($line,$options=[]): array {
 	$webpimg = $imgfile ? is_file('webp/'.$time.'t.webp') : false;
 	$com = (!$isset_catalog || $isset_search) ? $com : '';
 	$com = $com ? (!$isset_search ? str_replace('"\n"',"\n",$com) : str_replace('"\n"'," ",$com)) : '';
-	
+
 	$res=[
 		'no' => $no,
 		'sub' => $sub,
@@ -476,6 +475,7 @@ function create_res($line,$options=[]): array {
 		'pchext' => $pchext,
 		'anime' => $anime,
 		'continue' => ($check_elapsed_days && !$is_badhost) ? $continue : (adminpost_valid() ? $continue : false),
+		'first_posted_time' => $first_posted_time,
 		'time' => $time,
 		'date' => $date,
 		'datetime' => $datetime,
@@ -486,7 +486,8 @@ function create_res($line,$options=[]): array {
 		'encoded_no' => (!$isset_catalog && $is_oya) ? urlencode('['.$no.']') : '',
 		'encoded_sub' => (!$isset_catalog && $is_oya) ? urlencode($sub) : '',
 		'encoded_u' => (!$isset_catalog && $is_oya) ? urlencode($root_url.'?resno='.$no) : '',//tweet
-		'encoded_t' => (!$isset_catalog && $is_oya) ? urlencode('['.$no.']'.$sub.($name ? ' by '.$name : '').' - '.$boardname) : '',
+		'encoded_item_u' => (!$isset_catalog) ? urlencode($root_url.'?resno='.$no.'&resid='.$first_posted_time) : '',//tweet
+		'encoded_t' => (!$isset_catalog) ? urlencode('['.$no.']'.$sub.($name ? ' by '.$name : '').' - '.$boardname) : '',
 		'oya' => $oya,
 		'webpimg' => $webpimg ? 'webp/'.$time.'t.webp' :false,
 		'hide_thumbnail' => $hide_thumbnail, //サムネイルにぼかしをかける時
