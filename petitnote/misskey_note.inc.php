@@ -44,12 +44,13 @@ class misskey_note{
 			error($en?'This operation has failed.':'失敗しました。');
 		}
 		$find=false;
+		$resid="";
 		foreach($r_arr as $i =>$val){
 			$_line=explode("\t",trim($val));
 			list($_no,$sub,$name,$verified,$com,$url,$imgfile,$w,$h,$thumbnail,$painttime,$log_hash_img,$tool,$pchext,$time,$first_posted_time,$host,$userid,$hash,$oya)=$_line;
 			if($id===$time && $no===$_no){
-
 				$out[0][]=create_res($_line);
+				$resid=$first_posted_time;
 				$find=true;
 				break;
 				
@@ -72,7 +73,7 @@ class misskey_note{
 		$count_r_arr=count($r_arr);
 		$edit_mode = 'editmode';
 
-		$_SESSION['current_id']	= $id;
+		$_SESSION['current_resid']	= $first_posted_time;
 
 		set_form_display_time();
 		$admin_pass= null;
@@ -118,6 +119,7 @@ class misskey_note{
 		}
 
 		$flag=false;
+		$resid="";
 		foreach($r_arr as $val){
 
 			$line=explode("\t",trim($val));
@@ -130,6 +132,7 @@ class misskey_note{
 				}
 				if($admin||check_elapsed_days($time)){
 					$flag=true;
+					$resid=$first_posted_time;
 					break;
 				}
 			}
@@ -160,7 +163,7 @@ class misskey_note{
 
 		$image_rep=false;
 
-		$_SESSION['current_id']	= $id;
+		$_SESSION['current_resid']	= $first_posted_time;
 
 		$admin_pass= null;
 		// HTML出力
