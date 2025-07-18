@@ -3,8 +3,8 @@
 //https://paintbbs.sakura.ne.jp/
 //1スレッド1ログファイル形式のスレッド式画像掲示板
 
-$petit_ver='v1.99.9';
-$petit_lot='lot.20250716';
+$petit_ver='v1.100.2';
+$petit_lot='lot.20250718';
 
 $lang = ($http_langs = $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '')
   ? explode( ',', $http_langs )[0] : '';
@@ -20,13 +20,13 @@ if(!is_file(__DIR__.'/functions.php')){
 	die(__DIR__.'/functions.php'.($en ? ' does not exist.':'がありません。'));
 }
 require_once(__DIR__.'/functions.php');
-if(!isset($functions_ver)||$functions_ver<20250713){
+if(!isset($functions_ver)||$functions_ver<20250717){
 	die($en?'Please update functions.php to the latest version.':'functions.phpを最新版に更新してください。');
 }
 
 check_file(__DIR__.'/misskey_note.inc.php');
 require_once(__DIR__.'/misskey_note.inc.php');
-if(!isset($misskey_note_ver)||$misskey_note_ver<20250707){
+if(!isset($misskey_note_ver)||$misskey_note_ver<20250718){
 	die($en?'Please update misskey_note.inc.php to the latest version.':'misskey_note.inc.phpを最新版に更新してください。');
 }
 
@@ -1739,7 +1739,6 @@ function confirmation_before_deletion ($edit_mode=''): void {
 
 	$count_r_arr=count($r_arr);
 
-
 	set_form_display_time();
 
 	$admin_pass= null;
@@ -2408,6 +2407,7 @@ function view(): void {
 			}
 		}
 	}
+	unset($lines);
 	$aikotoba = aikotoba_valid();
 	$adminpost=adminpost_valid();
 	$resform = ((!$only_admin_can_reply && !$use_diary && !$is_badhost && $aikotoba)||$adminpost);
@@ -2446,7 +2446,7 @@ function view(): void {
 	$lightbox_gallery=false;
 	$resmode=false;
 	$resno=0;
-	$sitename= preg_replace("/\A\s*\z/u","",$sitename);//連続する空行を削除
+	$sitename= preg_replace("/\A\s*\z/u","",$sitename);//連続する空文字を削除
 
 	//PCHアップロードの投稿可能な最大値
 	$upload_max_filesize = get_upload_max_filesize() * 1024 * 1024; //byte単位に変換
@@ -2475,7 +2475,7 @@ function res (): void {
 	$denny_all_posts=$deny_all_posts;
 	$resno=(string)filter_input_data('GET','resno',FILTER_VALIDATE_INT);
 	$misskey_note = $use_misskey_note ? (bool)filter_input_data('GET','misskey_note',FILTER_VALIDATE_BOOLEAN) : false;
-	$res_catalog = $misskey_note ? true : (bool)filter_input_data('GET','res_catalog',FILTER_VALIDATE_BOOLEAN);
+	$res_catalog = $misskey_note || (bool)filter_input_data('GET','res_catalog',FILTER_VALIDATE_BOOLEAN);
 	$resid = (string)filter_input_data('GET','resid');
 
 	session_sta();
