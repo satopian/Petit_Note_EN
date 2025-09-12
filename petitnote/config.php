@@ -280,6 +280,13 @@ $set_all_images_to_nsfw = false;
 // $use_hide_painttime = true;
 $use_hide_painttime = false;
 
+// Hide all paint times
+// Enable: Set to true to hide the paint time for all posts.
+// Enable: true / Disable: false
+
+// $all_hide_painttime = true;
+$all_hide_painttime = false;
+
 // Keep original post date when editing
 // Useful for diary-like posts where you don't want the date to update.
 // When enabled, editing a post will not change its timestamp. Default: false
