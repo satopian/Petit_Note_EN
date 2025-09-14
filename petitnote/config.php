@@ -287,6 +287,13 @@ $use_hide_painttime = false;
 // $all_hide_painttime = true;
 $all_hide_painttime = false;
 
+// Hide user ID for all posts
+// Enable: Set to true to hide the user ID for all posts.
+// Enable: true / Disable: false
+
+// $hide_userid = true;
+$hide_userid = false;
+
 // Keep original post date when editing
 // Useful for diary-like posts where you don't want the date to update.
 // When enabled, editing a post will not change its timestamp. Default: false
