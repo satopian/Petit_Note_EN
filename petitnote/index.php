@@ -3,8 +3,8 @@
 //https://paintbbs.sakura.ne.jp/
 //1スレッド1ログファイル形式のスレッド式画像掲示板
 
-$petit_ver='v1.132.8';
-$petit_lot='lot.20251028.5';
+$petit_ver='v1.135.2';
+$petit_lot='lot.20251030.1';
 
 $lang = ($http_langs = $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '')
   ? explode( ',', $http_langs )[0] : '';
@@ -20,7 +20,7 @@ if(!is_file(__DIR__.'/functions.php')){
 	die(__DIR__.'/functions.php'.($en ? ' does not exist.':'がありません。'));
 }
 require_once(__DIR__.'/functions.php');
-if(!isset($functions_ver)||$functions_ver<20250918){
+if(!isset($functions_ver)||$functions_ver<20250929){
 	die($en?'Please update functions.php to the latest version.':'functions.phpを最新版に更新してください。');
 }
 
@@ -1022,7 +1022,7 @@ function paint(): void {
 // お絵かきコメント 
 function paintcom(): void {
 	global $boardname,$home,$skindir,$sage_all,$en,$mark_sensitive_image;
-	global $usercode,$petit_lot,$use_hide_painttime,$all_hide_painttime,$nsfw_checked;
+	global $usercode,$petit_lot,$use_hide_painttime,$all_hide_painttime,$nsfw_checked,$set_all_images_to_nsfw;
 
 	aikotoba_required_to_view(true);
 	$token=get_csrf_token();
