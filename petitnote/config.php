@@ -164,7 +164,7 @@ $use_tegaki= true;
 $use_axnos = true;
 // $use_axnos = false;
 
-// Use ChickenPaint
+// Use litaChit
 // Enable: true / Disable: false
 $use_chickenpaint= true;
 // $use_chickenpaint= false;
