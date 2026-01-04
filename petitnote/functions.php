@@ -1,8 +1,8 @@
 <?php
-//Petit Note (c)さとぴあ @satopian 2021-2025 MIT License
+//Petit Note (c)さとぴあ @satopian 2021-2026 MIT License
 //https://paintbbs.sakura.ne.jp/
 
-$functions_ver=20251127;
+$functions_ver=20260103;
 
 //編集モードログアウト
 function logout(): void {
@@ -771,36 +771,44 @@ function delete_res_cache (): void {
 	safe_unlink(__DIR__.'/template/cache/index_cache.json');
 }
 
-//pngをwebpに変換してみてファイル容量が小さくなっていたら元のファイルを上書き
-function convert_andsave_if_smaller_png2webp($is_upload_img,$fname,$time): void {
+//PNG形式またはWebP形式で上書き保存
+function convert2($is_upload_img,$is_upload_img_png_format,$fname,$time): void {
 	global $max_kb,$max_file_size_in_png_format_paint,$max_file_size_in_png_format_upload;
 	$upfile=TEMP_DIR.basename($fname);
 
+	if(mime_content_type($upfile)==="image/gif"){
+		return;//GIF形式の時は処理しない
+	}
+
 	clearstatcache();
 	$filesize=filesize($upfile);
-	$max_kb_size_over = ($filesize > ($max_kb * 1024));
-	if(mime_content_type($upfile)!=="image/png" && !$max_kb_size_over){
-		return;//ファイルサイズが$max_kbを超えている時は形式にかかわらず処理続行
-	}
-	if(((!$is_upload_img && $filesize < ($max_file_size_in_png_format_paint * 1024))||	
-	($is_upload_img && $filesize < ($max_file_size_in_png_format_upload * 1024))) && !$max_kb_size_over){
-		return;
-	}
-	//webp作成が可能ならwebpに、でなければjpegに変換する。
-	$im_webp = thumbnail_gd::thumb(TEMP_DIR,$fname,$time,null,null,['png2webp'=>true]);
 
-	if($im_webp){
-		clearstatcache();
-		if(filesize($im_webp)<$filesize){//webpのほうが小さい時だけ
-			rename($im_webp,$upfile);//webpで保存
-			chmod($upfile,0606);
-		} else{//pngよりファイルサイズが大きくなる時は
-			unlink($im_webp);//作成したwebp画像を削除
-		}
+	//GDのPNGのサイズは少し大きくなるので制限値を1.5で割る
+	$max_kb_size_over = ($filesize > ($max_kb * 1024 / 1.5));
+
+	if(
+		//お絵かき画像は必ずPNG形式
+		//ファイルサイズが小さな時はもとのPNGのまま何もしない
+		(!$is_upload_img && $filesize < ($max_file_size_in_png_format_paint * 1024)))
+		//アップロード画像がPNG形式の時で、ファイルサイズがが小さな時はPNG形式のまま保存
+		{//PNG形式のまま何もしない
+			 return;
+		}//アップロード画像がPNG形式で、ファイルサイズが小さな時はPNG形式で上書き保存	
+		elseif($is_upload_img_png_format && $filesize < ($max_file_size_in_png_format_upload * 1024) && !$max_kb_size_over){
+			//PNG形式で保存
+			$img = thumbnail_gd::thumb(TEMP_DIR,$fname,$time,null,null,['2png'=>true]);
+		}else{
+			//WebP形式で保存
+			$img = thumbnail_gd::thumb(TEMP_DIR,$fname,$time,null,null,['2webp'=>true]);
+	}
+
+	if(is_file($img)){
+		rename($img,$upfile);//上書き保存
+		chmod($upfile,0606);
 	}
 }
 
-//Exifをチェックして画像が回転している時と位置情報が付いている時は上書き保存
+//Exifをチェックして画像が回転している時は上書き保存
 function check_jpeg_exif($upfile): void {
 	global $max_px;
 
@@ -811,11 +819,9 @@ function check_jpeg_exif($upfile): void {
 	//画像回転の検出
 	$exif = @exif_read_data($upfile);// サポートされていないタグの時に`E_NOTICE`が発生するので`@`をつける
 	$orientation = $exif["Orientation"] ?? 1;
-	//位置情報はあるか?
-	$gpsdata_exists =(isset($exif['GPSLatitude']) || isset($exif['GPSLongitude'])); 
 
-	if ($orientation === 1 && !$gpsdata_exists) {
-		//画像が回転していない、位置情報も存在しない
+	if ($orientation === 1) {
+		//画像が回転していない
 		return;
 	}
 
@@ -858,7 +864,7 @@ function check_jpeg_exif($upfile): void {
 		ImageCopyResampled($im_out, $im_in, 0, 0, 0, 0, $out_w, $out_h, $w, $h);
 	}
 	// 画像を保存
-	imagejpeg($im_out, $upfile,98);
+	imagepng($im_out, $upfile, 3);//圧縮率3で保存
 	// 画像のメモリを解放
 	if(PHP_VERSION_ID < 80000) {//PHP8.0未満の時は
 		imagedestroy($im_in);
