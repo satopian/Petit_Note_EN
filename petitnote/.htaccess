@@ -4,3 +4,7 @@
 <Files "manifest.json">
 	Require all granted
 </Files>
+<IfModule mod_headers.c>
+    Header set Content-Security-Policy "worker-src 'self' blob:;"
+</IfModule>
+
