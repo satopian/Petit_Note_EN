@@ -2,7 +2,7 @@
 //Petit Note (c)さとぴあ @satopian 2021-2026 MIT License
 //https://paintbbs.sakura.ne.jp/
 
-$functions_ver=20260224;
+$functions_ver=20260225;
 
 //編集モードログアウト
 function logout(): void {
@@ -1451,7 +1451,7 @@ function check_elapsed_days ($postedtime): bool {
 		return true; // 投稿時間が不正な場合は許可
 	}
 	$postedtime=microtime2time($postedtime);//マイクロ秒を秒に戻す
-	return $elapsed_days //古いスレッドのフォームを閉じる日数が設定されていたら
+	return $elapsed_days && $postedtime //古いスレッドのフォームを閉じる日数が設定されていたら
 		? ((time() - (int)$postedtime) <= ((int)$elapsed_days * 86400)) // 指定日数以内なら許可
 		: true; // フォームを閉じる日数が未設定なら許可
 }
@@ -1470,7 +1470,8 @@ function time_left_to_close_the_thread ($postedtime): string {
 // マイクロ秒を秒に戻す
 function microtime2time($microtime): int {
 	$microtime=(string)$microtime;
-	$time=(strlen($microtime)>15) ? substr($microtime,0,-6) : substr($microtime,0,-3);
+	$time = (strlen($microtime)>15) ? substr($microtime,0,-6) : substr($microtime,0,-3);
+	$time = ctype_digit($time) ? $time : 0;
 	return (int)$time;
 }
 
@@ -1555,11 +1556,26 @@ function get_pch_size($src): ?array {
 function ini_get_size_mb(string $key): float {
 	if (!function_exists('ini_get')) return 0;
 
-	$val = ini_get($key);
-	$unit = strtoupper(substr($val, -1));
-	$num = (float)substr($val, 0, -1);
+	$val = trim(ini_get($key));//前後の空白を削除
 
-	switch ($unit) {//単位の変換
+	if ($val === '') return 0.0;
+
+	// もし完全に数字だけなら、「バイト単位」
+	if (is_numeric($val)) {
+			return (float)$val / 1024 / 1024;
+	}
+
+	$unit = strtoupper(substr($val, -1));
+	$num = trim(substr($val, 0, -1));
+
+	//（数字または小数）かチェック
+	if (!is_numeric($num)) {
+			return 0.0; // 数字部分が無効な場合は0.0を返す
+	}
+
+	$num = (float)$num; // 浮動小数点数に変換
+
+	switch ($unit) {// 単位の変換
 			case 'G':
 					return ($num * 1024);	// GB → MB
 			case 'M':
@@ -1569,7 +1585,7 @@ function ini_get_size_mb(string $key): float {
 			case 'B':
 					return ($num / 1024 / 1024);	// バイト → MB
 			default:
-					return ((float)$val / 1024 / 1024); // 単位なし → バイトとして処理
+					return ($num / 1024 / 1024); // 単位なし → バイトとして処理
 	}
 }
 //投稿可能な最大ファイルサイズを取得 単位MB
