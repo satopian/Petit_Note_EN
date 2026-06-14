@@ -3,15 +3,20 @@
 //https://paintbbs.sakura.ne.jp/
 //APIを使ってお絵かき掲示板からMisskeyにノート
 
-$misskey_note_ver=20260501;
+$misskey_note_ver=20260614;
 class misskey_note{
 
 	//投稿済みの記事をMisskeyにノートするための前処理
 	public static function before_misskey_note (): void {
 
-		global $boardname,$home,$petit_ver,$petit_lot,$skindir,$set_nsfw,$en,$deny_all_posts;
+		global $boardname,$home,$petit_ver,$petit_lot,$skindir,$set_nsfw,$en,$deny_all_posts,$enable_v1_legacy_template_unsafe_get_login;
 		//管理者判定処理
 		session_sta();
+
+		if(!$enable_v1_legacy_template_unsafe_get_login){
+			check_same_origin();
+		}
+
 		aikotoba_required_to_view(true);
 		$aikotoba= true;//テンプレート互換性
 		$adminpost=adminpost_valid();
@@ -19,9 +24,12 @@ class misskey_note{
 
 		$pwdc=(string)filter_input_data('COOKIE','pwdc');
 		$id = t(filter_input_data('POST','id'));//intの範囲外
-		$id = $id ?: t(filter_input_data('GET','id'));//intの範囲外
 		$no = t(filter_input_data('POST','no',FILTER_VALIDATE_INT));
-		$no = $no ?: t(filter_input_data('GET','no',FILTER_VALIDATE_INT));
+			//互換設定時はgetでもログインできるようにする
+		if($enable_v1_legacy_template_unsafe_get_login){
+			$id = $id ?: t(filter_input_data('GET','id'));//intの範囲外
+			$no = $no ?: t(filter_input_data('GET','no',FILTER_VALIDATE_INT));
+		}
 		$userdel=isset($_SESSION['userdel'])&&($_SESSION['userdel']==='userdel_mode');
 		$resmode = false;//使っていない
 		$page= $_SESSION['current_page_context']["page"] ?? 0;
@@ -121,7 +129,7 @@ class misskey_note{
 
 		$flag=false;
 		$resid="";
-		$line="";
+		$line=[];
 		$first_posted_time="";
 		foreach($r_arr as $val){
 
