@@ -2,7 +2,7 @@
 //Petit Note (c)さとぴあ @satopian 2021-2026 MIT License
 //https://paintbbs.sakura.ne.jp/
 
-$functions_ver=20260614;
+$functions_ver=20260615;
 
 /**
  * 編集モードログアウト
@@ -159,12 +159,6 @@ function is_adminpass(?string $pwd): bool {
 
 function admin_in(): void {
 	global $boardname,$use_diary,$petit_lot,$petit_ver,$skindir,$en,$latest_var,$enable_v1_legacy_template_unsafe_get_login;
-
-	if(!$enable_v1_legacy_template_unsafe_get_login &&
-	$_SERVER["REQUEST_METHOD"] != "POST")
-	{
-	error("失敗しました。");	
-	}
 
 	if(!$enable_v1_legacy_template_unsafe_get_login){
 		check_same_origin();
@@ -1111,9 +1105,6 @@ function get_csrf_token(): string {
 function check_csrf_token(): void {
 	global $en;
 
-	if(($_SERVER["REQUEST_METHOD"]) !== "POST"){
-		error($en?'This operation has failed.':'失敗しました。');
-	} 
 	check_same_origin();
 	session_sta();
 	$token=(string)filter_input_data('POST','token');
@@ -1151,6 +1142,11 @@ function session_sta(): void {
  */
 function check_same_origin(): void {
 	global $en,$usercode;
+
+	if($_SERVER["REQUEST_METHOD"] != "POST"){
+		header("HTTP/1.1 403 Forbidden");
+		exit();
+	}
 
 	session_sta();
 	$c_usercode = t(filter_input_data('COOKIE', 'usercode'));//user-codeを取得
@@ -1967,4 +1963,28 @@ function filter_input_data(string $input, string $key, int $filter=FILTER_UNSAFE
 			$value = filter_input(INPUT_COOKIE, $key, $filter);
 	}
 		return $value;
+}
+/**
+ * 不正なクエリパラメータの時は 403 Forbiddenを返す
+ */
+function validateQueryParameters(){
+	$resno=filter_input_data('GET','resno',FILTER_VALIDATE_INT);
+	$page=filter_input_data('GET','page',FILTER_VALIDATE_INT);
+	$id=filter_input_data('GET','id',FILTER_VALIDATE_INT);
+	$resid=filter_input_data('GET','resid',FILTER_VALIDATE_INT);
+	$res_catalog=filter_input_data('GET','res_catalog',FILTER_VALIDATE_BOOLEAN);
+	$misskey_note=filter_input_data('GET','misskey_note',FILTER_VALIDATE_BOOLEAN);
+	//フィルタが失敗した時はfalse
+	if(
+		$resno===false||
+		$page===false||
+		$id===false||
+		$resid===false||
+		$res_catalog===false||
+		$misskey_note===false
+	)
+	{
+			header("HTTP/1.1 403 Forbidden");
+			exit();
+	}
 }
