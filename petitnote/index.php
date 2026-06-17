@@ -3,8 +3,8 @@
 //https://paintbbs.sakura.ne.jp/
 //1スレッド1ログファイル形式のスレッド式画像掲示板
 
-$petit_ver='v2.0.7';
-$petit_lot='lot.20260616';
+$petit_ver='v2.0.8';
+$petit_lot='lot.20260617';
 
 $lang = ($http_langs = $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '')
   ? explode( ',', $http_langs )[0] : '';
@@ -20,7 +20,7 @@ if(!is_file(__DIR__.'/functions.php')){
 	die(__DIR__.'/functions.php'.($en ? ' does not exist.':'がありません。'));
 }
 require_once(__DIR__.'/functions.php');
-if(!isset($functions_ver)||$functions_ver<20260615){
+if(!isset($functions_ver)||$functions_ver<20260617){
 	die($en?'Please update functions.php to the latest version.':'functions.phpを最新版に更新してください。');
 }
 
@@ -81,6 +81,12 @@ if(!$max_log){
 if(!isset($admin_pass)||!$admin_pass){
 	error($en?'The administrator password has not been set.':'管理者パスワードが設定されていません。');
 }
+
+/**
+ * 不正なクエリパラメータの時は 403 Forbiddenを返す
+ */
+validateQueryParameters();
+
 $max_log=($max_log<500) ? 500 : $max_log;//最低500スレッド
 $max_com= $max_com ?? 1000;
 $sage_all= $sage_all ?? false;
@@ -1256,6 +1262,8 @@ function to_continue(): void {
 	$set_nsfw_show_hide=(bool)filter_input_data('COOKIE','p_n_set_nsfw_show_hide',FILTER_VALIDATE_BOOLEAN);
 
 	set_form_display_time();
+	$token = get_csrf_token();
+
 	$admin_pass= null;
 
 	// HTML出力
@@ -1706,6 +1714,10 @@ function img_replace(): void {
 
 // 動画表示
 function pchview(): void {
+
+	//不正なクエリパラメータの時は 403 Forbiddenを返す
+	$allowed_keys = array_fill_keys(['mode','pchview','imagefile','id','no'], true);
+	validateQueryParameters($allowed_keys);
 
 	global $boardname,$skindir,$en,$petit_lot;
 
@@ -2364,6 +2376,10 @@ function catalog(): void {
 	global $home,$catalog_pagedef,$skindir,$display_link_back_to_home;
 	global $boardname,$petit_ver,$petit_lot,$set_nsfw,$en,$mark_sensitive_image; 
 
+	// 不正なクエリパラメータの時は 403 Forbiddenを返す
+	$allowed_keys = array_fill_keys(['mode','page'], true);
+	validateQueryParameters($allowed_keys);
+
 	aikotoba_required_to_view();
 	set_page_context_to_session();
 
@@ -2675,6 +2691,10 @@ function res (): void {
 	global $use_upload,$home,$skindir,$root_url,$use_res_upload,$max_kb,$mark_sensitive_image,$only_admin_can_reply,$use_misskey_note;
 	global $boardname,$max_res,$petit_ver,$petit_lot,$set_nsfw,$set_nsfw_hide_flag,$age_check_required_to_view,$use_sns_button,$deny_all_posts,$sage_all,$en,$use_diary,$nsfw_checked;
 	global $use_paintbbs_neo,$use_chickenpaint,$use_klecs,$use_tegaki,$use_axnos,$display_link_back_to_home,$display_search_nav,$switch_sns,$sns_window_width,$sns_window_height,$sort_comments_by_newest,$use_url_input_field,$set_all_images_to_nsfw;
+
+	//不正なクエリパラメータの時は 403 Forbiddenを返す
+	$allowed_keys = array_fill_keys(['resno','res_catalog','misskey_note','resid'], true);
+	validateQueryParameters($allowed_keys);
 
 	aikotoba_required_to_view();
 	set_page_context_to_session();
