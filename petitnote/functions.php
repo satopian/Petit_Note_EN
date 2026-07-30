@@ -2,7 +2,7 @@
 //Petit Note (c)さとぴあ @satopian 2021-2026 MIT License
 //https://paintbbs.sakura.ne.jp/
 
-$functions_ver=20260723;
+$functions_ver=20260730;
 
 /**
  * 編集モードログアウト
@@ -31,13 +31,13 @@ function logout_admin(): void {
 function aikotoba(): void {
 	global $aikotoba,$en,$keep_aikotoba_login_status;
 
+	check_same_origin();
 	//投稿間隔をチェック
 	check_submission_interval();
 	//禁止ホストをチェック
 	check_badhost();
 	//Fetch API以外からのPOSTを拒否
 	check_post_via_javascript();
-	check_same_origin();
 
 	session_sta();
 	if(!$aikotoba || !hash_equals($aikotoba,(string)filter_input_data('POST','aikotoba'))){
@@ -166,7 +166,7 @@ function admin_in(): void {
 
 	check_same_origin();
 	//禁止ホストをチェック
-	check_badhost();
+	check_badhost(['admin_in'=>true]);
 	aikotoba_required_to_view();
 	//古いテンプレート用の使用しない変数
 	$page = $resno = $catalog = $res_catalog = $search = $radio = $imgsearch = $q = $id = "";
@@ -195,13 +195,6 @@ function admin_in(): void {
 function adminpost(): void {
 	global $second_pass,$en,$enable_v1_legacy_template_unsafe_get_login;
 
-	//禁止ホストをチェック
-	check_badhost();
-	//投稿間隔をチェック
-	check_submission_interval();
-	//Fetch API以外からのPOSTを拒否
-	check_post_via_javascript();
-
 	if($enable_v1_legacy_template_unsafe_get_login){
 		//古いテンプレート互換設定の時
 		check_same_origin();
@@ -210,6 +203,13 @@ function adminpost(): void {
 		//same_originも、csrf_tokenもチェックする
 		check_csrf_token();
 	}
+	//禁止ホストをチェック
+	check_badhost();
+	//投稿間隔をチェック
+	check_submission_interval();
+	//Fetch API以外からのPOSTを拒否
+	check_post_via_javascript();
+
 
 	check_password_input_error_count();
 	session_sta();
@@ -233,13 +233,6 @@ function adminpost(): void {
 function admin_del(): void {
 	global $second_pass,$en,$enable_v1_legacy_template_unsafe_get_login;
 
-	//禁止ホストをチェック
-	check_badhost();
-	//投稿間隔をチェック
-	check_submission_interval();
-	//Fetch API以外からのPOSTを拒否
-	check_post_via_javascript();
-
 	if($enable_v1_legacy_template_unsafe_get_login){
 		//古いテンプレート互換設定の時
 		check_same_origin();
@@ -248,6 +241,14 @@ function admin_del(): void {
 		//same_originも、csrf_tokenもチェックする
 		check_csrf_token();
 	}
+
+	//禁止ホストをチェック
+	check_badhost();
+	//投稿間隔をチェック
+	check_submission_interval();
+	//Fetch API以外からのPOSTを拒否
+	check_post_via_javascript();
+
 
 	check_password_input_error_count();
 
@@ -333,6 +334,8 @@ function view_nsfw(): void {
  */
 function set_nsfw_show_hide(): void {
 
+	check_same_origin();
+
 	$view=(bool)filter_input_data('POST','set_nsfw_show_hide');
 	if($view){
 		setcookie("p_n_set_nsfw_show_hide","1",time()+(60*60*24*365),"","",false,true);
@@ -344,6 +347,8 @@ function set_nsfw_show_hide(): void {
  * ダークモード
  */
 function set_darkmode(): void {
+
+	check_same_origin();
 
 	$darkmode=(bool)filter_input_data('POST','darkmode');
 	if($darkmode){
@@ -472,6 +477,7 @@ function check_cont_pass(): void {
  * コンティニュー前画面のペイントツールを選択可能に 
  */
 function set_app_select_enabled_session() : void {
+	check_same_origin();
 	session_sta();
 	$_SESSION['enableappselect'] = true;
 }
@@ -738,6 +744,7 @@ function get_prev_next_pages(int $page,int $pagedef,int $count_alllog): array {
 
 /**
  * ユーザーip 
+ * @return string $ip
  */
 function get_uip(): string {
 	$ip = $_SERVER["HTTP_CLIENT_IP"] ?? '';
@@ -1202,10 +1209,12 @@ function check_same_origin(): void {
 
 /**
  * 禁止ホストなら拒絶 
+ * @param array $options
  */
-function check_badhost(): void {
+function check_badhost(array $options=[]): void {
 	global $en;
-	if(is_badhost()){
+
+	if(is_badhost($options)){
 		//禁止ホストの管理者ログインを解除
 		unset($_SESSION['adminpost']);
 		unset($_SESSION['admindel']);
@@ -1442,20 +1451,23 @@ function is_ngword ($ngwords, $strs): bool {
 
 /**
  * 禁止ホストチェック
+ * @param array $options
  */
-function is_badhost(): bool {
-	global $badhost,$reject_if_no_reverse_dns,$use_badhost_session_cache;
+function is_badhost(array $options=[]): bool {
+	global $badhost,$reject_if_no_reverse_dns,$reject_if_no_reverse_dns_admin_login,$use_badhost_session_cache;
 
 	//ホスト名が逆引きできないIPアドレスからの投稿を拒絶する
-	$reject_if_no_reverse_dns = $reject_if_no_reverse_dns ?? false;
-	
+	$reject_dns = $reject_if_no_reverse_dns ?? false;
+ //ホスト名が逆引きできないIPアドレスからの管理画面ログインを拒否する
+	$reject_dns = (isset($options['admin_in']) && $reject_if_no_reverse_dns_admin_login || $reject_dns);
 	//禁止ホストからのアクセスがあった時は、SESSIONにキャッシュする
 	$use_badhost_session_cache = $use_badhost_session_cache ?? false;
 	
 	session_sta();
 
 	$session_is_badhost = $_SESSION['is_badhost'] ?? false; //SESSIONに保存された値を取得
-	if($use_badhost_session_cache && $session_is_badhost){//禁止ホストフラグがSESSIONに保存されていたら拒絶
+	if(!isset($options['admin_in']) && $use_badhost_session_cache && $session_is_badhost){
+	//投稿時に禁止ホストフラグがSESSIONに保存されていたら拒絶する。管理者ログインは除外。
 		return true;
 	}
 	//ホスト取得
@@ -1463,15 +1475,18 @@ function is_badhost(): bool {
 	$host = $userip ? gethostbyaddr($userip) :'';
 
 	if($host === $userip){//ホスト名がipアドレスになる場合は
-		if($reject_if_no_reverse_dns){
+		if($reject_dns){
 			if(!$host || filter_var($userip, FILTER_VALIDATE_IP,FILTER_FLAG_IPV4)){//IPv4アドレスなら
-				$_SESSION['is_badhost'] = true;
+				// ホスト名逆引き不可の場合は、拒絶するのみで禁止ホストとしてsessionにキャッシュしない
 				return true; //リバースDNSがない場合は拒絶
 			}
 		}
 		foreach($badhost as $value){
 			if (preg_match("/\A$value/i",$host)) {//前方一致
+			//管理者ログイン時はsessionにキャッシュしない
+			if(!isset($options['admin_in'])){
 				$_SESSION['is_badhost'] = true;
+			}
 				return true;
 			}
 		}
@@ -1479,7 +1494,10 @@ function is_badhost(): bool {
 	}else{
 		foreach($badhost as $value){
 			if (preg_match("/$value\z/i",$host)) {
+			//管理者ログイン時はsessionにキャッシュしない
+			if(!isset($options['admin_in'])){
 				$_SESSION['is_badhost'] = true;
+			}
 				return true;
 			}
 		}
@@ -1495,7 +1513,7 @@ function init(): void {
 	check_dir(__DIR__."/src");
 	check_dir(__DIR__."/temp");
 	check_dir(__DIR__."/thumbnail");
-	check_dir(__DIR__."/log");
+	check_dir(__DIR__."/log",0700);
 	check_dir(__DIR__."/webp");
 	check_dir(__DIR__."/template/cache");
 	if(!is_file(LOG_DIR.'alllog.log')){
@@ -1506,18 +1524,28 @@ function init(): void {
 
 /**
  * ディレクトリ作成
- * @param string|null $path ディレクトリのパス。nullまたは空文字の場合はエラーになる。
+ * @param string $path ディレクトリのパス。
+ * @param int $permission ディレクトリのパーミッション 未指定時は0707
  */
-function check_dir (?string $path): void {
+function check_dir (string $path,int $permission=0): void {
+
+	if((is_dir($path)) && $permission){
+		// 現在のパーミッションを取得（8進数下位3桁を抽出）
+		$current_perms = fileperms($path) & 0777; 
+		// 異なる場合のみ chmod を実行する
+		if ($current_perms !== $permission) {
+				chmod($path, $permission);
+		}
+	}
 
 	$msg=initial_error_message();
-
+	$permission = $permission ?: 0707;
 	if (!is_dir($path)) {
-			mkdir($path, 0707);
-			chmod($path, 0707);
+		mkdir($path, $permission);
+		chmod($path, $permission);
 	}
 	if (!is_readable($path) || !is_writable($path)){
-		chmod($path, 0707);
+		chmod($path, $permission);
 	}
 	if (!is_dir($path)){
 		die(h($path) . $msg['001']);
@@ -1532,14 +1560,25 @@ function check_dir (?string $path): void {
 
 /**
  * ファイルの存在とアクセス権をチェック	
- * @param string|null $path ファイルのパス。nullまたは空文字の場合はエラーになる。
+ * @param string $path ファイルのパス。
+ * @param int $permission
  */
-function check_file (?string $path): void {
+function check_file (string $path, int $permission=0): void {
 	$msg=initial_error_message();
 
 	if (!is_file($path)){
 		die(h($path) . $msg['001']);
 	} 
+
+	if($permission){
+		// 現在のパーミッションを取得（8進数下位3桁を抽出）
+		$current_perms = fileperms($path) & 0777; 
+		// 異なる場合のみ chmod を実行する
+		if ($current_perms !== $permission) {
+				chmod($path, $permission);
+		}
+	}
+
 	if (!is_readable($path)){
 		die(h($path) . $msg['002']);
 	} 
@@ -1999,7 +2038,7 @@ function filter_input_data(string $input, string $key, int $filter=FILTER_UNSAFE
  * 不正なクエリパラメータの時は 403 Forbiddenを返す
  * @param array $allowed_keys
  */
-function validateQueryParameters($allowed_keys=[]){
+function validateQueryParameters($allowed_keys=[]): void {
 
 	$gets=filter_input_array(INPUT_GET) ?? [];
 
