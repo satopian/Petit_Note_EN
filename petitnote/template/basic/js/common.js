@@ -1,4 +1,4 @@
-//Petit Note (c)さとぴあ @satopian 2021-2025 MIT License
+//Petit Note (c)さとぴあ @satopian 2021-2026 MIT License
 //https://paintbbs.sakura.ne.jp/
 
 "use strict";
@@ -214,7 +214,12 @@ const postFormAndReload = (formData) => {
       console.error("Error:", error);
     });
 };
-//formDataの送信と再表示
+
+/**
+ * formDataの送信と再表示
+ * @param {FormData} formData
+ * @returns {void}
+ */
 const postFormAndRedisplay = (formData) => {
   fetch("./", {
     method: "post",
@@ -231,7 +236,24 @@ const postFormAndRedisplay = (formData) => {
       console.error("Error:", error);
     });
 };
-
+/**
+ * formDataの送信とレスポンスの取得
+ * @param {FormData} formData
+ * @returns {Promise<string>}
+ */
+const postFormAndGetResponse = async (formData) => {
+  try {
+    const response = await fetch("./", {
+      method: "post",
+      mode: "same-origin",
+      body: formData,
+    });
+    return await response.text();
+  } catch (error) {
+    console.error("Error:", error);
+    return "";
+  }
+};
 /**
  * 年齢制限付きの掲示板に設定されている時はボタンを押下するまで表示しない
  *
@@ -316,7 +338,11 @@ const open_sns_server_window = (event, width = 600, height = 600) => {
     height = 600; // デフォルト値
   }
   const target = event.currentTarget;
-  const url = target instanceof HTMLAnchorElement ? target.href : "";
+
+  const url =
+    (target instanceof HTMLElement && target.dataset.shareurl) ||
+    (target instanceof HTMLAnchorElement ? target.href : "");
+
   const windowFeatures = "width=" + width + ",height=" + height; // ウィンドウのサイズを指定
 
   if (snsWindow && !snsWindow.closed) {
@@ -372,13 +398,11 @@ window.addEventListener("pageshow", () => {
 /**
  * データセットでPOSTして表示を切り替える
  */
-
-document.addEventListener("click", (e) => {
+document.addEventListener("click", async (e) => {
   //ブラウザ自動化ツールを拒絶
   if (isAutomaticBrowser()) {
     return;
   }
-
   const target = e.target;
   if (!target) {
     return;
@@ -394,6 +418,10 @@ document.addEventListener("click", (e) => {
   form.method = "POST";
   form.action = "./";
   form.target = trigger.dataset.target ? "_blank" : "_self";
+  //いいねボタンのカウントの表示を更新するための要素を取得
+  const clapCountId = trigger.dataset.clapCountId
+    ? document.getElementById(trigger.dataset.clapCountId)
+    : null;
 
   /**
    * @param  {string} name
@@ -412,7 +440,21 @@ document.addEventListener("click", (e) => {
   append("id", trigger.dataset.id ?? "");
 
   document.body.appendChild(form);
-  form.submit();
+  if (trigger.dataset.fetch === "true") {
+    const responseText = await postFormAndGetResponse(new FormData(form));
+    if (clapCountId) {
+      if (responseText !== "") {
+        const trimmed = responseText.trim();
+        if (/^\d+$/.test(trimmed)) {
+          clapCountId.textContent = `x ${trimmed}`;
+        } else {
+          console.error("Unexpected response (not a number):", responseText);
+        }
+      }
+    }
+  } else {
+    form.submit();
+  }
   document.body.removeChild(form);
 });
 
