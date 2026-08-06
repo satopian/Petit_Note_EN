@@ -585,6 +585,12 @@ $misskey_servers=
 
 ];
 
+// Enable the like (clap) feature
+// true: enabled  false: disabled
+
+$use_clap = true;
+// $use_clap = false;
+
 /* Message for notification mail */
 
 define('NOTICE_MAIL_NAME', 'Name');
