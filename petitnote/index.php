@@ -482,7 +482,7 @@ function post(): void {
 		error($en?'Please attach an image.':'画像を添付してください。');
 	}
 
-	$hash = $pwd ? password_hash($pwd,PASSWORD_BCRYPT,['cost' => 5]) : '';
+	$hash = $pwd ? password_hash($pwd,PASSWORD_BCRYPT,['cost' => 12]) : '';
 
 	setcookie("namec",$name,time()+(60*60*24*30),"","",$httpsonly,true);
 	setcookie("urlc",$url,time()+(60*60*24*30),"","",$httpsonly,true);
