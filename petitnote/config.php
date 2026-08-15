@@ -628,14 +628,3 @@ $fetch_articles_to_skip = false;
 define("CRYPT_PASS","v25Xc9nZ82a5JPT");//Crypt key initial value
 define("CRYPT_METHOD","aes-128-cbc");
 define("CRYPT_IV","T3pkYxNyjN7Wz3pu");//16 single-byte alphanumeric characters
-
-/* Do not change this part */
-
-// temporary
-define("TEMP_DIR","temp/");
-//log
-define("LOG_DIR","log/");
-//image
-define("IMG_DIR","src/");
-//thumbnail
-define("THUMB_DIR","thumbnail/");
