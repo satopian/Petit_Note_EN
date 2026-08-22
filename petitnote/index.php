@@ -3,8 +3,8 @@
 //https://paintbbs.sakura.ne.jp/
 //1スレッド1ログファイル形式のスレッド式画像掲示板
 
-$petit_ver='v3.8.5';
-$petit_lot='lot.20260820';
+$petit_ver='v3.10.7';
+$petit_lot='lot.20260823';
 
 $lang = ($http_langs = $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '')
   ? explode( ',', $http_langs )[0] : '';
@@ -61,7 +61,7 @@ if(!isset($noticemail_inc_ver)||$noticemail_inc_ver<20260714){
 }
 check_file(__DIR__.'/clap.inc.php');
 require_once(__DIR__.'/clap.inc.php');
-if(!isset($clap_inc_ver)||$clap_inc_ver<20260819){
+if(!isset($clap_inc_ver)||$clap_inc_ver<20260822){
 	die($en?'Please update clap.inc.php to the latest version.':'clap.inc.phpを最新版に更新してください。');
 }
 
@@ -1793,6 +1793,9 @@ function img_replace(): void {
 		edit_form($time,$no);//編集画面にもどる
 		exit();
 	}
+	//いいねボタンの押下ずみ履歴をリセットして再度押せるようにする
+	clap::deleteChecksum($no,$_first_posted_time);
+
 	redirect("./?resno={$no}&resid={$_first_posted_time}");
 
 }
@@ -2594,56 +2597,51 @@ function view(): void {
 	}
 	fclose($fp);
 
-	$index_cache_json = __DIR__.'/template/cache/index_cache.json';
-
 	$out=[];
-	if($page===0 && !$admindel && !$userdel && !$adminpost && !$is_badhost){
-		$out = is_file($index_cache_json) ? json_decode(file_get_contents($index_cache_json),true) : [];
-	}
-	if(empty($out)){
-		//oyaのループ
-		foreach($article_nos as $oya => $no){
+	//oyaのループ
+	foreach($article_nos as $oya => $no){
 
-			//個別スレッドのループ
-			if(!is_file(LOG_DIR."{$no}.log")){
-				continue;	
-			}
+		//個別スレッドのループ
+		if(!is_file(LOG_DIR."{$no}.log")){
+			continue;	
+		}
+		$_res=[];
+		$out[$oya]=[];
+		$find_hide_thumbnail=false;
+		check_open_no($no);
+		$claps = clap::create_claplog_array($no);
+		$rp = fopen(LOG_DIR."{$no}.log", "r");//個別スレッドのログを開く
+		$lines=create_array_from_fp($rp);
+		fclose($rp);
+		$countres=count($lines);
+		$com_skipres= $dispres ? ($countres-($dispres+1)) : 0;
+
+		if($userdel || $admindel){
+			$com_skipres = 0;	//削除モードの時はレスを省略しない
+		}
+
+		foreach($lines as $i => $line){
+
 			$_res=[];
-			$out[$oya]=[];
-			$find_hide_thumbnail=false;
-			check_open_no($no);
-			$claps = clap::create_claplog_array($no);
-			$rp = fopen(LOG_DIR."{$no}.log", "r");//個別スレッドのログを開く
-			$lines=create_array_from_fp($rp);
-			fclose($rp);
-			$countres=count($lines);
-			$com_skipres= $dispres ? ($countres-($dispres+1)) : 0;
-
-			if($userdel || $admindel){
-				$com_skipres = 0;	//削除モードの時はレスを省略しない
+			$_res['clap_count'] = 0;
+			$_res['alreadyClapped'] = false;
+			if($fetch_articles_to_skip ||($i===0 || $i>$com_skipres)){//省略するレスは処理しない
+				$_res = create_res(explode("\t",trim($line)),['is_badhost'=>$is_badhost]);//$lineから、情報を取り出す
+				$_res['clap_count'] = $claps[$_res['first_posted_time']]['clapCount'] ?? 0;
+				$_res['alreadyClapped'] = $claps[$_res['first_posted_time']]['alreadyClapped'] ?? false;
 			}
-
-			foreach($lines as $i => $line){
-
-				$_res=[];
-
-				if($fetch_articles_to_skip ||($i===0 || $i>$com_skipres)){//省略するレスは処理しない
-					$_res = create_res(explode("\t",trim($line)),['is_badhost'=>$is_badhost]);//$lineから、情報を取り出す
-					$_res['clap_count'] = $claps[$_res['first_posted_time']] ?? 0;
+			if(isset($_res['img']) && $_res['img']){
+				if($_res['hide_thumbnail']){
+					$find_hide_thumbnail=true;
 				}
-				if(isset($_res['img']) && $_res['img']){
-					if($_res['hide_thumbnail']){
-						$find_hide_thumbnail=true;
-					}
-				}
-				$out[$oya][]=$_res;
-				unset($lines[$i]);
-			}	
-			$out[$oya][0]['find_hide_thumbnail']=$find_hide_thumbnail;
-			$out[$oya][0]['countres']=$countres;
-			if(empty($out[$oya])||$out[$oya][0]['oya']!=='oya'){
-				unset($out[$oya]);
 			}
+			$out[$oya][]=$_res;
+			unset($lines[$i]);
+		}	
+		$out[$oya][0]['find_hide_thumbnail']=$find_hide_thumbnail;
+		$out[$oya][0]['countres']=$countres;
+		if(empty($out[$oya])||$out[$oya][0]['oya']!=='oya'){
+			unset($out[$oya]);
 		}
 	}
 	unset($article_nos);
@@ -2680,12 +2678,6 @@ function view(): void {
 	/** @var int|false $next */
 	[$prev,$next]=get_prev_next_pages($page,$pagedef,$count_alllog);
 
-	if($page===0 && !$admindel && !$adminpost && !$is_badhost){
-		if(!is_file($index_cache_json)){
-			file_put_contents($index_cache_json,json_encode($out),LOCK_EX);
-			chmod($index_cache_json,0600);
-		}
-	}
 	$use_misskey_note = $use_diary  ? ($adminpost||$admindel) : $use_misskey_note;
 	$lightbox_gallery=false;
 	$resmode=false;
@@ -2697,6 +2689,12 @@ function view(): void {
 	//フォームの表示時刻をセット
 	set_form_display_time();
 
+	$index_cache_json = __DIR__.'/template/cache/index_cache.json';
+	if(!is_file($index_cache_json)){
+		file_put_contents($index_cache_json,json_encode([]),LOCK_EX);
+		chmod($index_cache_json,0600);
+	}
+	
 	$admin_pass= null;
 	// HTML出力
 	$templete='main.html';
@@ -2887,7 +2885,8 @@ function res (): void {
 			$og_resid = $_res['oya'] === 'res' ? $resid : ""; //oyaの時はresidを出さない
 		}
 
-		$_res['clap_count'] = $claps[$_res['first_posted_time']] ?? 0;
+		$_res['clap_count'] = $claps[$_res['first_posted_time']]['clapCount'] ?? 0;
+		$_res['alreadyClapped'] = $claps[$_res['first_posted_time']]['alreadyClapped'] ?? false;
 
 		$out[0][]=$_res;
 		$out[0][0]['find_hide_thumbnail']=$find_hide_thumbnail;
@@ -2940,6 +2939,12 @@ function res (): void {
 
 	if($res_catalog){
 		krsort($out[0]);
+	}
+
+	$index_cache_json = __DIR__.'/template/cache/index_cache.json';
+	if(!is_file($index_cache_json)){
+		file_put_contents($index_cache_json,json_encode([]),LOCK_EX);
+		chmod($index_cache_json,0600);
 	}
 	
 	$admin_pass= null;
