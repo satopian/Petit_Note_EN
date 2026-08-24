@@ -3,8 +3,8 @@
 //https://paintbbs.sakura.ne.jp/
 //1スレッド1ログファイル形式のスレッド式画像掲示板
 
-$petit_ver='v3.10.8';
-$petit_lot='lot.20260823.1';
+$petit_ver='v3.10.9';
+$petit_lot='lot.20260823.2';
 
 $lang = ($http_langs = $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '')
   ? explode( ',', $http_langs )[0] : '';
@@ -640,7 +640,7 @@ function post(): void {
 	$pchext = '';
 	//PCHファイルアップロード
 	if ($is_painted_img && $imgfile) {
-		// .pch, .spch,.chi,.psd ブランク どれかが返ってくる
+		// .pch .tgkr .chi .psd" ブランク どれかが返ってくる
 		if($pchext = check_pch_ext($temp_basepath,['upload'=>true])){
 			$pch_src = $temp_basepath.$pchext;
 			$pch_dst = IMG_DIR.$time.$pchext;

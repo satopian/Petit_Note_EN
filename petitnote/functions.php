@@ -1713,9 +1713,9 @@ function calc_remaining_time_to_close_thread (int $sec): string {
 }
 
 /**
- * pchかtgkrかchiかpsdか、それともファイルが存在しないかチェック
+ * pchかtgkrかchiかpsdか、ファイルが存在しないかチェック
  * @param $filepath
- * @return string
+ * @return string .pch .tgkr .chi .psd" ブランク どれかが返ってくる
  */
 function check_pch_ext (?string $filepath,array $options = []): string {
 	
