@@ -21,7 +21,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 var Neo = {};
 
-Neo.version = "1.7.22";
+Neo.version = "1.7.25";
 // @ts-ignore
 /** @type {Neo.Painter} */
 Neo.painter;
@@ -7669,11 +7669,6 @@ Neo.EffectToolBase = class extends Neo.ToolBase {
     this.startY = Math.floor(this.startY);
     this.endX = Math.floor(this.endX);
     this.endY = Math.floor(this.endY);
-
-    if (this.startX >= oe.canvasWidth) this.startX = oe.canvasWidth - 1;
-    if (this.endX >= oe.canvasWidth) this.endX = oe.canvasWidth - 1;
-    if (this.startY >= oe.canvasHeight) this.startY = oe.canvasHeight - 1;
-    if (this.endY >= oe.canvasHeight) this.endY = oe.canvasHeight - 1;
 
     var x = this.startX < this.endX ? this.startX : this.endX;
     var y = this.startY < this.endY ? this.startY : this.endY;
