@@ -111,6 +111,8 @@ const res_form_submit = (event, formId = "res_form") => {
               console.log(text);
               const error_message = text.split("\n").slice(1).join("\n"); //"error\n"を除去
               return (elem_error_message.innerText = error_message);
+            } else {
+              elem_error_message.innerText = "";
             }
             if (formId === "aikotoba_form") {
               return location.reload();
@@ -910,7 +912,7 @@ class petitNoteImagePreview {
           this.removePchAttachmentBtn.style.display = "inline-block";
         }
         this.file_size_check(
-          "this.paint_forme",
+          "paint_forme",
           "error_message_paintform",
           this.paint_form_fileInput,
           "remove_pch_attachment_btn",
