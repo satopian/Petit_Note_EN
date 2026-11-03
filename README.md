@@ -15,7 +15,7 @@ If the set language is not Japanese, it will be displayed in English.
 
 ## Required PHP Version.
 PHP7.4 or higher environment is required.  
-Operation has been confirmed with PHP7.4,PHP8.5.  
+Operation has been confirmed with PHP7.4,PHP8.6.  
 I recommend using PHP8.2 to PHP8.6.  
 
 ## support
