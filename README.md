@@ -2,7 +2,7 @@
 
 Petit Note English ver.
 PHP script for PaintBBS,ChickenPaint,tegaki.js and Klecks.
-PHP7.4-PHP8.4
+PHP7.4-PHP8.6
 https://paintbbs.sakura.ne.jp/
 
 ## This is English version of Petit Note
@@ -15,8 +15,8 @@ If the set language is not Japanese, it will be displayed in English.
 
 ## Required PHP Version.
 PHP7.4 or higher environment is required.  
-Operation has been confirmed with PHP7.4,PHP8.5.  
-I recommend using PHP8.0 to PHP8.5.  
+Operation has been confirmed with PHP7.4,PHP8.6.  
+I recommend using PHP8.2 to PHP8.6.  
 
 ## support
 If you have any questions, you can open an [issue](https://github.com/satopian/Petit_Note_EN/issues) and ask a question.
