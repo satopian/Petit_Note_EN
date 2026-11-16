@@ -3,8 +3,8 @@
 //https://paintbbs.sakura.ne.jp/
 //1スレッド1ログファイル形式のスレッド式画像掲示板
 
-$petit_ver='v3.33.0';
-$petit_lot='lot.20261112';
+$petit_ver='v3.36.8';
+$petit_lot='lot.20261116';
 
 $lang = ($http_langs = $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '')
   ? explode( ',', $http_langs )[0] : '';
@@ -20,13 +20,13 @@ if(!is_file(__DIR__.'/functions.php')){
 	die(__DIR__.'/functions.php'.($en ? ' does not exist.':'がありません。'));
 }
 require_once(__DIR__.'/functions.php');
-if(!isset($functions_ver)||$functions_ver<20261031){
+if(!isset($functions_ver)||$functions_ver<20261116){
 	die($en?'Please update functions.php to the latest version.':'functions.phpを最新版に更新してください。');
 }
 
 check_file(__DIR__.'/misskey_note.inc.php');
 require_once(__DIR__.'/misskey_note.inc.php');
-if(!isset($misskey_note_ver)||$misskey_note_ver<20260818){
+if(!isset($misskey_note_ver)||$misskey_note_ver<20261116){
 	die($en?'Please update misskey_note.inc.php to the latest version.':'misskey_note.inc.phpを最新版に更新してください。');
 }
 
@@ -38,7 +38,7 @@ if(!isset($save_inc_ver)||$save_inc_ver<20260501){
 
 check_file(__DIR__.'/search.inc.php');
 require_once(__DIR__.'/search.inc.php');
-if(!isset($search_inc_ver)||$search_inc_ver<20260714){
+if(!isset($search_inc_ver)||$search_inc_ver<20261116){
 	die($en?'Please update search.inc.php to the latest version.':'search.inc.phpを最新版に更新してください。');
 }
 
@@ -61,7 +61,7 @@ if(!isset($noticemail_inc_ver)||$noticemail_inc_ver<20260714){
 }
 check_file(__DIR__.'/clap.inc.php');
 require_once(__DIR__.'/clap.inc.php');
-if(!isset($clap_inc_ver)||$clap_inc_ver<20260823){
+if(!isset($clap_inc_ver)||$clap_inc_ver<20261116){
 	die($en?'Please update clap.inc.php to the latest version.':'clap.inc.phpを最新版に更新してください。');
 }
 check_file(__DIR__.'/config.php',0600);
@@ -392,7 +392,7 @@ function post(): void {
 	if($resto){//レスの時はファイルロックしてレスファイルを開く
 		check_open_no($resto);
 		chmod(LOG_DIR."{$resto}.log",0600);
-		$rp=fopen(LOG_DIR."{$resto}.log","r+");
+		$rp=openFile(LOG_DIR."{$resto}.log","r+");
 		file_lock($rp, LOCK_EX);
 		$r_arr = create_array_from_fp($rp);
 		if(empty($r_arr)){
@@ -737,7 +737,7 @@ function post(): void {
 		[$d_no,]=explode("\t",$alllog_arr[$i],2);
 		if(is_file(LOG_DIR."{$d_no}.log")){
 			check_open_no($d_no);
-			$dp = fopen(LOG_DIR."{$d_no}.log", "r");//個別スレッドのログを開く
+			$dp = openFile(LOG_DIR."{$d_no}.log", "r");//個別スレッドのログを開く
 			file_lock($dp, LOCK_EX);
 
 			while ($line = fgets($dp)) {
@@ -926,7 +926,8 @@ function continue_paint(): array{
 		error($en ? 'The article does not exist.' : '記事がありません。');
 	}
 	$find = false;
-	$rp = fopen(LOG_DIR . "{$no}.log", "r");
+	$rp = openFile(LOG_DIR . "{$no}.log", "r");
+	file_lock($rp,LOCK_SH);
 	while ($_line = fgets($rp)) {
 		if (strpos($_line, "\t" . $imgfile . "\t") !== false) {
 			[$_no,,,,,, $_imgfile,,,,,, $_tool,, $_time, $_first_posted_time,] = explode("\t", trim($_line));
@@ -1242,7 +1243,9 @@ function to_continue(): void {
 		error($en? 'The article does not exist.':'記事がありません。');
 	}
 	check_open_no($no);
-	$rp=fopen(LOG_DIR."{$no}.log","r");
+	$rp=openFile(LOG_DIR."{$no}.log","r");
+	file_lock($rp,LOCK_SH);
+
 	$i=0;
 	//スレッドが閉じてるかどうか
 	$oya_time=0;
@@ -1269,7 +1272,7 @@ function to_continue(): void {
 		++$i;
 	}
 
-	closeFile ($rp);
+	closeFile($rp);
 	//閉じていたら $res_max_over が true になる
 	$res_max_over=(!$adminpost && ($i>$max_res||!check_elapsed_days($oya_time)));
 
@@ -1362,7 +1365,9 @@ function download_app_dat(): void {
 		error($en? 'The article does not exist.':'記事がありません。');
 	}
 	check_open_no($no);
-	$rp=fopen(LOG_DIR."{$no}.log","r");
+	$rp=openFile(LOG_DIR."{$no}.log","r");
+	file_lock($rp,LOCK_SH);
+
 	$time='';
 	while ($line = fgets($rp)) {
 		if(!trim($line)){
@@ -1378,7 +1383,7 @@ function download_app_dat(): void {
 			} 
 		}
 	}
-	closeFile ($rp);
+	closeFile($rp);
 	$time=basename($time);
 	$pchext = check_pch_ext(IMG_DIR.$time,['upload'=>true]);
 	$pchext=basename($pchext);
@@ -1492,7 +1497,6 @@ function img_replace(): void {
 	}
 	//ログ読み込み
 	if(!is_file(LOG_DIR."{$no}.log")){
-
 		if($is_upload_img){//該当記事が無い時はエラー
 			error($en? 'The article does not exist.':'記事がありません。');
 		} 
@@ -1500,9 +1504,9 @@ function img_replace(): void {
 	}
 
 	chmod(LOG_DIR."alllog.log",0600);
-	$fp=fopen(LOG_DIR."alllog.log","r+");
-	$flock_option = $is_upload_img ? []: ['paintcom'=>true];
-	file_lock($fp, LOCK_EX,$flock_option);
+	$paintcom_option = $is_upload_img ? []: ['paintcom'=>true];
+	$fp=openFile(LOG_DIR."alllog.log","r+",$paintcom_option);
+	file_lock($fp, LOCK_EX,$paintcom_option);
 
 	$alllog_arr = create_array_from_fp($fp);
 
@@ -1515,9 +1519,8 @@ function img_replace(): void {
 	}
 	check_open_no($no);
 	chmod(LOG_DIR."{$no}.log",0600);
-	$rp=fopen(LOG_DIR."{$no}.log","r+");
-	$flock_option = $is_upload_img ? []: ['paintcom'=>true];
-	file_lock($rp, LOCK_EX,$flock_option);
+	$rp=openFile(LOG_DIR."{$no}.log","r+");
+	file_lock($rp, LOCK_EX,$paintcom_option);
 
 	$r_arr = create_array_from_fp($rp);
 
@@ -1745,10 +1748,10 @@ function img_replace(): void {
 			location_paintcom();//該当記事が無い時は新規投稿。
 		}
 
-		writeFile($fp,implode("",$alllog_arr));
+		writeFile($fp,implode("",$alllog_arr),$paintcom_option);
 
 	}
-	writeFile($rp, implode("", $r_arr));
+	writeFile($rp, implode("", $r_arr),$paintcom_option);
 	closeFile($rp);
 	closeFile($fp);
 	
@@ -1799,7 +1802,8 @@ function pchview(): void {
 		error($en? 'The article does not exist.':'記事がありません。');
 	}
 	check_open_no($no);
-	$rp=fopen(LOG_DIR."{$no}.log","r");
+	$rp=openFile(LOG_DIR."{$no}.log","r");
+
 	$flag=false;
 	$resid = '';
 	$pchext ='';
@@ -1819,7 +1823,7 @@ function pchview(): void {
 			break;
 		} 
 	}
-	closeFile ($rp);
+	closeFile($rp);
 	if(!$flag){
 		error($en? 'The article does not exist.':'記事がありません。');
 	}
@@ -1892,9 +1896,11 @@ function confirmation_before_deletion (): void {
 		error($en? 'The article does not exist.':'記事がありません。');
 	}
 	check_open_no($no);
-	$rp=fopen(LOG_DIR."{$no}.log","r");
+	$rp=openFile(LOG_DIR."{$no}.log","r");
+	file_lock($rp,LOCK_SH);
+
 	$r_arr = create_array_from_fp($rp);
-	closeFile ($rp);
+	closeFile($rp);
 
 	if(empty($r_arr)){
 		error($en?'This operation has failed.':'失敗しました。');
@@ -1988,7 +1994,8 @@ function edit_form(string $id='',string $no=''): void {
 		error($en? 'The article does not exist.':'記事がありません。');
 	}
 	check_open_no($no);
-	$rp=fopen(LOG_DIR."{$no}.log","r");
+	$rp=openFile(LOG_DIR."{$no}.log","r");
+	file_lock($rp,LOCK_SH);
 
 	$flag=false;
 	$lines=[];
@@ -2103,12 +2110,12 @@ function edit(): void {
 		error($en? 'The article does not exist.':'記事がありません。');
 	}
 	chmod(LOG_DIR."alllog.log",0600);
-	$fp=fopen(LOG_DIR."alllog.log","r+");
+	$fp=openFile(LOG_DIR."alllog.log","r+");
 	file_lock($fp, LOCK_EX);
 
 	check_open_no($no);
 	chmod(LOG_DIR."{$no}.log",0600);
-	$rp=fopen(LOG_DIR."{$no}.log","r+");
+	$rp=openFile(LOG_DIR."{$no}.log","r+");
 	file_lock($rp, LOCK_EX);
 
 	$r_arr = create_array_from_fp($rp);
@@ -2300,7 +2307,7 @@ function del(): void {
 	}
 	$delete_thread=(bool)filter_input_data('POST','delete_thread',FILTER_VALIDATE_BOOLEAN);
 	chmod(LOG_DIR."alllog.log",0600);
-	$fp=fopen(LOG_DIR."alllog.log","r+");
+	$fp=openFile(LOG_DIR."alllog.log","r+");
 	file_lock($fp, LOCK_EX);
 
 	if(!is_file(LOG_DIR."{$no}.log")){
@@ -2308,7 +2315,7 @@ function del(): void {
 	}
 	check_open_no($no);
 	chmod(LOG_DIR."{$no}.log",0600);
-	$rp=fopen(LOG_DIR."{$no}.log","r+");
+	$rp=openFile(LOG_DIR."{$no}.log","r+");
 	file_lock($rp, LOCK_EX);
 
 	$r_arr = create_array_from_fp($rp);
@@ -2473,7 +2480,8 @@ function catalog(): void {
 	$page=$page<0 ? 0 : $page;
 	$pagedef=$catalog_pagedef;
 
-	$fp=fopen(LOG_DIR."alllog.log","r");
+	$fp=openFile(LOG_DIR."alllog.log","r");
+
 	$count_alllog=0;
 	$_res=[];
 	$out=[];
@@ -2492,7 +2500,7 @@ function catalog(): void {
 		}
 		++$count_alllog;
 	}
-	fclose($fp);
+	closeFile($fp);
 
 	//管理者判定処理
 	$admindel=admindel_valid();
@@ -2536,6 +2544,7 @@ function view(): void {
 	global $boardname,$max_res,$use_miniform,$use_diary,$petit_ver,$petit_lot,$set_nsfw,$use_sns_button,$deny_all_posts,$en,$mark_sensitive_image,$only_admin_can_reply; 
 	global $use_paintbbs_neo,$use_chickenpaint,$use_klecs,$use_tegaki,$use_axnos,$display_link_back_to_home,$display_search_nav,$switch_sns,$sns_window_width,$sns_window_height,$sort_comments_by_newest,$use_url_input_field;
 	global $disp_image_res,$nsfw_checked,$sitename,$fetch_articles_to_skip,$set_all_images_to_nsfw,$use_clap;
+
 	//不正なクエリパラメータの時は 403 Forbiddenを返す
 	$allowed_keys = array_fill_keys(['page'], true);
 	validateQueryParameters($allowed_keys);
@@ -2559,7 +2568,8 @@ function view(): void {
 	session_sta();
 	unset ($_SESSION['enableappselect']);
 
-	$fp=fopen(LOG_DIR."alllog.log","r");
+	$fp=openFile(LOG_DIR."alllog.log","r");
+
 	$article_nos=[];
 	$count_alllog=0;
 	while ($_line = fgets($fp)) {
@@ -2572,7 +2582,7 @@ function view(): void {
 		}
 		++$count_alllog;//処理の後半で記事数のカウントとして使用
 	}
-	fclose($fp);
+	closeFile($fp);
 
 	$out=[];
 	//oyaのループ
@@ -2587,9 +2597,10 @@ function view(): void {
 		$find_hide_thumbnail=false;
 		check_open_no($no);
 		$claps = clap::create_claplog_array($no);
-		$rp = fopen(LOG_DIR."{$no}.log", "r");//個別スレッドのログを開く
+		$rp = openFile(LOG_DIR."{$no}.log", "r");//個別スレッドのログを開く
+
 		$lines=create_array_from_fp($rp);
-		fclose($rp);
+		closeFile($rp);
 		$countres=count($lines);
 		$com_skipres= $dispres ? ($countres-($dispres+1)) : 0;
 
@@ -2688,7 +2699,8 @@ function res_view_other_works(string $resno): array
 {
 	global $view_other_works;
 
-	$fp = fopen(LOG_DIR . "alllog.log", "r");
+	$fp = openFile(LOG_DIR . "alllog.log", "r");
+
 	$count_alllog = 0;
 	$i = 0;
 	$j = 0;
@@ -2726,7 +2738,7 @@ function res_view_other_works(string $resno): array
 		}
 		++$j;
 	}
-	fclose($fp);
+	closeFile($fp);
 
 	$nextLine = $articles2[$i + 1] ?? '';
 	$prevLine = $articles1[$i - 1] ?? '';
@@ -2821,7 +2833,7 @@ function res (): void {
 	$claps=[];
 	check_open_no($resno);
 	$claps=clap::create_claplog_array($resno);
-	$rp = fopen(LOG_DIR."{$resno}.log", "r");//個別スレッドのログを開く
+	$rp = openFile(LOG_DIR."{$resno}.log", "r");//個別スレッドのログを開く
 
 	$out[0]=[];
 
@@ -2868,7 +2880,7 @@ function res (): void {
 		$out[0][]=$_res;
 		$out[0][0]['find_hide_thumbnail']=$find_hide_thumbnail;
 	}	
-	fclose($rp);
+	closeFile($rp);
 	if(empty($out[0])||$out[0][0]['oya']!=='oya'){
 		error($en? 'The article does not exist.':'記事がありません。');
 	}
